@@ -83,7 +83,7 @@ The tools are about intent ("find this jacket's materials", "the nearest red"), 
 | Step | Who | Rule |
 |---|---|---|
 | 1. Spec | One session studies MlsetupBuilder (code, UI, videos) and the game files | Writes [`docs/design/behavior.md`](design/behavior.html) in its own words: features, file fields, workflows, edge cases. No code, no copied text, no copied data |
-| 2. Check | The same session, through REDbridge | Every claim in the spec is checked against real game files. MlsetupBuilder is a reference, not the authority |
+| 2. Check | A session on the dev PC, through REDbridge, without opening MlsetupBuilder's source | Every claim in the spec is checked against real game files and corrected where wrong. MlsetupBuilder is a reference, not the authority. Questions about what MlsetupBuilder does go back to the spec session |
 | 3. Build | Other sessions, from the spec | Never open MlsetupBuilder's source. Questions go back to step 1 |
 | GPL logic worth reusing | REDbridge | If a piece of MlsetupBuilder's logic is worth reusing as code, it goes into REDbridge (GPL-3.0) with attribution, never into EDGEmat |
 
