@@ -111,3 +111,11 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M4 |
 | Which items first | The garments modders recolor most, to list in M0, become the test set |
 | The sibling repos' notes | REDcode's roadmap lists the layered material preview under C6 (README, `docs/design.html`); it should point at EDGEmat. EDGEkit's design says new EDGE editor extensions go into REDcode, and its `extensions.json` should gain EDGEmat. Each repo's own session makes the change |
+
+## Later ideas
+
+Not planned into a phase. Kept so they are not lost.
+
+| Idea | Notes |
+|---|---|
+| Recolor in the live game, through EDGEbuilder | EDGEbuilder is a REDnode in-game app. A modder looks at something in the game and says "recolor this"; EDGEbuilder works out the item or mesh and hands it to EDGEmat's MCP tools (`mat_find`, `mat_colors`, `mat_edit`), and the change is deployed back to the running game. Needs EDGEmat's MCP server (M2, M3), a way for EDGEbuilder to name what is being looked at, and REDnode's live deploy. Raised by the owner on 2026-10-14 |
