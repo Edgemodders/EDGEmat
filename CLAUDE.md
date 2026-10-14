@@ -6,7 +6,8 @@ EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: a standalone VS C
 
 - Scaffold created 2026-10-14: README, license, docs site (HUD layout, dev setup), brand sources and images, Pages workflow. No code.
 - **Design draft 0.2 agreed in chat on 2026-10-14:** standalone extension, `.mlsetup` first, an MCP server beside the UI with every feature in both, the material library built from the user's game (never shipped), MlsetupBuilder studied for behavior and never copied. Phases M0 Spec to M6 Ship.
-- **Next: M0 Spec.** Write `docs/design/behavior.md` from MlsetupBuilder and the game files, check every claim through REDbridge, file the bridge requests. The user contacts Neurolinked before any announcement.
+- **M0 Spec in progress.** `docs/design/behavior.md` draft 0.1 was written on 2026-10-14 in a cloud session (no game install) from a study of MlsetupBuilder 1.6.9, commit `4271e8c`. Every claim is unverified.
+- **Next: the local session** (game and REDbridge available) works through the spec's checklist, marks each row confirmed or corrected with the date, and files the missing bridge methods as REDbridge requests. The user contacts Neurolinked before any announcement.
 
 ## Conventions
 

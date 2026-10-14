@@ -5,6 +5,7 @@ EDGEmat is the EDGEmodders material editor for Cyberpunk 2077, a VS Code extensi
 | Document | What it covers |
 |---|---|
 | [Design](design.html) | The mission, what EDGEmat edits, its shape, the material library, the MCP server, prior art, phases M0 to M6. Draft 0.2 |
+| [Behavior spec](design/behavior.html) | What EDGEmat must understand about multilayered materials: the chain from item to layers, every `.mlsetup` field, templates, masks, how layers blend, saving, bridge needs, features and the checklist for the local session. Draft 0.1, unverified |
 | [Dev setup](dev-setup.html) | What a PC needs to work on EDGEmat |
 | [REDcode docs](https://edgemodders.github.io/REDcode/) | The editor extensions and the bridge EDGEmat builds on |
 
@@ -14,7 +15,7 @@ As of 2026-10-14.
 
 | Phase | Status |
 |---|---|
-| M0 Spec | Next. The behavior spec from MlsetupBuilder and the game files, checked through REDbridge |
+| M0 Spec | In progress. The [behavior spec](design/behavior.html) is written (2026-10-14, unverified); next, the local session checks it against the game through REDbridge |
 | M1 Library | Not started |
 | M2 Read | Not started |
 | M3 Edit | Not started |
