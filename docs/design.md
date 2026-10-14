@@ -110,4 +110,4 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | The bridge client | Copy REDcode's `bridgeClient.ts` for now, or make it a shared npm package that REDcode, EDGEmat and the other EDGE tools all use |
 | Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M4 |
 | Which items first | The garments modders recolor most, to list in M0, become the test set |
-| REDcode's notes | REDcode's CLAUDE.md says new editor extensions go into REDcode, and its roadmap lists the layered material preview under C6. Both should point at EDGEmat; the REDcode session makes that change |
+| The sibling repos' notes | REDcode's roadmap lists the layered material preview under C6 (README, `docs/design.html`); it should point at EDGEmat. EDGEkit's design says new EDGE editor extensions go into REDcode, and its `extensions.json` should gain EDGEmat. Each repo's own session makes the change |
