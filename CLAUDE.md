@@ -1,11 +1,12 @@
 # EDGEmat: notes for Claude sessions
 
-EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: material instances (`.mi`), templates (`.mt`) and multilayered setups (`.mlsetup`, `.mltemplate`, `.mlmask`), with a preview. Read [docs/design.md](docs/design.md) first. It reads and writes game files through REDbridge, like REDcode.
+EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: a standalone VS Code extension in the EDGE family (`edgemodders.edgemat`) and an MCP server, so a modder edits materials in the UI or tells REDagent or Claude "make this jacket red". Multilayered setups (`.mlsetup`, `.mltemplate`, `.mlmask`) first, then `.mi` and `.mt`. Read [docs/design.md](docs/design.md) first. It reads and writes game files through REDbridge, like REDcode.
 
 ## Status and next step
 
-- Scaffold created 2026-10-14: README, license, docs site (HUD layout, design draft 0.1, dev setup), brand sources and images, Pages workflow. No code.
-- **Next: M0 Decide** with the user (open questions in the design), starting with the form of the tool and its place beside REDcode. Agree the plan in chat before any code.
+- Scaffold created 2026-10-14: README, license, docs site (HUD layout, dev setup), brand sources and images, Pages workflow. No code.
+- **Design draft 0.2 agreed in chat on 2026-10-14:** standalone extension, `.mlsetup` first, an MCP server beside the UI with every feature in both, the material library built from the user's game (never shipped), MlsetupBuilder studied for behavior and never copied. Phases M0 Spec to M6 Ship.
+- **Next: M0 Spec.** Write `docs/design/behavior.md` from MlsetupBuilder and the game files, check every claim through REDbridge, file the bridge requests. The user contacts Neurolinked before any announcement.
 
 ## Conventions
 
@@ -14,5 +15,8 @@ EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: material instance
 - **Never commit game files**, WolvenKit binaries, or data extracted from the game.
 - **License boundary:** this repo is MIT. Talk to REDbridge (GPL-3.0) only as a separate process; never link it or copy WolvenKit code here. Needs from the bridge go to REDbridge as issues labelled `request`, with the shape that would work.
 - **Do not change REDcode or REDbridge from here**; other sessions work in them.
+- **MlsetupBuilder (GPL-3.0) is studied, never copied.** Only the M0 spec session reads its source, and writes what it learns in its own words in `docs/design/behavior.md`. Build sessions work from that spec and never open MlsetupBuilder's source. No code, text or data from it in this repo. GPL logic worth reusing as code goes into REDbridge with attribution.
+- **The mission decides UI questions:** modding for everyone, especially non-coders; easy, fun, fast. Plain words first, raw values one click away. Every feature ships in the UI and the MCP server together. AI is optional: no network calls or telemetry until an assistant connects.
+- Keep `extensions/edgemat/src/core` free of VS Code imports; the MCP server bundles it.
 - **House style** is the HUD look from REDnode's design doc, and the REDnode HUD theme in REDcode is the default theme for any VS Code UI.
 - **Docs site:** `docs/` is published by GitHub Pages through `.github/workflows/pages.yml`. `docs/index.md` is the landing page (document ledger and roadmap status); add every page to `nav` in `docs/_config.yml`. Brand images come from `tools/brand/render.ps1`. Record every tool install in `docs/dev-setup.md`, with versions and exact commands.

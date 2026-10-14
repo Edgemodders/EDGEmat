@@ -1,60 +1,113 @@
 # EDGE<span class="y">mat</span> design
 
-EDGEmat is the EDGEmodders material editor for Cyberpunk 2077. A modder opens a material, sees every parameter it has, including the ones it inherits, changes colors, textures and values, and sees the result without packing the mod and starting the game.
+EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: a VS Code extension and an MCP server. A modder picks a garment, clicks a layer, chooses a color and sees it on the model. Or they skip the UI and tell REDagent or Claude "make this jacket red".
 
-**Status: draft 0.1, scaffold.** Nothing here is agreed yet. Next: M0, the decisions below, with the user.
+**Status: draft 0.2.** Agreed with the user on 2026-10-14: a standalone extension in the EDGE family, `.mlsetup` editing first, an MCP server beside the UI, and MlsetupBuilder studied for behavior, never copied. Next: M0.
+
+## Mission
+
+EDGE brings modding to everyone, especially non-coders: easy, fun and fast. For EDGEmat this decides every UI question:
+
+| Rule | In practice |
+|---|---|
+| The first result in seconds | Open an item, click a layer, pick a color, see it on the model. No file formats to learn first |
+| Plain words first, details one click away | "Leather, dark red, 41% of the jacket" before `colorScale`, `mltemplate` and level ranges. Every raw value stays reachable for experienced modders |
+| Everything the UI does, an assistant can do | Each feature ships in the UI and in the MCP server in the same phase |
+| The best editor even with AI switched off | The MCP server does nothing until an assistant connects. No network calls, no telemetry |
 
 ## What EDGEmat edits
 
-The file roles below are from community knowledge (WolvenKit, the Cyberpunk 2077 modding wiki) and are **unverified** in this repo. M0 checks each against real files through REDbridge.
+The file roles are from community knowledge (WolvenKit, the modding wiki, MlsetupBuilder) and are **unverified** here. M0 checks each one against real files through REDbridge.
 
 | File | Class | What it is |
 |---|---|---|
-| `.mt` | `CMaterialTemplate` | A shader and its parameters with default values. Modders rarely change these |
-| `.mi` | `CMaterialInstance` | A `baseMaterial` (a `.mt` or another `.mi`) plus the parameters it overrides: textures, colors, scalars |
-| `.mesh` | `CMesh` | Holds material entries: local instances inside the mesh and references to external `.mi` files, and the appearances that pick a material per submesh |
-| `.mlsetup` | `Multilayer_Setup` | A multilayered material's layers: for each one a `.mltemplate`, a color, tiling and the strength of its normal, roughness and metal values |
-| `.mltemplate` | `Multilayer_LayerTemplate` | A layer's textures and its preset colors and levels |
-| `.mlmask` | `Multilayer_Mask` | The masks that say where each layer shows |
+| `.mlsetup` | `Multilayer_Setup` | A multilayered material's layers. Each has a `.mltemplate`, a color preset, tiling, offsets, opacity, levels for normal, roughness and metalness, and a microblend (a small detail texture with its own tiling and contrast) |
+| `.mltemplate` | `Multilayer_LayerTemplate` | A surface (leather, chrome, denim): its textures and its list of named color and level presets |
+| `.mlmask` | `Multilayer_Mask` | One mask per layer: where on the mesh that layer shows |
+| `.mesh` | `CMesh` | Material entries, local or external, and the appearances that pick a material per submesh. A multilayered material points at an `.mlsetup` and an `.mlmask` |
+| `.mi` | `CMaterialInstance` | A `baseMaterial` (a `.mt` or another `.mi`) and the parameters it overrides |
+| `.mt` | `CMaterialTemplate` | A shader and its parameters with defaults. Read, rarely edited |
 
-## What EDGEmat is, and is not
+Two facts that matter most, both **unverified**:
 
-| It is | It is not |
+- **A layer's color is a preset name from its template, not a free RGB value.** So "make it red" means the nearest red among that template's presets, or a different template with a better red. Free colors would need a custom `.mltemplate`, which is an M5 question.
+- **An item reaches its materials through a chain:** item, then appearance (`.app`, `.ent`), then mesh, then material, then `.mlsetup` and `.mlmask`. "This jacket" has to be resolved down that chain, so finding is a feature in its own right.
+
+## Shape
+
+| Part | What it is |
 |---|---|
-| An editor for the files above, with the inheritance chain resolved so a modder sees what a parameter's value really is and where it comes from | A shader compiler or a new material system. It edits what the game already reads |
-| A preview: the material on a sphere or on the mesh that uses it | An exact render of the game. The preview approximates the game's shaders, and says so |
-| A client of REDbridge for every file read and write | A place for WolvenKit or other GPL code. That stays in REDbridge, behind a process boundary |
+| `extensions/edgemat` | The VS Code extension, id `edgemodders.edgemat`: the `.mlsetup` editor, the material library view, the preview |
+| `extensions/edgemat/src/core` | Everything that is not UI: the bridge client, the material library, reading and editing setups, finding an item's materials. **No VS Code imports**, so the MCP server bundles the same code, as `redcode-mcp` does with REDcode's bridge client |
+| `packages/edgemat-mcp` | The MCP server over stdio, for Claude Code, REDagent or any MCP client |
+| REDbridge | Every game file read and write: archives, CR2W as JSON, textures to PNG, mesh export. EDGEmat asks for new methods as REDbridge issues labelled `request` |
 
-## Facts that shape the design
-
-| Fact | Consequence |
+| Relationship | How |
 |---|---|
-| REDbridge already opens, patches and saves any CR2W file (`cr2w.open`, `patch`, `save`, REDbridge 0.5.0 and later), converts textures to PNG (`texture.toPng`) and exports meshes (`project.export`) | EDGEmat builds on those methods. New ones (for example resolving a material's inheritance chain) go to REDbridge as requests |
-| REDcode's CR2W editor already edits these files as a generic tree, and REDcode V1 has a three.js mesh viewer | EDGEmat is the material-specific view on top. Whether it reuses REDcode's editor and viewer, or ships beside them, is an M0 question |
-| REDcode's roadmap lists "material preview" under C6 Parity | EDGEmat may take that over, as EDGEkit took over C7 Brand. To agree in M0 and note in REDcode's design |
-| The game's shaders are not public source | The preview is an approximation built per template (for example metal-roughness PBR for the common templates). Each template EDGEmat previews is listed with how close it is |
-| Community tools already cover parts of this: WolvenKit's editors, the Cyberpunk Blender add-on's material import, and MLSetupBuilder for multilayered setups | EDGEmat credits them and learns from them. Their licenses are checked before any of their data (for example layer presets) is reused |
+| REDbridge | A separate process over JSON-RPC on stdio, the boundary REDcode keeps. EDGEmat is MIT; REDbridge is GPL-3.0 |
+| REDcode | Not required. Projects are WolvenKit projects, so EDGEmat writes into `source/archive` itself. When REDcode is installed, EDGEmat uses it through its exported API (`extensions.getExtension`, never importing its code), as REDcode does with REDdeck: open in the CR2W editor, pack, install |
+| The UI and the MCP server together | Both edit files. The editor follows changes on disk, so a modder watching the editor sees the assistant's edit land |
+| EDGEkit | Bundled as a built-in extension once released |
+
+## The material library
+
+MlsetupBuilder ships about 18 MB of JSON built from the game (every `.mltemplate` with its color presets, a model list, mask and normal lists) and about 500 thumbnails made from game textures. EDGEmat ships none of it: that is data extracted from the game, which the EDGE repos never commit.
+
+Instead EDGEmat builds the library from the modder's own game through REDbridge on first run, and keeps it in a local cache: templates and their presets, microblends, masks, the models that use multilayered materials, and thumbnails rendered from the textures. It stays current with game patches and needs no WolvenKit.CLI. How long a full build takes is measured in M1.
+
+## The MCP server
+
+The tools are about intent ("find this jacket's materials", "the nearest red"), not file plumbing. Proposed names, settled in M2:
+
+| Tool | Does |
+|---|---|
+| `mat_find` | Finds the materials for an item, appearance, mesh or path: each `.mlsetup` with the submeshes and appearances that use it |
+| `mat_describe` | A setup's layers in plain words and in raw values: template, color name and RGB, how much of the surface each layer covers |
+| `mat_templates` | Searches the library: "leather", "worn chrome" |
+| `mat_colors` | A template's color presets with RGB, and the nearest preset to a color given as a word or a value |
+| `mat_edit` | Changes layers (template, color, tiling, levels, microblend) and writes the result into the project, copying the setup from the game first when needed. Returns what changed, so it can be undone |
+| `mat_render` | Renders the preview to a PNG, so the assistant can look at its own work before saying it is done |
+
+"Make this jacket red" is then: `mat_find`, `mat_describe` to pick the layers that make up the fabric, `mat_colors` for the nearest red in each, `mat_edit`, `mat_render`, and the user sees it. Packing and installing stay with REDcode's and REDdeck's tools.
+
+## Prior art, and how EDGEmat uses it
+
+| Project | License | What EDGEmat takes |
+|---|---|---|
+| [MlsetupBuilder](https://github.com/Neurolinked/MlsetupBuilder) by Neurolinked | GPL-3.0 | The behaviors a multilayered material editor needs, learned by studying it. No code, no data |
+| [WolvenKit](https://github.com/WolvenKit/WolvenKit) | GPL-3.0 | The file formats and their JSON form, through REDbridge only |
+| The [Cyberpunk 2077 modding wiki](https://wiki.redmodding.org/) | | How the material system works. Findings that are new go back to it |
+
+**Spec, then build.** EDGEmat is not a port of MlsetupBuilder and must not read like one.
+
+| Step | Who | Rule |
+|---|---|---|
+| 1. Spec | One session studies MlsetupBuilder (code, UI, videos) and the game files | Writes `docs/design/behavior.md` in its own words: features, file fields, workflows, edge cases. No code, no copied text, no copied data |
+| 2. Check | The same session, through REDbridge | Every claim in the spec is checked against real game files. MlsetupBuilder is a reference, not the authority |
+| 3. Build | Other sessions, from the spec | Never open MlsetupBuilder's source. Questions go back to step 1 |
+| GPL logic worth reusing | REDbridge | If a piece of MlsetupBuilder's logic is worth reusing as code, it goes into REDbridge (GPL-3.0) with attribution, never into EDGEmat |
+
+Neurolinked is contacted before EDGEmat is announced: credited, told what it is, and offered collaboration.
 
 ## Phases
 
-Phases are numbered M0 to M5, so they do not clash with the other repos' phases (C in REDcode, K in EDGEkit). **Unverified:** that no other EDGE repo uses M. Each phase ends with a test on the dev PC.
+Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends with a test on the dev PC.
 
 | Phase | Builds | The test proves |
 |---|---|---|
-| **M0 Decide** | The open questions below, answered with the user. A survey of real `.mi`, `.mt` and `.mlsetup` files through REDbridge | The plan and the file table above are agreed and checked |
-| **M1 Read** | Open a `.mi` (and a mesh's local materials): the parameter list with each value and where it comes from, following `baseMaterial` to the template. Textures shown as thumbnails | A game material shows the same values WolvenKit shows |
-| **M2 Edit** | Change a parameter, override an inherited one, reset to inherited, pick a texture from the project or the game, undo and redo, save | An edited material packs and shows in the game as expected |
-| **M3 Preview** | The material on a sphere and on its mesh, updated as values change, for the most used templates | Side by side with an in-game screenshot, the preview reads the same |
-| **M4 Multilayer** | The `.mlsetup` layer editor: layers, their templates, colors from the template's presets, tiling, the mask per layer, and a preview | A recolored outfit made in EDGEmat shows correctly in the game |
-| **M5 Ship** | Packaging and a release, the docs, a Nexus page | A modder installs it and recolors an item from the docs alone |
+| **M0 Spec** | The behavior spec (steps 1 and 2 above). The file table above checked. The bridge methods EDGEmat needs, filed with REDbridge. Neurolinked contacted | The spec is agreed with the user, and every field in it is seen in a real file |
+| **M1 Library** | The extension and MCP skeletons, the bridge client, the material library built from the game and cached, the library view with thumbnails | A full library builds from the game; its counts match the game's |
+| **M2 Read** | The `.mlsetup` editor, read-only: layers in plain words, swatches, each layer's mask. Finding an item's materials. MCP `mat_find`, `mat_describe`, `mat_templates`, `mat_colors` | A game jacket shows the same layers WolvenKit shows, and Claude describes it correctly |
+| **M3 Edit** | Change template, color, tiling, levels, microblend; undo and redo; save into a WolvenKit project. MCP `mat_edit` | A jacket recolored in EDGEmat, and another recolored by asking Claude, both show correctly in the game |
+| **M4 Preview** | The 3D preview: the mesh with layers blended through their masks, templates and microblends, updated live. MCP `mat_render` | Side by side with an in-game screenshot, the preview reads the same |
+| **M5 Beyond mlsetup** | `.mi` parameters, mesh appearances, custom colors (a custom `.mltemplate`, if M2 confirms colors are presets) | A non-multilayered item retextured and a free color used, both in the game |
+| **M6 Ship** | Open VSX and Marketplace, the MCP package, docs, a Nexus page, the EDGEkit bundle entry | A non-coder recolors an item from the docs alone, in the UI and by asking an assistant |
 
-## Open questions for M0
+## Open questions
 
 | Question | Notes |
 |---|---|
-| What form does EDGEmat take? | A VS Code extension in this repo that works beside REDcode (like the planned `redcode-rednode` add-on); a mode of REDcode's CR2W editor with only docs here; or a standalone app. REDcode's notes say new EDGE editor extensions go into REDcode, so a separate repo needs a reason |
-| Does it need REDcode installed? | Sharing REDcode's bridge client, project view and mesh viewer saves work; a standalone tool reaches modders who do not use VS Code |
-| Which templates first? | The preview covers templates one at a time. The most used ones (to count in M0) come first |
-| Multilayered first? | Recoloring clothing through `.mlsetup` may be what most modders want, ahead of plain `.mi` editing |
-| Bridge methods | Which new REDbridge methods are needed (for example, resolve a material chain, list a template's parameters), filed as requests in REDbridge |
-| AI | Expose the material methods as MCP tools, as REDcode does, so an assistant can recolor or retexture a material |
+| The bridge client | Copy REDcode's `bridgeClient.ts` for now, or make it a shared npm package that REDcode, EDGEmat and the other EDGE tools all use |
+| Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M4 |
+| Which items first | The garments modders recolor most, to list in M0, become the test set |
+| REDcode's notes | REDcode's CLAUDE.md says new editor extensions go into REDcode, and its roadmap lists the layered material preview under C6. Both should point at EDGEmat; the REDcode session makes that change |
