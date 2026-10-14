@@ -1,0 +1,30 @@
+# GitHub Pages (Jekyll) settings for the docs site.
+# Every markdown page in docs/ renders with the HUD layout in _layouts/default.html.
+# Built and deployed by .github/workflows/pages.yml.
+
+title: EDGEmat
+url: https://edgemodders.github.io
+baseurl: /EDGEmat
+repo: https://github.com/Edgemodders/EDGEmat
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+# Status bar links, in order.
+nav:
+  - title: Docs
+    url: /
+  - title: Design
+    url: /design.html
+  - title: Dev setup
+    url: /dev-setup.html
+  - title: REDcode
+    url: https://edgemodders.github.io/REDcode/
