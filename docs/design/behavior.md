@@ -227,6 +227,7 @@ Seen in MlsetupBuilder, listed so build sessions check for them. Each is a code 
 | Workflow | In EDGEmat |
 |---|---|
 | Recolor a game garment | Search the item, pick the appearance, click a part of the model or a layer, pick a color. It saves into the project; pack with REDcode. Or tell the assistant. The appearance decides the setup: on the sneakers each look (`basic_01`, `old_02`...) has its own `.mlsetup`, so recoloring one look leaves the others alone |
+| Use a setup from anywhere | Open a setup from any folder, as WolvenKit JSON, or from inside a mod's `.archive`; inspect it, change it if wanted, then Save to Project at a game path EDGEmat suggests. The original file is never written ([design](../design.html#open-any-file-then-save-it-into-a-project)) |
 | Change a surface | Pick a layer, pick another template ("leather" to "worn chrome"); all six preset names reset to the new template's `defaultOverrides`, with a note |
 | Start from a blank setup | New setup for a mask set: one layer per mask (`numLayers`), all set to `unused.mltemplate`, as the game fills empty slots |
 | Try ideas | "Surprise me" on chosen layers, then refine |

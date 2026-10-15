@@ -37,7 +37,7 @@ Two facts that matter most, both **unverified**:
 
 | Part | What it is |
 |---|---|
-| `extensions/edgemat` | The VS Code extension, id `edgemodders.edgemat`: the `.mlsetup` editor, the material library view, the preview |
+| `extensions/edgemat` | The VS Code extension, id `edgemodders.edgemat`, with its own activity bar container: the `.mlsetup` editor, the library and find views, the preview ([In VS Code](#in-vs-code)) |
 | `extensions/edgemat/src/core` | Everything that is not UI: the bridge client, the material library, reading and editing setups, finding an item's materials. **No VS Code imports**, so the MCP server bundles the same code, as `redcode-mcp` does with REDcode's bridge client |
 | `packages/edgemat-mcp` | The MCP server over stdio, for Claude Code, REDagent or any MCP client |
 | REDbridge | Every game file read and write: archives, CR2W as JSON, textures to PNG, mesh export. EDGEmat asks for new methods as REDbridge issues labelled `request` |
@@ -48,6 +48,30 @@ Two facts that matter most, both **unverified**:
 | REDcode | Not required. Projects are WolvenKit projects, so EDGEmat writes into `source/archive` itself. When REDcode is installed, EDGEmat uses it through its exported API (`extensions.getExtension`, never importing its code), as REDcode does with REDdeck: open in the CR2W editor, pack, install |
 | The UI and the MCP server together | Both edit files. The editor follows changes on disk, so a modder watching the editor sees the assistant's edit land |
 | EDGEkit | Bundled as a built-in extension once released |
+
+## In VS Code
+
+EDGEmat has its own place in the activity bar, as REDcode and REDdeck do. It works with no folder open: a modder opens EDGEmat, not a workspace.
+
+| Part | What it is | Phase |
+|---|---|---|
+| Activity bar | An EDGEmat view container. Its icon is [`tools/brand/activity.svg`](https://github.com/Edgemodders/EDGEmat/blob/main/tools/brand/activity.svg): the family's two HUD corner brackets around a material sheet over a second layer, 24 × 24, stroke 2, one color (`currentColor`). The theme paints it: in the REDnode HUD theme from REDcode, yellow when inactive and white when active. M1 copies it to `extensions/edgemat/images/activity.svg`, where REDcode and REDdeck keep theirs. The Marketplace icon is `docs/assets/brand/icon.png` (the "EM" mark) | M1 |
+| Library view | Templates and microblends from the modder's game, with thumbnails, searched by plain words | M1 |
+| Find view | Items, meshes and setups, from the game and the open project | M2 |
+| Container title bar | Open File, Find, Rebuild Library | M2 |
+| Setup editor | A custom editor tab for `.mlsetup`. Opens from EDGEmat's views, from REDcode's Project and Game Assets trees, from the Explorer, and from Open File | M2 |
+
+### Open any file, then save it into a project
+
+A modder has a setup somewhere on their computer: downloaded from a mod page, inside someone's mod, or left from an old project. They want to look at it, perhaps change it, and use it in their own project. Supported in the UI and through MCP:
+
+| Step | Behavior |
+|---|---|
+| Open | **Open File** takes a file anywhere on disk, not only in the open folder: a binary `.mlsetup`, WolvenKit JSON (`.mlsetup.json`), or a mod's `.archive`, from which the modder picks a setup (REDbridge `archive.openMod`, `archive.extractFromMod`) |
+| Inspect | The setup editor shows it like any other setup: layers in plain words, swatches, masks. The original file is never written. Masks and the model need the mesh that uses the setup: EDGEmat takes it from the same mod archive, from the game file at the same game path, or lets the modder pick one. Without a mesh the layers still show, without a model |
+| Edit | Allowed. Edits stay in the editor, unsaved, until the modder saves them into a project |
+| Save to Project | An editor title button, in the style of REDcode's "Save JSON to Project". It asks for the project (the open WolvenKit project, a recent one, or a `.cpmodproj` to browse to) and writes the binary to `source\archive\<game path>`. The game path is suggested from the file's own path when it holds one (`...\source\archive\base\...`, or the entry in a mod archive), else from a game file with the same name, else the modder types it. If a file is already there, EDGEmat asks before replacing it |
+| Assistant | `mat_describe` takes a file on disk or a setup inside a mod archive; `mat_edit` writes the result into a project the same way |
 
 ## The material library
 
@@ -62,10 +86,10 @@ The tools are about intent ("find this jacket's materials", "the nearest red"), 
 | Tool | Does |
 |---|---|
 | `mat_find` | Finds the materials for an item, appearance, mesh or path: each `.mlsetup` with the submeshes and appearances that use it |
-| `mat_describe` | A setup's layers in plain words and in raw values: template, color name and RGB, how much of the surface each layer covers |
+| `mat_describe` | A setup's layers in plain words and in raw values: template, color name and RGB, how much of the surface each layer covers. The setup can be a game file, a project file, a file anywhere on disk, or one inside a mod's `.archive` |
 | `mat_templates` | Searches the library: "leather", "worn chrome" |
 | `mat_colors` | A template's color presets with RGB, and the nearest preset to a color given as a word or a value |
-| `mat_edit` | Changes layers (template, color, tiling, levels, microblend) and writes the result into the project, copying the setup from the game first when needed. Returns what changed, so it can be undone |
+| `mat_edit` | Changes layers (template, color, tiling, levels, microblend) and writes the result into the project, copying the setup first from wherever it came from (the game, a file on disk, a mod archive) when needed. Returns what changed, so it can be undone |
 | `mat_render` | Renders the preview to a PNG, so the assistant can look at its own work before saying it is done |
 
 "Make this jacket red" is then: `mat_find`, `mat_describe` to pick the layers that make up the fabric, `mat_colors` for the nearest red in each, `mat_edit`, `mat_render`, and the user sees it. Packing and installing stay with REDcode's and REDdeck's tools.
@@ -96,9 +120,9 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | Phase | Builds | The test proves |
 |---|---|---|
 | **M0 Spec** | The behavior spec (steps 1 and 2 above). The file table above checked. The bridge methods EDGEmat needs, filed with REDbridge. Neurolinked contacted | The spec is agreed with the user, and every field in it is seen in a real file |
-| **M1 Library** | The extension and MCP skeletons, the bridge client, the material library built from the game and cached, the library view with thumbnails | A full library builds from the game; its counts match the game's |
-| **M2 Read** | The `.mlsetup` editor, read-only: layers in plain words, swatches, each layer's mask. Finding an item's materials. MCP `mat_find`, `mat_describe`, `mat_templates`, `mat_colors` | A game jacket shows the same layers WolvenKit shows, and Claude describes it correctly |
-| **M3 Edit** | Change template, color, tiling, levels, microblend; undo and redo; save into a WolvenKit project. MCP `mat_edit` | A jacket recolored in EDGEmat, and another recolored by asking Claude, both show correctly in the game |
+| **M1 Library** | The extension and MCP skeletons, the EDGEmat activity bar container, the bridge client, the material library built from the game and cached, the library view with thumbnails | A full library builds from the game; its counts match the game's |
+| **M2 Read** | The `.mlsetup` editor, read-only: layers in plain words, swatches, each layer's mask. Finding an item's materials. Open File for a setup anywhere on disk, as JSON or inside a mod archive. MCP `mat_find`, `mat_describe`, `mat_templates`, `mat_colors` | A game jacket shows the same layers WolvenKit shows, and Claude describes it correctly. A setup from a mod archive outside any project opens and reads the same |
+| **M3 Edit** | Change template, color, tiling, levels, microblend; undo and redo; save into a WolvenKit project, including Save to Project for a file opened from anywhere. MCP `mat_edit` | A jacket recolored in EDGEmat, and another recolored by asking Claude, both show correctly in the game. A setup opened from outside the project, saved into it and packed, loads in the game |
 | **M4 Preview** | The 3D preview: the mesh with layers blended through their masks, templates and microblends, updated live. MCP `mat_render` | Side by side with an in-game screenshot, the preview reads the same |
 | **M5 Beyond mlsetup** | `.mi` parameters, mesh appearances, custom colors (a custom `.mltemplate`, if M2 confirms colors are presets) | A non-multilayered item retextured and a free color used, both in the game |
 | **M6 Ship** | Open VSX and Marketplace, the MCP package, docs, a Nexus page, the EDGEkit bundle entry | A non-coder recolors an item from the docs alone, in the UI and by asking an assistant |

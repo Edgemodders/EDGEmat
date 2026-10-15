@@ -59,5 +59,6 @@ The site at https://edgemodders.github.io/EDGEmat/ is built by `.github/workflow
 |---|---|
 | `docs/assets/brand/banner.png` | README header |
 | `docs/assets/brand/social.png` | Upload by hand in Settings > General > Social preview |
-| `docs/assets/brand/icon.png` | Site icon, and the tool's icon later |
+| `docs/assets/brand/icon.png` | Site icon, and the extension's Marketplace icon later |
+| `tools/brand/activity.svg` | The activity bar icon. Drawn by hand, not rendered: 24 × 24, stroke 2, `currentColor`, the family's HUD brackets as in REDcode and REDdeck. M1 copies it to `extensions/edgemat/images/activity.svg` |
 | `docs/assets/brand/badges/*.svg` | README badges. Edit the list in `tools/brand/badges.py` |
