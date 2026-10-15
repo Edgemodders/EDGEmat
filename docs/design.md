@@ -45,7 +45,7 @@ Two facts that matter most, both **unverified**:
 | Relationship | How |
 |---|---|
 | REDbridge | A separate process over JSON-RPC on stdio, the boundary REDcode keeps. EDGEmat is MIT; REDbridge is GPL-3.0 |
-| REDcode | Not required. Projects are WolvenKit projects, so EDGEmat writes into `source/archive` itself. When REDcode is installed, EDGEmat shares its settings for the game folder and the bridge ([below](#the-game-folder-and-the-bridge)) and calls its commands (open in the CR2W editor, pack, install), never importing its code. REDcode exports no API yet (checked 2026-10-15: its `activate` returns nothing); if it gains one like REDdeck's, EDGEmat uses that through `extensions.getExtension` |
+| REDcode | Not required. Projects are WolvenKit projects, so EDGEmat writes into `source/archive` itself. When REDcode is installed, EDGEmat uses its API (`REDcodeApi` version 1, extension `edgemodders.redcode-cyberpunk`, REDcode 0.9.0) for the game folder, the bridge and the open project ([below](#the-game-folder-and-the-bridge)), and for packing (`pack()`), never importing its code |
 | The UI and the MCP server together | Both edit files. The editor follows changes on disk, so a modder watching the editor sees the assistant's edit land |
 | EDGEkit | Bundled as a built-in extension once released |
 
@@ -68,14 +68,15 @@ A modder with REDcode set up configures nothing in EDGEmat. EDGEmat finds the ga
 | # | Source | Notes |
 |---|---|---|
 | 1 | `edgemat.gamePath` | EDGEmat's own setting, empty by default, meaning "use the next source". It exists because VS Code lets an extension write only settings that an installed extension declares, so EDGEmat cannot save `redcode.gamePath` when REDcode is absent |
-| 2 | `redcode.gamePath` | Read with `getConfiguration("redcode")`. It carries REDcode's game discovery and its Set Game Folder choice. Its default is the standard Steam folder, which on most machines is not the game until REDcode's first run fixes it; hence the check |
-| 3 | REDdeck's API, `gamePath()` | `extensions.getExtension("edgemodders.reddeck").exports`, API version 1, only when REDdeck is already running (REDcode does the same, to avoid racing a window reload) |
-| 4 | EDGEmat's own discovery | Steam libraries, GOG, Epic, then default folders, as REDcode's `gameFinder.ts` does. That file has no VS Code imports; copy it or share it, the same choice as the bridge client ([open questions](#open-questions)) |
-| 5 | Ask | A folder picker, saved to `edgemat.gamePath` |
+| 2 | REDcode's API, `gamePath()` | `REDcodeApi` version 1 from `extensions.getExtension("edgemodders.redcode-cyberpunk")` (REDcode 0.9.0, [REDcode's API doc](https://edgemodders.github.io/REDcode/api.html)). It returns `undefined` when REDcode's folder is not the game. It carries REDcode's game discovery and its Set Game Folder choice. REDcode stays optional: EDGEmat does not list it in `extensionDependencies` |
+| 3 | `redcode.gamePath` | Read with `getConfiguration("redcode")`, for when REDcode is not active. Its default is the standard Steam folder, which on most machines is not the game until REDcode's first run fixes it; hence the check. EDGEmat watches this setting to follow a later Set Game Folder (the API has no change event for the game folder) |
+| 4 | REDdeck's API, `gamePath()` | `extensions.getExtension("edgemodders.reddeck").exports`, API version 1, only when REDdeck is already running (REDcode does the same, to avoid racing a window reload) |
+| 5 | EDGEmat's own discovery | Steam libraries, GOG, Epic, then default folders, as REDcode's `gameFinder.ts` does. That file has no VS Code imports; copy it or share it, the same choice as the bridge client ([open questions](#open-questions)) |
+| 6 | Ask | A folder picker, saved to `edgemat.gamePath` |
 
-REDbridge is found the same way: `edgemat.bridgePath`, then `redcode.bridgePath`, then a copy bundled with EDGEmat or on `PATH`; `edgemat.dotnetRoot`, then `redcode.dotnetRoot`. The MCP server runs outside VS Code, so it reads the same settings from the user's `settings.json`, as `redcode-mcp` does, after its own `--game` and `--bridge` arguments and environment variables.
+**The bridge.** When REDcode is active, EDGEmat uses REDcode's running bridge (`bridge()`), so the machine runs one REDbridge with one archive index instead of two, provided its `bridge.info` version has the methods EDGEmat needs. Otherwise EDGEmat starts its own, found the same way as the game: `edgemat.bridgePath`, then `redcode.bridgePath`, then a copy bundled with EDGEmat or on `PATH`; `edgemat.dotnetRoot`, then `redcode.dotnetRoot`. M1 checks that sharing one bridge holds up while the library builds. The MCP server runs outside VS Code and always starts its own bridge, reading the same settings from the user's `settings.json`, as `redcode-mcp` does, after its own `--game` and `--bridge` arguments and environment variables.
 
-Each extension starts its own bridge process; EDGEmat does not share REDcode's.
+**The project.** REDcode's `project()` and `onDidChangeProject` give the open WolvenKit project and its folders, the default target for Save to Project.
 
 ### Open any file, then save it into a project
 
@@ -148,7 +149,7 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | Question | Notes |
 |---|---|
 | The bridge client | Copy REDcode's `bridgeClient.ts` and `gameFinder.ts` for now, or make them a shared npm package that REDcode, EDGEmat and the other EDGE tools all use |
-| A REDcode API | REDdeck exports an API (version 1, `gamePath()`); REDcode exports none. A matching one (`gamePath()`, `bridgePath()`, its project) would let EDGEmat stop reading REDcode's settings directly. Raised with REDcode's session on 2026-10-15 |
+| Sharing REDcode's bridge | REDcode's `bridge()` lets EDGEmat skip a second REDbridge. Whether one bridge copes with REDcode's work and EDGEmat's library build at once, and what EDGEmat does when REDcode's bridge is older than it needs, is settled in M1 |
 | Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M4 |
 | Which items first | The garments modders recolor most, to list in M0, become the test set |
 | The sibling repos' notes | REDcode's roadmap lists the layered material preview under C6 (README, `docs/design.html`); it should point at EDGEmat. EDGEkit's design says new EDGE editor extensions go into REDcode, and its `extensions.json` should gain EDGEmat. Each repo's own session makes the change |

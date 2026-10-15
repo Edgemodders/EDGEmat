@@ -15,7 +15,7 @@ As of 2026-10-14.
 
 | Phase | Status |
 |---|---|
-| M0 Spec | In progress. The [behavior spec](design/behavior.html) is written and checked against the game (2026-10-14): checklist items 1 to 6, 8 and 10 done, one bridge request filed ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)). Next: the in-game tests for items 7 and 9, then draft 0.2 |
+| M0 Spec | In progress. The [behavior spec](design/behavior.html) is written and checked against the game (2026-10-14): checklist items 1 to 6, 8 and 10 done, one bridge request filed and shipped ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4), TweakDB reading in 0.8.0). Next: the in-game tests for items 7 and 9, then draft 0.2 |
 | M1 Library | Not started |
 | M2 Read | Not started |
 | M3 Edit | Not started |
