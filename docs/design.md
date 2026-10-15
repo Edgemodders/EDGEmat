@@ -160,4 +160,23 @@ Not planned into a phase. Kept so they are not lost.
 
 | Idea | Notes |
 |---|---|
-| Recolor in the live game, through EDGEbuilder | EDGEbuilder is a REDnode in-game app. A modder looks at something in the game and says "recolor this"; EDGEbuilder works out the item or mesh and hands it to EDGEmat's MCP tools (`mat_find`, `mat_colors`, `mat_edit`), and the change is deployed back to the running game. Needs EDGEmat's MCP server (M2, M3), a way for EDGEbuilder to name what is being looked at, and REDnode's live deploy. Raised by the owner on 2026-10-14 |
+| Recolor in the live game, through EDGEbuilder | EDGEbuilder is a REDnode in-game app. A modder looks at something in the game and says "recolor this"; EDGEbuilder works out the item or mesh and hands it to EDGEmat's MCP tools (`mat_find`, `mat_colors`, `mat_edit`), and the change is deployed back to the running game. Needs EDGEmat's MCP server (M2, M3), a way for EDGEbuilder to name what is being looked at, and REDnode's live deploy. Raised by the owner on 2026-10-14. Thought through below |
+
+### Materials at runtime, through REDagent
+
+**A key long-term goal** (owner, 2026-10-15): a modder, or even a player, changes materials in the running game by asking REDagent. For example, looking at a brown crate: "make it blue". Explored when the time comes; these are first notes.
+
+| Piece | What it needs | State on 2026-10-15 |
+|---|---|---|
+| 1. What is being looked at | The running game names the object in view: its entity, mesh component, mesh and mesh appearance | Not built. REDnode reads and calls into the running game; a "looked-at object" query is a REDnode or EDGEbuilder request when the time comes |
+| 2. The change | Find the object's setup, pick the nearest preset in each layer's template (or a template with a better match), write the result | EDGEmat's core, M2 and M3. World props use the same multilayered setups as clothing |
+| 3. Into the running game | The game loads `.archive` files at startup, so a changed file has to be reloaded live | Open. RED Hot Tools (a community tool) is said to reload archives in a running game, unverified. If it does not fit, an EDGE hot reloader built the same way. REDnode's hot reload restarts its own JS mods; it does not reload game files |
+
+| Route | Notes |
+|---|---|
+| Switch to an existing appearance | The quick route, and certainly part of it: mods already change an object's appearance at runtime. Instant, needs no file change, but only offers the looks the mesh already has |
+| Recolor a shared setup | One edited `.mlsetup` changes every object that uses it, everywhere: every crate of that mesh and look turns blue. Right for "all crates", wrong for "this crate" |
+| Recolor one object | A new setup and a new mesh appearance (or material) for that object, and the placed object pointed at them in its streaming sector. EDGEbuilder's territory |
+| A color no template has | Needs a custom `.mltemplate` (M5) |
+
+Open for then: what a player (not only a modder) may change and how it is undone; whether runtime changes are saved as a mod in a project or only last for the session, as REDnode's TweakDB changes do.
