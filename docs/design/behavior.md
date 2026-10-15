@@ -19,8 +19,8 @@ Chosen by the owner on 2026-10-14: garments modders often recolor, all with many
 | Garment | Mesh | Setups | Layers used | Notes |
 |---|---|---|---|---|
 | Arasaka samurai jacket | `base\characters\garment\corp_arasaka\torso\t2_078_jacket__samurai\t2_078_ma_jacket__samurai.mesh` | 9 | 14 of 20 | NPC only: worn through `corpo__arasaka_*.app`, not a player item. 5 submeshes, 4 LODs |
-| Sneakers | `base\characters\garment\player_equipment\feet\s1_055_shoe__converse\s1_055_pma_shoe__converse.mesh`, and `_pwa_` | 17 | 20 of 20 | Player item `s1_casual_01.app`. Both body types use the same setups and mask. The in-game test garment |
-| Jeans | `base\characters\garment\player_equipment\legs\l1_062_pants__jeans\l1_062_pma_pants__jeans.mesh` | 18 | 20 of 20 | Player item `l1_pants_03.app`, masculine body only; the feminine body wears `l1_066 rogue` pants in the same item |
+| Sneakers | `base\characters\garment\player_equipment\feet\s1_055_shoe__converse\s1_055_pma_shoe__converse.mesh`, and `_pwa_` | 17 | 20 of 20 | `s1_casual_01.app`: the high-tops `Items.CasualShoes_01_basic_01` to `_05`, `_old_01`, `_old_02` ("Sunny Ammo synthetic high-tops" and others) and `Items.Q001_Shoes` ("V's Sneakers"). Both body types use the same setups and mask. The in-game test garment |
+| Jeans | `base\characters\garment\player_equipment\legs\l1_062_pants__jeans\l1_062_pma_pants__jeans.mesh` | 18 | 20 of 20 | `l1_pants_03.app`: `Items.Pants_03_*` ("Sturdy-stitched punk jeans" and others) and `Items.Q001_Pants` ("V's Pants"). Masculine body only; the feminine body wears `l1_066 rogue` pants in the same items |
 
 "Layers used" counts layers whose template is not `unused.mltemplate`.
 
@@ -30,7 +30,8 @@ A garment reaches its multilayered material through a chain. "Make this jacket r
 
 | Step | What holds the link | Check |
 |---|---|---|
-| Item to entity | The item's TweakDB record names an `entityName` and an `appearanceName`. For clothing the entity name is a row in `base\gameplay\factories\items\clothing.csv` (a `C2dArray`: name, path, preload), which gives a slot's root entity such as `base\gameplay\items\equipment\feet\player_feet_item.ent` | **Corrected** 2026-10-14. The factory and root entity are read. The TweakDB record is **unverified** here: REDbridge 0.8.0 reads it (`tweakdb.records`, [REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4), closed 2026-10-15), but the bridge on the dev PC is 0.7.0 |
+| Item to entity | The item's TweakDB record names an `entityName` and an `appearanceName`. For clothing the entity name is a row in `base\gameplay\factories\items\clothing.csv` (a `C2dArray`: name, path, preload), which gives a slot's root entity such as `base\gameplay\items\equipment\feet\player_feet_item.ent` | **Corrected** 2026-10-14; the record **confirmed** 2026-10-15 through REDbridge 0.8.0 `tweakdb.records` ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)): for example `Items.CasualShoes_01_basic_01` has `entityName` `player_feet_item`, `appearanceName` `s1_casual_01_basic_01_`, `equipArea` `EquipmentArea.Feet` and the name "Sunny Ammo synthetic high-tops". 1,997 clothing records; the first TweakDB load took 14 s |
+| Record to entity row | The record's `appearanceName` plus `&Male` or `&Female` is the `name` of a row in the root entity's `appearances`: `s1_casual_01_basic_01_&Male` gives `s1_casual_01.app`, appearance `basic_01_m` | **Confirmed** 2026-10-15 on all 16 `s1_casual_01` rows |
 | Entity to `.app` | The root entity's `appearances` list one row per item appearance: `appearanceName` and an `appearanceResource`, a per-item `.app` under `base\characters\appearances\player\items\<slot>\`, for example `s1_casual_01.app` | **Confirmed** 2026-10-14 |
 | `.app` appearance to mesh | A player item's `.app` appearance (`basic_01_m`, `old_02_w`...) has `partsValues` (a parts `.ent` beside the garment folder, holding the garment mesh component) and `partsOverrides` that set the component's `meshAppearance`. The `.app` also carries the resolved `components`. An NPC's `.app` (for example `corpo__arasaka_mah.app`) holds the garment mesh component directly in `components`, with no parts `.ent` | **Corrected** 2026-10-14. The spec had one link "item to appearance"; there are two shapes, player and NPC |
 | Body type | Player appearances end in `_m` or `_w`. They can point at different meshes (`_pma_`, `_pwa_`), and even at a different garment: the l1_062 jeans item uses `l1_066` pants on the feminine body | **Confirmed** 2026-10-14 |
@@ -178,7 +179,7 @@ Checked on 2026-10-14 by doing each one with the existing tools.
 | Textures to PNG, for template maps and microblends | Yes: `texture.toPng`. **Confirmed** on a diffuse, a normal map and a microblend | None |
 | A mask set's layers as images | Yes: `project.export` on an `.mlmask` writes one PNG per layer and a `.masklist`. **Confirmed**. It needs the mask copied under an "archive" folder first; EDGEmat's cache can use that layout | None |
 | A mesh's materials and appearances, resolved | Yes, by reading the mesh: `cr2w_read` of `appearances`, `materialEntries`, `localMaterialBuffer.materials` takes about 40 ms. **Confirmed** | None. EDGEmat resolves the chain itself in `core` |
-| From an item to its meshes | **Yes, since REDbridge 0.8.0.** The record (`entityName`, `appearanceName`, `displayName` with its text, `equipArea`) comes from `tweakdb.records`; everything after it is CR2W and CSV reads (section 1). REDbridge reports 1,997 clothing records, read in 37 ms after a first TweakDB load of about 12 s (unverified here: the dev PC's bridge is 0.7.0) | [REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4), shipped in 0.8.0 on 2026-10-15. Also the redcode-mcp tools `tweakdb_records` and `tweakdb_record` |
+| From an item to its meshes | **Yes, since REDbridge 0.8.0.** The record (`entityName`, `appearanceName`, `displayName` with its text, `equipArea`) comes from `tweakdb.records`; everything after it is CR2W and CSV reads (section 1). **Confirmed** 2026-10-15 on the dev PC: 1,997 clothing records with those flats and their names in 14 s, most of it the first TweakDB load | [REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4), shipped in 0.8.0 on 2026-10-15. Also the redcode-mcp tools `tweakdb_records` and `tweakdb_record` |
 | The material library | Yes: `archive.search` finds the 386 templates and `cr2w.toJson` reads them all in **4 seconds** | None. The draft's `mltemplate.index` is not needed |
 | Mesh to glTF for the preview | Yes: `project.export`; keeps UVs and names primitives `submesh_NN_LOD_N` | None |
 
@@ -235,7 +236,7 @@ Seen in MlsetupBuilder, listed so build sessions check for them. Each is a code 
 
 ## In-game tests
 
-A WolvenKit project outside the repo, `Projects\EDGEmat_M0`, built on 2026-10-14 through REDbridge. Each round is one archive. The edits apply to the eight sneaker setups worn by the player appearances in `s1_casual_01.app` (`basic_01` to `basic_05`, `old_01`, `old_02`, `_q001__start_m`), so any of these sneakers shows them, on either body type.
+A WolvenKit project outside the repo, `Projects\EDGEmat_M0`, built on 2026-10-14 through REDbridge. Each round is one archive. The edits apply to the eight sneaker setups worn by the player appearances in `s1_casual_01.app` (`basic_01` to `basic_05`, `old_01`, `old_02`, `_q001__start_m`), so any of these sneakers shows them, on either body type. In game they are the high-tops `Items.CasualShoes_01_basic_01` to `_basic_05`, `_old_01` and `_old_02`, for example "Sunny Ammo synthetic high-tops" (`basic_01`), and, on the masculine body only, "V's Sneakers" (`Items.Q001_Shoes`).
 
 | Test | Round | Edit | What it answers |
 |---|---|---|---|
