@@ -2,7 +2,7 @@
 
 What EDGEmat must understand and do to edit Cyberpunk 2077's multilayered materials. This is phase M0's spec: build sessions work from this page, not from MlsetupBuilder's source.
 
-**Status: draft 0.1, being checked.** Written on 2026-10-14 from a study of MlsetupBuilder 1.6.9 (commit `4271e8c`) and community knowledge, in a cloud session with no game install. Checked against the game the same day on the dev PC (REDbridge 0.7.0, WolvenKit 9.1.0, through `redcode-mcp`): checklist items 1 to 6, 8 and 10 are done; items 7 and 9 wait for an in-game test ([checklist](#checklist-for-the-local-session)). Field names, game paths and numbers are facts about the game and WolvenKit's JSON; everything else is our own description.
+**Status: draft 0.2, checked against the game.** Draft 0.1 was written on 2026-10-14 from a study of MlsetupBuilder 1.6.9 (commit `4271e8c`) and community knowledge, in a cloud session with no game install. Draft 0.2 (2026-10-15) is that draft checked on the dev PC: every row read against real files through REDbridge (0.7.0, then 0.8.0; WolvenKit 9.1.0) and marked confirmed or corrected, and the open questions tested in game through in-game tests and REDnode ([checklist](#checklist-for-the-local-session)). What is still unknown is marked so, with the reason. Field names, game paths and numbers are facts about the game and WolvenKit's JSON; everything else is our own description.
 
 ## How this page is used
 
@@ -55,7 +55,7 @@ The game has **17,734** `.mlsetup` files. All were read on 2026-10-14; the numbe
 | Root field | Type, engine default | Meaning | Check |
 |---|---|---|---|
 | `layers` | array of `Multilayer_Layer` | The layers, in order. **At most 20**: 9,310 setups have exactly 20, none has more. Counts run from 1 to 20 | **Confirmed** 2026-10-14 |
-| `ratio` | Float, 1 | 1 in 95% of setups; other values from 0.5 to 2. Meaning **unknown** | Unverified: data cannot show it. In-game test R2 sets it to 4 |
+| `ratio` | Float, 1 | 1 in 95% of setups; other values from 0.5 to 2. **Changes how microblends map onto the mesh.** At 4, a microblend used as a printed graphic (`graphics_logos_004.xbm`, a square atlas of 16 graphics, at `mbTile` 0.4) showed a different part of its image: the skull's face instead of the halo rays around it. Every mask edge stayed put | **Corrected** 2026-10-15 (in-game test R2). Unverified: whether it is a scale, a shift or an aspect change (the name suggests aspect), and whether it also affects the surface textures |
 | `useNormal` | Bool, true | True in every game setup. Meaning assumed from the name | **Confirmed** type and value 2026-10-14; effect unverified |
 | `cookingPlatform` | enum, `PLATFORM_PC` in game files | | **Confirmed** 2026-10-14 |
 
@@ -149,7 +149,7 @@ This is the least known part and the heart of the M4 preview. MlsetupBuilder doe
 | Normal | The template's normal at the preset strength, plus the microblend normal at its strength, added to the global normal (a "whiteout" style blend) |
 | Result | Each layer's values mixed over the result so far by its coverage |
 
-Observed on 2026-10-14, for M4: a microblend texture (`fine_filth.xbm`) holds a normal in red and green and a mask in alpha; the template diffuse sampled is near-grey; `ratio` and `colorMaskLevels` have no place in the hypothesis yet.
+Observed on 2026-10-14 and 15, for M4: a microblend texture (`fine_filth.xbm`) holds a normal in red and green and a mask in alpha; a microblend can also be a graphic atlas used as a print (`graphics_logos_004.xbm` at a low `mbTile`, cutting a layer like a stencil); `ratio` changes the microblend mapping (section 2); the template diffuse sampled is near-grey; `colorMaskLevels` has no place in the hypothesis yet.
 
 M4 tests this against in-game screenshots, template by template, and records how close it gets.
 
@@ -166,6 +166,7 @@ WolvenKit writes CR2W files as JSON. Over its versions an `.mlsetup` has had thr
 | Saving | Behavior for EDGEmat | Check |
 |---|---|---|
 | Where | The binary file at the same game path under the project's `source\archive`. `source\raw` is not needed for an `.mlsetup` | Written and packed 2026-10-14 |
+| The project's `packed` folder | WolvenKit owns it: its Pack clears the folder first. EDGEmat never writes its own files there | **Confirmed** 2026-10-15: test archives kept in `packed` were deleted by a WolvenKit Pack |
 | **Replacing a game setup in place** | **Has no effect in the game unless the "Material Texture Override" mod (MTO) is installed.** WolvenKit says so when packing a project that holds a base-game `.mlsetup`. Two routes for a recolor: edit the game's setup in place and require MTO, or save a **new** setup at a new path and point the mesh's material at it (a copy of the mesh, or an ArchiveXL patch), which needs no MTO and is how most recolor mods ship | **Corrected** 2026-10-15. Seen in game through REDnode: our archive mounted and its new-path file loaded (`ratio` 7), but every replaced setup loaded the game's own copy (a marker setup kept `ratio` 0.63, not our 4), whether or not the archive was in `modlist.txt`. Other mods' replacements of other file types worked. **With MTO installed** (Nexus mod 25246, version 0.2, archive only: 148 game setups) the marker read 4 and the edits showed on the shoe, **confirmed** 2026-10-15 |
 | How | Through REDbridge: edit the document session (`cr2w.open`, `patch`, `save`), the one-call `cr2w_edit_file` with a game path and an output file, or build from JSON (`cr2w.fromJson`). No WolvenKit.CLI, no version choice for the user. A CName may be given as a plain string | **Confirmed** 2026-10-14: eight sneaker setups edited from game paths with `cr2w_edit_file`, read back with every edit in place, packed with `project.pack` |
 | Editing a game file | Copy it into the project first, then edit the copy. The archives are never changed | **Confirmed** 2026-10-14 (`cr2w_edit_file` with a game path writes only the copy) |
@@ -253,7 +254,8 @@ Results so far:
 | Date | What happened |
 |---|---|
 | 2026-10-15 | R1 and a blunter test (R1b: every layer but the base hidden, base bright green) showed no change on the sneakers. Read through REDnode in the running game: V wears `s1_055_pwa_shoe__converse.mesh`, appearance `red_yellow_graphic`; our archive is mounted; a file only our archive has loads; every replaced setup loads the game's copy. WolvenKit then named the cause: replaced base-game setups need the Material Texture Override mod |
-| 2026-10-15 | **R1 with MTO**, on the "Sunny Ammo synthetic high-tops" (`red_yellow_graphic`, feminine body). R1-B: the sole and rubber band turned red, so mask order holds. R1-A: the collar lining (layer 4, unknown color name) turned white. R1-C: the toe cap's black layer vanished, no green, so `overrides` is not a combined selection in this form. Item 9 confirmed. R2 (`ratio`) still to run |
+| 2026-10-15 | **R1 with MTO**, on the "Sunny Ammo synthetic high-tops" (`red_yellow_graphic`, feminine body). R1-B: the sole and rubber band turned red, so mask order holds. R1-A: the collar lining (layer 4, unknown color name) turned white. R1-C: the toe cap's black layer vanished, no green, so `overrides` is not a combined selection in this form. Item 9 confirmed |
+| 2026-10-15 | **R2 with MTO**, same shoe. REDnode read `ratio` 4 from the loaded setup. The side panel's printed graphic, a microblend on layer 10, showed a different part of its image: the hooded skull's face where its halo rays had been. Masks, sole, toe cap and stripes unchanged. M0's in-game tests are done |
 | 2026-10-15 | Side findings. In the running game, a loaded setup shows its `ratio` and `useNormal` to scripts but not its layers, so a runtime tool cannot read or change layers through the game's script API. REDdeck had a bug writing `modlist.txt`, fixed the same day by REDdeck's session |
 
 ## Checklist for the local session
