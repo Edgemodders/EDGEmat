@@ -149,6 +149,7 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | Question | Notes |
 |---|---|
 | The bridge client | Copy REDcode's `bridgeClient.ts` and `gameFinder.ts` for now, or make them a shared npm package that REDcode, EDGEmat and the other EDGE tools all use |
+| Saving a recolor: in place or at a new path | A replaced game `.mlsetup` only shows in game with the Material Texture Override mod (spec section 6, found 2026-10-15). In place is the simplest file change but makes every player install MTO; a new setup at a new path, with the mesh's material pointed at it (a mesh copy or an ArchiveXL patch), needs nothing extra and is how most recolor mods ship. Leaning: new path by default, in place as an option that checks for MTO. Settled in M3 |
 | Sharing REDcode's bridge | REDcode's `bridge()` lets EDGEmat skip a second REDbridge. Whether one bridge copes with REDcode's work and EDGEmat's library build at once, and what EDGEmat does when REDcode's bridge is older than it needs, is settled in M1 |
 | Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M4 |
 | Which items first | The garments modders recolor most, to list in M0, become the test set |
