@@ -11,11 +11,11 @@ EDGEmat is the EDGEmodders material editor for Cyberpunk 2077, a VS Code extensi
 
 ## Roadmap status
 
-As of 2026-10-15.
+As of 2026-10-16.
 
 | Phase | Status |
 |---|---|
-| M0 Spec | In progress. The [behavior spec](design/behavior.html) is at draft 0.2 (2026-10-15): every checklist item checked against the game, the open questions tested in game, one bridge request filed and shipped ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)). Next: the owner agrees the spec and contacts Neurolinked |
+| M0 Spec | In progress. The [behavior spec](design/behavior.html) is at draft 0.2 (2026-10-15): every checklist item checked against the game, the open questions tested in game, one bridge request filed and shipped ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)). Neurolinked contacted on 2026-10-16. Next: the owner agrees the spec |
 | M1 Library | Not started |
 | M2 Read | Not started |
 | M3 Edit | Not started |

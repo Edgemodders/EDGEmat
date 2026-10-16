@@ -145,7 +145,7 @@ The tools are about intent ("find this jacket's materials", "the nearest red"), 
 | 3. Build | Other sessions, from the spec | Never open MlsetupBuilder's source. Questions go back to step 1 |
 | GPL logic worth reusing | REDbridge | If a piece of MlsetupBuilder's logic is worth reusing as code, it goes into REDbridge (GPL-3.0) with attribution, never into EDGEmat |
 
-Neurolinked is contacted before EDGEmat is announced: credited, told what it is, and offered collaboration.
+Neurolinked is contacted before EDGEmat is announced: credited, told what it is, and offered collaboration. **Done 2026-10-16:** the owner sent a Discord DM (what EDGEmat is, no code or data from MlsetupBuilder, credit, an offer to collaborate, and the M0 findings that may help MlsetupBuilder). Any reply, and credit wording they ask for, is recorded here.
 
 ## Phases
 
