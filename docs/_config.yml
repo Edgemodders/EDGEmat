@@ -24,6 +24,8 @@ nav:
     url: /
   - title: Progress
     url: /progress.html
+  - title: Tests
+    url: /testing.html
   - title: Design
     url: /design.html
   - title: Behavior

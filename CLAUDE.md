@@ -25,4 +25,5 @@ EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: a standalone VS C
 - Keep `extensions/edgemat/src/core` free of VS Code imports; the MCP server bundles it.
 - **House style** is the HUD look from REDnode's design doc, and the REDnode HUD theme in REDcode is the default theme for any VS Code UI.
 - **Progress log:** `docs/progress.md` is how the owner catches up without asking. Update it in the same commit as any status change: the log, decisions, findings, requests and the owner's to-dos.
+- **Tests:** `docs/testing.md` lists every test with steps to rerun it, expected results and the last result. Add a test there when it is first run.
 - **Docs site:** `docs/` is published by GitHub Pages through `.github/workflows/pages.yml`. `docs/index.md` is the landing page (document ledger and roadmap status); add every page to `nav` in `docs/_config.yml`. Brand images come from `tools/brand/render.ps1`. Record every tool install in `docs/dev-setup.md`, with versions and exact commands.

@@ -26,6 +26,7 @@ let view: LibraryView;
 let tree: vscode.TreeView<unknown>;
 let ownBridge: BridgeClient | undefined;
 let ownBridgeGame: string | undefined;
+let sharedBridge: BridgeClient | undefined;
 let building: Promise<void> | undefined;
 const cacheDir = defaultCacheDir();
 
@@ -60,8 +61,11 @@ async function getBridge(game: GameChoice): Promise<BridgeClient | undefined> {
   const rc = redcode();
   const shared = rc?.bridge();
   if (shared?.running && rc?.gamePath()?.toLowerCase() === game.path.toLowerCase()) {
+    if (sharedBridge !== shared) log(`Using REDcode's REDbridge for ${game.path}`);
+    sharedBridge = shared;
     return shared;
   }
+  sharedBridge = undefined;
   if (ownBridge?.running && ownBridgeGame === game.path) return ownBridge;
   ownBridge?.stop();
   const choice = resolveBridge(settings);

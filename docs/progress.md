@@ -41,6 +41,7 @@ Last updated 2026-10-16.
 
 | What | Detail |
 |---|---|
+| Tests page | [Tests](testing.html): every test so far, with steps to rerun it, expected results and the test project's contents. The log now names REDcode's bridge when EDGEmat uses it |
 | **M1 done** | Smoke test passes, and your hand test through F5 passed: the icon, the Library with thumbnails and hover cards, search, rebuild |
 | Surface page planned for M2 | Clicking a surface opens a read-only page: big image, every color as a named swatch, presets in plain words, texture paths. Game surfaces are never edited in place, because every item using one would change. "Use on this layer" (M3) and "Make a custom copy" (M5) come later |
 | CLI install test noted | In M6's test and in [Your to-dos](#your-to-dos) |
