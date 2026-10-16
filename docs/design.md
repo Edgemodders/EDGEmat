@@ -172,7 +172,20 @@ Filed on 2026-10-16, each to its repo as a `request`:
 
 MlsetupBuilder ships about 18 MB of JSON built from the game (every `.mltemplate` with its color presets, a model list, mask and normal lists) and about 500 thumbnails made from game textures. EDGEmat ships none of it: that is data extracted from the game, which the EDGE repos never commit.
 
-Instead EDGEmat builds the library from the modder's own game through REDbridge on first run, and keeps it in a local cache: templates and their presets, microblends, masks, the models that use multilayered materials, and thumbnails rendered from the textures. It stays current with game patches and needs no WolvenKit.CLI. How long a full build takes is measured in M1.
+Instead EDGEmat builds the library from the modder's own game through REDbridge on first run, and keeps it in a local cache. It stays current with game patches and needs no WolvenKit.CLI.
+
+**Built in M1** (2026-10-16), measured on the dev PC (game 2.31, REDbridge 0.8.0):
+
+| Part | What | Measured |
+|---|---|---|
+| Surfaces | Every `.mltemplate`: category and group (from its folder), tiling, textures, the six default presets, every color, normal, roughness and metal preset (levels as scale and bias) | 386, matching the game's listing; 155,099 color presets |
+| Microblends | Every `.xbm` in a `microblends` folder | 131, matching the game's listing. Setups use 144 distinct microblend paths (spec scan), so a few live elsewhere; found in M2 |
+| Counts | Setups and mask sets in the game, for later phases | 17,734 setups, 5,722 mask sets |
+| Thumbnails | 96 px PNGs: a surface's diffuse map with its levels stretched (grey when near-grey, to avoid speckle), or its normal map as relief when the diffuse is flat; a microblend's alpha mask | 343 files; 4 surfaces have none (`unused`, two flat plastics, one whose texture the game lacks) |
+| Time and size | A full build, then a rebuild with the thumbnails cached | 22 to 25 s, then 4 s; `library.json` 11.3 MB |
+| Where | `%LOCALAPPDATA%\EDGEmat`, one cache shared by the extension and the MCP server. A key from the game's archive list marks it out of date after a game update | |
+
+The models that use multilayered materials, and each mask set's layers, are left to M2, where finding an item's materials needs them.
 
 ## The MCP server
 
@@ -226,9 +239,9 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 
 | Question | Notes |
 |---|---|
-| The bridge client | Copy REDcode's `bridgeClient.ts` and `gameFinder.ts` for now, or make them a shared npm package that REDcode, EDGEmat and the other EDGE tools all use |
+| The bridge client | **M1: copied.** `bridgeClient.ts`, `types.ts` and `gameFinder.ts` are copied from REDcode at commit `9f54c80` into `extensions/edgemat/src/core`, each with a header naming the source. A shared npm package for the EDGE tools stays the goal, together with the shared viewer |
 | Saving a recolor: in place or at a new path | A replaced game `.mlsetup` only shows in game with the Material Texture Override mod (spec section 6, found 2026-10-15). In place is the simplest file change but makes every player install MTO; a new setup at a new path, with the mesh's material pointed at it (a mesh copy or an ArchiveXL patch), needs nothing extra and is how most recolor mods ship. Leaning: new path by default, in place as an option that checks for MTO. Settled in M3 |
-| Sharing REDcode's bridge | REDcode's `bridge()` lets EDGEmat skip a second REDbridge. Whether one bridge copes with REDcode's work and EDGEmat's library build at once, and what EDGEmat does when REDcode's bridge is older than it needs, is settled in M1 |
+| Sharing REDcode's bridge | **M1:** EDGEmat uses REDcode's running bridge when REDcode is active and reads the same game folder; otherwise it starts its own, and the MCP server always does. Whether one bridge copes under load with both tools busy, and what to do when REDcode's bridge is older than EDGEmat needs, is watched in M2 |
 | Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M4 |
 | Which items first | The garments modders recolor most, to list in M0, become the test set |
 | A shared mesh viewer | Factor REDcode's viewer out into a shared component (an npm package) that REDcode, EDGEmat and other EDGE tools embed. Later, once the material hook works; noted in REDcode #6 |

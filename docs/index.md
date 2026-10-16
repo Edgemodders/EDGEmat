@@ -16,7 +16,7 @@ As of 2026-10-16.
 | Phase | Status |
 |---|---|
 | M0 Spec | **Done 2026-10-16.** The [behavior spec](design/behavior.html) draft 0.2 is checked against the game and agreed; one bridge request filed and shipped ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)); the viewer hook requested ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); Neurolinked contacted |
-| M1 Library | Next |
+| M1 Library | **Built 2026-10-16, hand test pending.** The extension (0.1.0) with its activity bar container and Library view, the MCP server skeleton (`mat_library`, `mat_templates`, `mat_microblends`), the bridge client, and the library built from the game: 386 surfaces and 131 microblends in about 22 s, matching the game's counts (`npm run smoke` passes) |
 | M2 Read | Not started |
 | M3 Edit | Not started |
 | M4 Preview | Not started |

@@ -17,14 +17,16 @@ It edits multilayered materials (`.mlsetup`, `.mltemplate`, `.mlmask`) first, th
 **[Read the docs](https://edgemodders.github.io/EDGEmat/)** &middot; [Design](docs/design.md) &middot; [Dev setup](docs/dev-setup.md)
 
 > [!NOTE]
-> **Status: scaffold.** The repository, the branding, the docs site and the design (draft 0.2) exist; there is no code yet. Next: M0, the behavior spec.
+> **Status: M1 built, hand test pending.** The behavior spec is checked against the game (M0). EDGEmat 0.1.0 has its activity bar container and a Library of every surface and microblend in your game, with thumbnails, built from the game in about 22 seconds; the MCP server searches it too. Next: M2, reading a garment's layers.
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
-| `docs/` | Documentation site: the design and dev setup |
-| `tools/brand/` | Renders the banner, icon and badges |
+| `extensions/edgemat` | The VS Code extension. `src/core` is everything that is not UI, with no VS Code imports |
+| `packages/edgemat-mcp` | The MCP server, bundling the extension's core |
+| `docs/` | Documentation site: the design, the behavior spec, dev setup |
+| `tools/brand/` | Renders the banner, icon and badges; `activity.svg` is the activity bar icon |
 
 ## Prior art
 

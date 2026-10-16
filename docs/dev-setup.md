@@ -1,6 +1,6 @@
 # Dev setup
 
-What a Windows PC needs to work on EDGEmat. The shared tools are the same as in [REDcode's setup guide](https://edgemodders.github.io/REDcode/dev-setup.html). There is no code yet: M0 decides the form of the tool, and this page then gains its build steps with exact versions.
+What a Windows PC needs to work on EDGEmat. The shared tools are the same as in [REDcode's setup guide](https://edgemodders.github.io/REDcode/dev-setup.html). The code starts in M1: the extension in `extensions/edgemat` and the MCP server in `packages/edgemat-mcp`, one npm workspace.
 
 ## 1. Base tools
 
@@ -10,7 +10,7 @@ What a Windows PC needs to work on EDGEmat. The shared tools are the same as in 
 | nvm for Windows and Node.js | as REDcode (Node 24) | The tool will be TypeScript, as the rest of the ecosystem | `winget install --id CoreyButler.NVMforWindows -e`, then `nvm install 24` and `nvm use 24` |
 | Python | 3.10 or later | Brand tooling | |
 | Chrome or Edge | any | Renders the brand images | Already present on Windows |
-| REDbridge | 0.7.0 or later | Reads and writes game files | See [REDbridge's setup guide](https://edgemodders.github.io/REDbridge/dev-setup.html) |
+| REDbridge | 0.8.0 (0.7.0 or later works for M1) | Reads and writes game files | See [REDbridge's setup guide](https://edgemodders.github.io/REDbridge/dev-setup.html) |
 
 ## 2. Repository and GitHub
 
@@ -47,7 +47,39 @@ The server finds REDbridge and the game from REDcode's VS Code settings (`redcod
 
 In-game tests use a WolvenKit project outside the repo, `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M0`. Game files and anything extracted from them stay there or in the session scratchpad, never in this repo.
 
-## 4. Docs site and brand images
+## 4. Build, test and package
+
+Installed with `npm install` at the repository root on 2026-10-16 (Node 24.11.1, npm 11.14.1):
+
+| Package | Version | Used by |
+|---|---|---|
+| `vscode-jsonrpc` | 9.0.3 | The bridge client (copied from REDcode), bundled into the extension and the MCP server |
+| `pngjs` | 7.0.0 | Thumbnails, pure JavaScript, bundled |
+| `@modelcontextprotocol/sdk` | 1.32.1 | The MCP server, bundled |
+| `zod` | 3.25.76 | The MCP server's tool schemas, bundled |
+| `esbuild` | 0.28.2 | Bundling |
+| `typescript` | 5.9.3 | Type checks |
+| `@types/vscode` | 1.70.0 | The extension's API level (VS Code 1.70 or later) |
+| `@vscode/vsce` | 4.0.0 | Packaging the VSIX |
+
+```powershell
+npm install
+npm run typecheck          # both packages
+npm run build              # extensions/edgemat/dist and packages/edgemat-mcp/dist
+npm run smoke              # M1's test: builds the library from the game and checks its counts
+npm run edgemat:package    # dist\edgemat-0.1.0.vsix
+code --install-extension dist\edgemat-0.1.0.vsix
+```
+
+The smoke test finds the game and REDbridge from the VS Code settings (`edgemat.*`, then `redcode.*`), as the extension does, and writes the library to `%LOCALAPPDATA%\EDGEmat`. F5 in VS Code, with the repository open, runs the extension in a development host (`.vscode/launch.json`, "Run EDGEmat"); build first.
+
+Register the MCP server with Claude Code (no options needed on a PC with REDcode set up):
+
+```powershell
+claude mcp add edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
+```
+
+## 5. Docs site and brand images
 
 The site at https://edgemodders.github.io/EDGEmat/ is built by `.github/workflows/pages.yml` on every push to `main`. **Settings > Pages > Source** must be **GitHub Actions**.
 
