@@ -165,7 +165,8 @@ WolvenKit writes CR2W files as JSON. Over its versions an `.mlsetup` has had thr
 
 | Saving | Behavior for EDGEmat | Check |
 |---|---|---|
-| Where | The binary file at the same game path under the project's `source\archive`. `source\raw` is not needed for an `.mlsetup` | Written and packed 2026-10-14; loading in the game is in-game test R1 (item 9) |
+| Where | The binary file at the same game path under the project's `source\archive`. `source\raw` is not needed for an `.mlsetup` | Written and packed 2026-10-14 |
+| **Replacing a game setup in place** | **Has no effect in the game unless the "Material Texture Override" mod (MTO) is installed.** WolvenKit says so when packing a project that holds a base-game `.mlsetup`. Two routes for a recolor: edit the game's setup in place and require MTO, or save a **new** setup at a new path and point the mesh's material at it (a copy of the mesh, or an ArchiveXL patch), which needs no MTO and is how most recolor mods ship | **Corrected** 2026-10-15. Seen in game through REDnode: our archive mounted and its new-path file loaded (`ratio` 7), but every replaced setup loaded the game's own copy (a marker setup kept `ratio` 0.63, not our 4), whether or not the archive was in `modlist.txt`. Other mods' replacements of other file types worked. With MTO installed: to test |
 | How | Through REDbridge: edit the document session (`cr2w.open`, `patch`, `save`), the one-call `cr2w_edit_file` with a game path and an output file, or build from JSON (`cr2w.fromJson`). No WolvenKit.CLI, no version choice for the user. A CName may be given as a plain string | **Confirmed** 2026-10-14: eight sneaker setups edited from game paths with `cr2w_edit_file`, read back with every edit in place, packed with `project.pack` |
 | Editing a game file | Copy it into the project first, then edit the copy. The archives are never changed | **Confirmed** 2026-10-14 (`cr2w_edit_file` with a game path writes only the copy) |
 
@@ -246,7 +247,12 @@ A WolvenKit project outside the repo, `Projects\EDGEmat_M0`, built on 2026-10-14
 | R1 | 1 | Packed from `source\archive` | Item 9: an edited `.mlsetup` there loads |
 | R2 | 2 | `ratio` = 4 on the unedited setups | What `ratio` does |
 
-Results: pending.
+Results so far:
+
+| Date | What happened |
+|---|---|
+| 2026-10-15 | R1 and a blunter test (R1b: every layer but the base hidden, base bright green) showed no change on the sneakers. Read through REDnode in the running game: V wears `s1_055_pwa_shoe__converse.mesh`, appearance `red_yellow_graphic`; our archive is mounted; a file only our archive has loads; every replaced setup loads the game's copy. WolvenKit then named the cause: replaced base-game setups need the Material Texture Override mod. R1 and R2 are rerun with MTO installed |
+| 2026-10-15 | Side findings. In the running game, a loaded setup shows its `ratio` and `useNormal` to scripts but not its layers, so a runtime tool cannot read or change layers through the game's script API. REDdeck had a bug writing `modlist.txt`, fixed the same day by REDdeck's session |
 
 ## Checklist for the local session
 
@@ -262,5 +268,5 @@ Run against the real game through REDbridge (`cr2w_read`, `texture_to_png`, `arc
 | 6 | Mask count against layer count, and mask order | Read a garment's `.mlmask` next to its `.mlsetup`; export the mask layers to PNG | Done 2026-10-14: 20 and 20; no flip. Order supported, confirmed in game by R1-B |
 | 7 | What the game does with a color name the template lacks | Set one in a copy, pack, look in game | Pending: R1-A |
 | 8 | Which JSON shape REDbridge writes and reads | `cr2w_read` an `.mlsetup`; compare with section 6 | Done 2026-10-14: the current shape, version 0.0.9 |
-| 9 | Where WolvenKit expects an edited `.mlsetup` in a project | Save one under `source\archive` and pack; check it loads | Packed 2026-10-14. Pending: loads in game (R1) |
+| 9 | Where WolvenKit expects an edited `.mlsetup` in a project | Save one under `source\archive` and pack; check it loads | Corrected 2026-10-15: under `source\archive` is right, but a replaced game setup has no effect without MTO (section 6). Pending: R1 with MTO installed |
 | 10 | Which bridge methods in section 7 really are missing | Try each with the existing tools; file the rest as requests | Done 2026-10-14: one, filed as REDbridge #4; shipped in REDbridge 0.8.0 on 2026-10-15 |
