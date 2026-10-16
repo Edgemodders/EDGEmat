@@ -1,0 +1,13 @@
+{
+  // F5 runs EDGEmat in an extension development host. Build first: npm run build.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run EDGEmat",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/extensions/edgemat"],
+      "outFiles": ["${workspaceFolder}/extensions/edgemat/dist/**/*.js"]
+    }
+  ]
+}

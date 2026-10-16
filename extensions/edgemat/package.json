@@ -1,0 +1,212 @@
+{
+  "name": "edgemat",
+  "displayName": "EDGEmat",
+  "description": "The EDGE material editor for Cyberpunk 2077: browse the game's surfaces and microblends, recolor garments and see the result.",
+  "publisher": "edgemodders",
+  "version": "0.1.0",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Edgemodders/EDGEmat.git",
+    "directory": "extensions/edgemat"
+  },
+  "homepage": "https://edgemodders.github.io/EDGEmat/",
+  "bugs": {
+    "url": "https://github.com/Edgemodders/EDGEmat/issues"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "cyberpunk",
+    "cyberpunk2077",
+    "modding",
+    "materials",
+    "mlsetup",
+    "wolvenkit"
+  ],
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:edgemat.library",
+    "onCommand:edgemat.rebuildLibrary",
+    "onCommand:edgemat.setGameFolder",
+    "onCommand:edgemat.searchLibrary"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "edgemat",
+          "title": "EDGEmat",
+          "icon": "images/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "edgemat": [
+        {
+          "id": "edgemat.library",
+          "name": "Library"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "edgemat.library",
+        "contents": "EDGEmat needs your Cyberpunk 2077 folder to build its material library from your game.\n[Set Game Folder](command:edgemat.setGameFolder)",
+        "when": "edgemat.state == noGame"
+      },
+      {
+        "view": "edgemat.library",
+        "contents": "EDGEmat reads the game through REDbridge, which was not found. Install REDcode and run its \"Install REDbridge\" command, or set edgemat.bridgePath to REDbridge.exe.\n[Open Settings](command:workbench.action.openSettings?%22edgemat.bridgePath%22)\n[Show Log](command:edgemat.showLog)",
+        "when": "edgemat.state == noBridge"
+      },
+      {
+        "view": "edgemat.library",
+        "contents": "Building the material library from your game: every surface with its colors, and every microblend, with thumbnails. This runs once, and again after a game update.",
+        "when": "edgemat.state == building"
+      },
+      {
+        "view": "edgemat.library",
+        "contents": "The library could not be built.\n[Show Log](command:edgemat.showLog)\n[Try Again](command:edgemat.rebuildLibrary)",
+        "when": "edgemat.state == error"
+      },
+      {
+        "view": "edgemat.library",
+        "contents": "Nothing in the library matches your search.\n[Clear Search](command:edgemat.clearSearch)",
+        "when": "edgemat.state == ready && edgemat.filtered"
+      }
+    ],
+    "commands": [
+      {
+        "command": "edgemat.searchLibrary",
+        "title": "Search Library",
+        "category": "EDGEmat",
+        "icon": "$(search)"
+      },
+      {
+        "command": "edgemat.clearSearch",
+        "title": "Clear Search",
+        "category": "EDGEmat",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "edgemat.rebuildLibrary",
+        "title": "Rebuild Library",
+        "category": "EDGEmat",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "edgemat.setGameFolder",
+        "title": "Set Game Folder",
+        "category": "EDGEmat",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "edgemat.showLog",
+        "title": "Show Log",
+        "category": "EDGEmat",
+        "icon": "$(output)"
+      },
+      {
+        "command": "edgemat.copyGamePath",
+        "title": "Copy Game Path",
+        "category": "EDGEmat",
+        "icon": "$(copy)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "edgemat.searchLibrary",
+          "when": "view == edgemat.library",
+          "group": "navigation@1"
+        },
+        {
+          "command": "edgemat.clearSearch",
+          "when": "view == edgemat.library && edgemat.filtered",
+          "group": "navigation@2"
+        },
+        {
+          "command": "edgemat.rebuildLibrary",
+          "when": "view == edgemat.library",
+          "group": "navigation@3"
+        },
+        {
+          "command": "edgemat.setGameFolder",
+          "when": "view == edgemat.library",
+          "group": "more@1"
+        },
+        {
+          "command": "edgemat.showLog",
+          "when": "view == edgemat.library",
+          "group": "more@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "edgemat.copyGamePath",
+          "when": "view == edgemat.library && viewItem == edgemat.gamePath",
+          "group": "inline"
+        },
+        {
+          "command": "edgemat.copyGamePath",
+          "when": "view == edgemat.library && viewItem == edgemat.gamePath",
+          "group": "copy@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "edgemat.copyGamePath",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.clearSearch",
+          "when": "edgemat.filtered"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "EDGEmat",
+      "properties": {
+        "edgemat.gamePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "The Cyberpunk 2077 folder (the one holding `bin`, `archive` and `r6`). Empty: use REDcode's game folder, then REDdeck's, then search the machine."
+        },
+        "edgemat.bridgePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "REDbridge.exe, or the folder holding it. Empty: use REDcode's `redcode.bridgePath`, then REDbridge on PATH. When REDcode is running with the same game, EDGEmat uses REDcode's bridge."
+        },
+        "edgemat.dotnetRoot": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "DOTNET_ROOT for the bridge, when .NET 10 is installed per user. Empty: use REDcode's `redcode.dotnetRoot`."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.mjs",
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "pngjs": "7.0.0",
+    "vscode-jsonrpc": "^9.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/vscode": "1.70.0",
+    "esbuild": "^0.28.2",
+    "typescript": "~5.9.3"
+  }
+}
