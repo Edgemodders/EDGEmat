@@ -97,15 +97,76 @@ The goal for a modder: preview meshes with their appearances and materials in RE
 | Job | Owner | Why |
 |---|---|---|
 | Viewing a mesh, its submeshes and LODs | REDcode | Its viewer (three.js, `webview/meshViewer.ts`, done in REDcode 0.7.0) already does this. EDGEmat does not build a second one |
-| Switching appearances | REDcode | An appearance is mesh data: the material each render chunk uses. Also `.app` and `.ent` appearances |
+| Viewing and switching a mesh's appearances | REDcode | Viewing: pick an appearance and see it. An appearance is mesh data: the material each render chunk uses |
 | Turning a material into something renderable | **EDGEmat** | Layered materials need what EDGEmat knows: setup, masks, templates, microblends, the level math (spec sections 3 to 5). Later `.mi` and `.mt` |
 | Authoring materials | EDGEmat | Its purpose |
-| Creating an appearance as part of a recolor ("save as new look") | EDGEmat | The no-MTO route: a new setup, and a new appearance and material pointing at it. One step of a recolor |
-| General appearance editing (reassigning submeshes, hiding parts) | REDcode | Mesh editing, through its editor |
+| **Authoring a mesh's appearances**: its looks, which material each submesh uses, new looks and variants. "Save as new look" in a recolor is one case | **EDGEmat** | Revised with the owner on 2026-10-16: an appearance is a set of materials, so its editor belongs beside the material editor. EDGEmat's **Looks** editor ([Custom assets](#custom-assets-from-a-model-to-the-game)) |
+| An item's or entity's appearances (`.app`, `.ent`), and generic editing of any file | REDcode, then the asset tool | REDcode's CR2W editor edits any file raw. Guided item appearances belong to the proposed asset tool ([Custom assets](#custom-assets-from-a-model-to-the-game)) |
 
 **How they connect.** EDGEmat exports an API (`apiVersion` 1) with `renderMaterials(mesh, appearance)`: per material name, baked PBR maps (color, normal, roughness, metalness) as PNG bytes, marked approximate until M4 checks them against the game, and an event when a material changes. REDcode's viewer asks for them when EDGEmat is active and keeps flat colors otherwise, the way REDcode reads REDdeck's API. Baking to plain maps keeps the contract small and serves three more uses: `mat_render`, glTF exports with real textures, and library thumbnails. Requested as [REDcode #6](https://github.com/Edgemodders/REDcode/issues/6) on 2026-10-15, with appearance switching, and with REDcode's planned layered material preview (C6) handed to EDGEmat.
 
 **EDGEmat's own editor** embeds the same viewer for live preview while editing. **Later:** factor the viewer out of REDcode into a shared component (an npm package) that REDcode, EDGEmat and other EDGE tools embed; until then EDGEmat uses REDcode's bundled viewer or a copy (both MIT).
+
+## Custom assets: from a model to the game
+
+**The ultimate goal** (owner, 2026-10-16): modders create and modify custom assets, such as new clothes and objects, fully textured and with appearances, and see them in the game fast. EDGEmat is at the center of this, because every asset needs materials and looks. It is not the whole of it: the workflow spans several EDGE tools, and this section says who does what. These are goals and recommendations for planning, not yet phases with tests, except where the phase table says so.
+
+### The four goals
+
+| # | Goal | Owner | Notes |
+|---|---|---|---|
+| 1 | **Import a textured model** from Blender or an AI model service such as Tripo | REDbridge (geometry, images), EDGEmat (materials, looks) | **glTF and GLB first**: Blender exports them natively, Tripo and most AI services offer GLB, and WolvenKit's importer, which REDbridge's `project.import` runs, reads glTF. FBX and OBJ through Blender (EDGE can call an installed Blender in the background to convert) or asked for as GLB. Geometry becomes a `.mesh`; the model's images become `.xbm` (both exist in REDbridge 0.7.0). **Unverified:** WolvenKit's importer appears to import over an existing `.mesh` ("keeps the replaced file's settings"), so a new asset may start from a template mesh; to check with REDbridge |
+| 2 | **View the model** with its in-game appearances | REDcode's viewer | Before import, a GLB shows its own textures: three.js loads them already, REDcode's viewer currently paints flat colors instead. After import, the viewer switches appearances and gets materials from EDGEmat (REDcode #6). Authoring the appearances is EDGEmat's **Looks** editor (the table above) |
+| 3 | **The whole asset workflow**, from a model to a working item or object | Several tools, guided by a proposed **asset tool** | Below |
+| 4 | **Hot-load updated archives** into the running game | REDnode (game side), REDcode (pack), REDdeck (deploy) | Below |
+
+### What EDGEmat adds for this
+
+| Feature | What it does | Phase |
+|---|---|---|
+| **Materials from a textured model** | Turns a model's PBR textures (base color, normal, metallic-roughness, emissive) into the game's material for plain textured assets: a `.mi` on `engine\materials\metal_base.remt` (the usual choice for custom assets, unverified for all cases), with the images imported as `.xbm`. Handles the format gaps: glTF packs roughness and metalness in one image; normal-map conventions may differ (unverified) | M5 |
+| **Looks editor** | A mesh's appearances: list them, see each on the model, pick the material for each submesh, add a look, duplicate a look as a variant. Writes the mesh's `appearances` and `materialEntries` | M5 (recolor's "save as new look" in M3) |
+| **Layered materials for new assets** | A multilayered material for a custom model needs masks painted for its UVs: mask painting (a later feature in the behavior spec) becomes how a modder makes one | Later |
+
+### The workflow, step by step
+
+Two kinds of asset, with different hard parts: an **object** (a prop placed in the world) needs no rig; **clothing** must be skinned to the player's rig and layer with other garments. Objects come first.
+
+| Step | What happens | Tool |
+|---|---|---|
+| Make or get a model | Blender, or an AI model service. EDGE does not build a 3D modeler | Blender; an AI service, opt-in, as EDGEwave does for voice |
+| Import | Geometry to `.mesh`, images to `.xbm` | REDbridge through REDcode (exists) |
+| Rig and fit (clothing only) | Weights for the player's rig, fitted to the body types; garment layering parameters | Blender with the community WolvenKit Blender add-on today. An "Edit in Blender" round trip is a candidate for REDcode |
+| Materials and looks | Materials from the model's textures, recolors, variants | **EDGEmat** |
+| Make it a game thing | Object: an entity with the mesh. Clothing: entity and `.app` appearances, an ArchiveXL factory and `.xl`, a TweakXL item record (entity name, appearance name, display name, icon), localized text, an inventory icon | **The asset tool (proposed)** |
+| Place it (objects) | Drop it in the world and bake it into a sector | EDGEbuilder, once its index reads mod archives as well as the game's |
+| Pack, deploy, try | Pack the project, deploy it, hot-load it, spawn it or put it on V | REDcode, REDdeck, REDnode (and REDagent: "give V the new jacket") |
+
+**Recommendation: a new EDGE tool for asset assembly.** No tool owns "make it a game thing", and it is the step non-coders find hardest: many small files that must agree with each other. A guided tool, a VS Code extension like EDGEmat with an MCP server, would create new items and objects (and later vehicles or weapons) from a mesh and its looks: the entity, appearances, factory, `.xl`, TweakXL record, text and icon, checked against each other. It would use EDGEmat for materials and looks, REDcode's viewer, REDbridge for files, REDdeck and REDnode to try the result. Name and phases are the owner's call; a working name is *the asset tool*. Without it, EDGEmat would grow into an item editor, which blurs its purpose.
+
+### Hot-loading archives
+
+The game loads `.archive` files at startup, so today every change means a restart. Options, in order:
+
+| Option | Notes |
+|---|---|
+| **RED Hot Tools** (a community RED4ext plugin) | Reported to reload archives from a hot folder in a running game. Unverified on the dev PC. Try it first |
+| **An EDGE hot loader** | If RED Hot Tools does not fit, the same idea built into REDnode's native plugin: mount a changed archive and refresh what uses it |
+| **Refresh what is on screen** | A reloaded resource shows only when the game loads it again. REDnode can respawn an object or re-apply V's appearance (switching appearances at runtime already works, as EDGEbuilder does) |
+
+The flow for a modder: **Pack and try** in REDcode packs the project, deploys it to the hot folder (REDdeck's deploy, so the mod list stays right), and asks REDnode to reload and refresh. Setups replaced in place also need Material Texture Override (spec section 6), unknown whether that holds for hot loading. This also serves the runtime-materials goal in [Later ideas](#materials-at-runtime-through-redagent).
+
+### Requests this implies
+
+Filed when the owner agrees, each to its repo as a `request`:
+
+| Repo | Request |
+|---|---|
+| REDcode | Add to #6: show a GLB's own textures in the viewer; Looks authoring is EDGEmat's, REDcode views and switches. Later: "Pack and try" (hot load), "Edit in Blender" |
+| REDbridge | Mesh import for a **new** asset (from a template mesh if WolvenKit needs one); a list of what the importer keeps and drops (materials, appearances, rig) |
+| REDnode | A hot loader if RED Hot Tools does not fit; refresh an object or V's appearance after a reload |
+| EDGEbuilder | Index the user's mod archives too, so custom objects can be placed |
+| A new repo | The asset tool, if the owner agrees |
 
 ## The material library
 
@@ -158,7 +219,7 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | **M2 Read** | The `.mlsetup` editor, read-only: layers in plain words, swatches, each layer's mask. Finding an item's materials. Open File for a setup anywhere on disk, as JSON or inside a mod archive. MCP `mat_find`, `mat_describe`, `mat_templates`, `mat_colors` | A game jacket shows the same layers WolvenKit shows, and Claude describes it correctly. A setup from a mod archive outside any project opens and reads the same |
 | **M3 Edit** | Change template, color, tiling, levels, microblend; undo and redo; save into a WolvenKit project, including Save to Project for a file opened from anywhere; "save as new look" (a new setup, appearance and material, the no-MTO route). MCP `mat_edit` | A jacket recolored in EDGEmat, and another recolored by asking Claude, both show correctly in the game. A setup opened from outside the project, saved into it and packed, loads in the game |
 | **M4 Preview** | The bake: a layered material to PBR maps, with layers blended through their masks, templates and microblends, updated live. EDGEmat's API `renderMaterials` for REDcode's viewer ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); the same viewer in EDGEmat's editor. MCP `mat_render` | Side by side with an in-game screenshot, the preview reads the same, in REDcode's viewer and in EDGEmat's |
-| **M5 Beyond mlsetup** | `.mi` parameters, mesh appearances, custom colors (a custom `.mltemplate`, if M2 confirms colors are presets) | A non-multilayered item retextured and a free color used, both in the game |
+| **M5 Beyond mlsetup** | `.mi` parameters; **materials from a textured model** (glTF PBR textures to `.xbm` and a `.mi`); the **Looks** editor for a mesh's appearances; custom colors (a custom `.mltemplate`). See [Custom assets](#custom-assets-from-a-model-to-the-game) | A non-multilayered item retextured, a free color used, and a GLB model from Blender or an AI service imported with its textures and two looks, all shown in the game |
 | **M6 Ship** | Open VSX and Marketplace, the MCP package, docs, a Nexus page, the EDGEkit bundle entry | A non-coder recolors an item from the docs alone, in the UI and by asking an assistant |
 
 ## Open questions
@@ -189,7 +250,7 @@ Not planned into a phase. Kept so they are not lost.
 |---|---|---|
 | 1. What is being looked at | The running game names the object in view: its entity, mesh component, mesh and mesh appearance | Not built. REDnode reads and calls into the running game; a "looked-at object" query is a REDnode or EDGEbuilder request when the time comes |
 | 2. The change | Find the object's setup, pick the nearest preset in each layer's template (or a template with a better match), write the result | EDGEmat's core, M2 and M3. World props use the same multilayered setups as clothing |
-| 3. Into the running game | The game loads `.archive` files at startup, so a changed file has to be reloaded live | Open. RED Hot Tools (a community tool) is said to reload archives in a running game, unverified. If it does not fit, an EDGE hot reloader built the same way. REDnode's hot reload restarts its own JS mods; it does not reload game files |
+| 3. Into the running game | The game loads `.archive` files at startup, so a changed file has to be reloaded live | Open. RED Hot Tools (a community tool) is said to reload archives in a running game, unverified. If it does not fit, an EDGE hot reloader built the same way. REDnode's hot reload restarts its own JS mods; it does not reload game files. Planned with the custom-asset workflow: [Hot-loading archives](#hot-loading-archives) |
 
 | Route | Notes |
 |---|---|
