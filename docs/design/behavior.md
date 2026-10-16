@@ -2,7 +2,7 @@
 
 What EDGEmat must understand and do to edit Cyberpunk 2077's multilayered materials. This is phase M0's spec: build sessions work from this page, not from MlsetupBuilder's source.
 
-**Status: draft 0.2, checked against the game.** Draft 0.1 was written on 2026-10-14 from a study of MlsetupBuilder 1.6.9 (commit `4271e8c`) and community knowledge, in a cloud session with no game install. Draft 0.2 (2026-10-15) is that draft checked on the dev PC: every row read against real files through REDbridge (0.7.0, then 0.8.0; WolvenKit 9.1.0) and marked confirmed or corrected, and the open questions tested in game through in-game tests and REDnode ([checklist](#checklist-for-the-local-session)). What is still unknown is marked so, with the reason. Field names, game paths and numbers are facts about the game and WolvenKit's JSON; everything else is our own description.
+**Status: draft 0.2, checked against the game, agreed with the owner on 2026-10-16.** Draft 0.1 was written on 2026-10-14 from a study of MlsetupBuilder 1.6.9 (commit `4271e8c`) and community knowledge, in a cloud session with no game install. Draft 0.2 (2026-10-15) is that draft checked on the dev PC: every row read against real files through REDbridge (0.7.0, then 0.8.0; WolvenKit 9.1.0) and marked confirmed or corrected, and the open questions tested in game through in-game tests and REDnode ([checklist](#checklist-for-the-local-session)). What is still unknown is marked so, with the reason. Field names, game paths and numbers are facts about the game and WolvenKit's JSON; everything else is our own description.
 
 ## How this page is used
 

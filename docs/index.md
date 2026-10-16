@@ -15,8 +15,8 @@ As of 2026-10-16.
 
 | Phase | Status |
 |---|---|
-| M0 Spec | In progress. The [behavior spec](design/behavior.html) is at draft 0.2 (2026-10-15): every checklist item checked against the game, the open questions tested in game, one bridge request filed and shipped ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)). Neurolinked contacted on 2026-10-16. Next: the owner agrees the spec |
-| M1 Library | Not started |
+| M0 Spec | **Done 2026-10-16.** The [behavior spec](design/behavior.html) draft 0.2 is checked against the game and agreed; one bridge request filed and shipped ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)); the viewer hook requested ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); Neurolinked contacted |
+| M1 Library | Next |
 | M2 Read | Not started |
 | M3 Edit | Not started |
 | M4 Preview | Not started |

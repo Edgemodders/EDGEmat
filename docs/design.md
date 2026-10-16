@@ -2,7 +2,7 @@
 
 EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: a VS Code extension and an MCP server. A modder picks a garment, clicks a layer, chooses a color and sees it on the model. Or they skip the UI and tell REDagent or Claude "make this jacket red".
 
-**Status: draft 0.2.** Agreed with the user on 2026-10-14: a standalone extension in the EDGE family, `.mlsetup` editing first, an MCP server beside the UI, and MlsetupBuilder studied for behavior, never copied. Next: M0.
+**Status: draft 0.2.** Agreed with the user on 2026-10-14: a standalone extension in the EDGE family, `.mlsetup` editing first, an MCP server beside the UI, and MlsetupBuilder studied for behavior, never copied. M0 done on 2026-10-16: the [behavior spec](design/behavior.html) is checked against the game and agreed, and Neurolinked contacted. Since then the design gained the activity bar container, opening files from anywhere, the game folder and bridge through REDcode's API, and the preview split with REDcode. Next: M1.
 
 ## Mission
 
