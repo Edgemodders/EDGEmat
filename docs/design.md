@@ -37,7 +37,7 @@ Two facts that matter most, both **unverified**:
 
 | Part | What it is |
 |---|---|
-| `extensions/edgemat` | The VS Code extension, id `edgemodders.edgemat`, with its own activity bar container: the `.mlsetup` editor, the library and find views, the preview ([In VS Code](#in-vs-code)) |
+| `extensions/edgemat` | The VS Code extension, id `edgemodders.edgemat`, with its own activity bar container: the `.mlsetup` editor, the library and find views ([In VS Code](#in-vs-code)), and the material bake that REDcode's viewer shows ([Preview](#preview-redcode-shows-meshes-edgemat-renders-materials)) |
 | `extensions/edgemat/src/core` | Everything that is not UI: the bridge client, the material library, reading and editing setups, finding an item's materials. **No VS Code imports**, so the MCP server bundles the same code, as `redcode-mcp` does with REDcode's bridge client |
 | `packages/edgemat-mcp` | The MCP server over stdio, for Claude Code, REDagent or any MCP client |
 | REDbridge | Every game file read and write: archives, CR2W as JSON, textures to PNG, mesh export. EDGEmat asks for new methods as REDbridge issues labelled `request` |
@@ -90,6 +90,23 @@ A modder has a setup somewhere on their computer: downloaded from a mod page, in
 | Save to Project | An editor title button, in the style of REDcode's "Save JSON to Project". It asks for the project (the open WolvenKit project, a recent one, or a `.cpmodproj` to browse to) and writes the binary to `source\archive\<game path>`. The game path is suggested from the file's own path when it holds one (`...\source\archive\base\...`, or the entry in a mod archive), else from a game file with the same name, else the modder types it. If a file is already there, EDGEmat asks before replacing it |
 | Assistant | `mat_describe` takes a file on disk or a setup inside a mod archive; `mat_edit` writes the result into a project the same way |
 
+## Preview: REDcode shows meshes, EDGEmat renders materials
+
+The goal for a modder: preview meshes with their appearances and materials in REDcode or EDGEmat, author a new material in EDGEmat, and see it on the mesh. Agreed with the owner on 2026-10-15: **one viewer, two jobs, loosely coupled.** Neither extension requires the other.
+
+| Job | Owner | Why |
+|---|---|---|
+| Viewing a mesh, its submeshes and LODs | REDcode | Its viewer (three.js, `webview/meshViewer.ts`, done in REDcode 0.7.0) already does this. EDGEmat does not build a second one |
+| Switching appearances | REDcode | An appearance is mesh data: the material each render chunk uses. Also `.app` and `.ent` appearances |
+| Turning a material into something renderable | **EDGEmat** | Layered materials need what EDGEmat knows: setup, masks, templates, microblends, the level math (spec sections 3 to 5). Later `.mi` and `.mt` |
+| Authoring materials | EDGEmat | Its purpose |
+| Creating an appearance as part of a recolor ("save as new look") | EDGEmat | The no-MTO route: a new setup, and a new appearance and material pointing at it. One step of a recolor |
+| General appearance editing (reassigning submeshes, hiding parts) | REDcode | Mesh editing, through its editor |
+
+**How they connect.** EDGEmat exports an API (`apiVersion` 1) with `renderMaterials(mesh, appearance)`: per material name, baked PBR maps (color, normal, roughness, metalness) as PNG bytes, marked approximate until M4 checks them against the game, and an event when a material changes. REDcode's viewer asks for them when EDGEmat is active and keeps flat colors otherwise, the way REDcode reads REDdeck's API. Baking to plain maps keeps the contract small and serves three more uses: `mat_render`, glTF exports with real textures, and library thumbnails. Requested as [REDcode #6](https://github.com/Edgemodders/REDcode/issues/6) on 2026-10-15, with appearance switching, and with REDcode's planned layered material preview (C6) handed to EDGEmat.
+
+**EDGEmat's own editor** embeds the same viewer for live preview while editing. **Later:** factor the viewer out of REDcode into a shared component (an npm package) that REDcode, EDGEmat and other EDGE tools embed; until then EDGEmat uses REDcode's bundled viewer or a copy (both MIT).
+
 ## The material library
 
 MlsetupBuilder ships about 18 MB of JSON built from the game (every `.mltemplate` with its color presets, a model list, mask and normal lists) and about 500 thumbnails made from game textures. EDGEmat ships none of it: that is data extracted from the game, which the EDGE repos never commit.
@@ -139,8 +156,8 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | **M0 Spec** | The behavior spec (steps 1 and 2 above). The file table above checked. The bridge methods EDGEmat needs, filed with REDbridge. Neurolinked contacted | The spec is agreed with the user, and every field in it is seen in a real file |
 | **M1 Library** | The extension and MCP skeletons, the EDGEmat activity bar container, the bridge client, the material library built from the game and cached, the library view with thumbnails | A full library builds from the game; its counts match the game's |
 | **M2 Read** | The `.mlsetup` editor, read-only: layers in plain words, swatches, each layer's mask. Finding an item's materials. Open File for a setup anywhere on disk, as JSON or inside a mod archive. MCP `mat_find`, `mat_describe`, `mat_templates`, `mat_colors` | A game jacket shows the same layers WolvenKit shows, and Claude describes it correctly. A setup from a mod archive outside any project opens and reads the same |
-| **M3 Edit** | Change template, color, tiling, levels, microblend; undo and redo; save into a WolvenKit project, including Save to Project for a file opened from anywhere. MCP `mat_edit` | A jacket recolored in EDGEmat, and another recolored by asking Claude, both show correctly in the game. A setup opened from outside the project, saved into it and packed, loads in the game |
-| **M4 Preview** | The 3D preview: the mesh with layers blended through their masks, templates and microblends, updated live. MCP `mat_render` | Side by side with an in-game screenshot, the preview reads the same |
+| **M3 Edit** | Change template, color, tiling, levels, microblend; undo and redo; save into a WolvenKit project, including Save to Project for a file opened from anywhere; "save as new look" (a new setup, appearance and material, the no-MTO route). MCP `mat_edit` | A jacket recolored in EDGEmat, and another recolored by asking Claude, both show correctly in the game. A setup opened from outside the project, saved into it and packed, loads in the game |
+| **M4 Preview** | The bake: a layered material to PBR maps, with layers blended through their masks, templates and microblends, updated live. EDGEmat's API `renderMaterials` for REDcode's viewer ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); the same viewer in EDGEmat's editor. MCP `mat_render` | Side by side with an in-game screenshot, the preview reads the same, in REDcode's viewer and in EDGEmat's |
 | **M5 Beyond mlsetup** | `.mi` parameters, mesh appearances, custom colors (a custom `.mltemplate`, if M2 confirms colors are presets) | A non-multilayered item retextured and a free color used, both in the game |
 | **M6 Ship** | Open VSX and Marketplace, the MCP package, docs, a Nexus page, the EDGEkit bundle entry | A non-coder recolors an item from the docs alone, in the UI and by asking an assistant |
 
@@ -153,7 +170,8 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | Sharing REDcode's bridge | REDcode's `bridge()` lets EDGEmat skip a second REDbridge. Whether one bridge copes with REDcode's work and EDGEmat's library build at once, and what EDGEmat does when REDcode's bridge is older than it needs, is settled in M1 |
 | Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M4 |
 | Which items first | The garments modders recolor most, to list in M0, become the test set |
-| The sibling repos' notes | REDcode's roadmap lists the layered material preview under C6 (README, `docs/design.html`); it should point at EDGEmat. EDGEkit's design says new EDGE editor extensions go into REDcode, and its `extensions.json` should gain EDGEmat. Each repo's own session makes the change |
+| A shared mesh viewer | Factor REDcode's viewer out into a shared component (an npm package) that REDcode, EDGEmat and other EDGE tools embed. Later, once the material hook works; noted in REDcode #6 |
+| The sibling repos' notes | REDcode's roadmap lists the layered material preview under C6 (README, `docs/design.html`); it should point at EDGEmat, requested in REDcode #6. EDGEkit's design says new EDGE editor extensions go into REDcode, and its `extensions.json` should gain EDGEmat. Each repo's own session makes the change |
 
 ## Later ideas
 
