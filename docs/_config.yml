@@ -22,6 +22,8 @@ defaults:
 nav:
   - title: Docs
     url: /
+  - title: Progress
+    url: /progress.html
   - title: Design
     url: /design.html
   - title: Behavior
