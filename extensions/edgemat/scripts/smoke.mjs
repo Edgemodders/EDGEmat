@@ -74,6 +74,28 @@ try {
   const made = [];
   for (const x of tex) made.push(await core.textureImage(bridge, cache, x.path, x.kind === "color" ? 512 : 192, x.kind === "normal" ? "relief" : "color", x.kind === "color" ? "soft" : "full"));
   check(made.length > 0 && made[0] && fs.existsSync(core.imageFile(cache, made[0])), `page images for ${leather[0].name}: ${made.filter(Boolean).length} of ${tex.length} made in ${Date.now() - started} ms`);
+
+  // M2: the setup editor's data, on the in-game test sneakers (behavior spec, "In-game tests").
+  console.log("\nsetup editor");
+  const sneakers = "base\\characters\\garment\\player_equipment\\feet\\s1_055_shoe__converse\\textures\\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup";
+  const t0 = Date.now();
+  const opened = await core.openSetup(bridge, lib, cache, { gamePath: sneakers });
+  const layers = opened.info.layers;
+  check(layers.length === 20 && opened.info.shownCount === 19 && layers[11].hidden === "opacity 0",
+    `read in ${Date.now() - t0} ms: ${layers.length} layers, ${opened.info.shownCount} shown; layer 11 hidden (${layers[11].hidden})`);
+  check(opened.masks?.name === "ml_s1_055_pma_shoe__converse_masksset" && opened.masks.count === 20 && opened.maskChoices.length === 2,
+    `mask set found beside it: ${opened.masks?.name} (${opened.masks?.count} masks), of ${opened.maskChoices.length} in the folder`);
+  check(layers[7].surface.title.startsWith("rubber bumper") && layers[7].share > 0.05 && fs.existsSync(opened.composite.file),
+    `layer 7 (the sole, in-game test R1-B): ${layers[7].surface.title}, ${(layers[7].share * 100).toFixed(1)}% of the texture; color map written`);
+  check(layers.every((l) => l.surface.unused || l.surface.found) && layers.every((l) => l.warnings.length === 0),
+    "every surface found in the library; no warnings on a game setup");
+  // The two older WolvenKit JSON shapes, made from the current one.
+  const current = JSON.parse((await bridge.toJson(sneakers)).json);
+  const wrap = (l) => ({ Properties: l });
+  const v001 = { Header: { WKitJsonVersion: "0.0.1" }, Data: { RootChunk: { Properties: { ...current.Data.RootChunk, layers: current.Data.RootChunk.layers.map(wrap) } } } };
+  const oldest = { Chunks: [{ Properties: { ...current.Data.RootChunk, layers: current.Data.RootChunk.layers.map(wrap) } }] };
+  const same = (a, b) => JSON.stringify(a.layers) === JSON.stringify(b.layers);
+  check(same(core.parseSetup(v001), opened.setup) && same(core.parseSetup(oldest), opened.setup), "the 0.0.1 and oldest JSON shapes read the same layers");
 } finally {
   bridge.stop();
 }
