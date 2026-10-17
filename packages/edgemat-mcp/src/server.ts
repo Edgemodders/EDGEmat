@@ -12,7 +12,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
-  BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame,
+  BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, openSetup, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame,
   searchMicroblends, searchTemplates, vscodeUserSettings, type ColorInfo, type Library, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
@@ -169,6 +169,59 @@ server.registerTool(
         colors: (target ? nearestColors(info, target, limit) : info.colors.slice(0, limit)).map(color),
         roughness: presets(info.roughness), roughnessContrast: presets(info.roughnessContrast), metal: presets(info.metal), bumps: presets(info.bumps),
         textures: info.textures.map((t) => ({ kind: t.kind, path: t.path, ownMap: !t.isDefault })),
+      });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+const isFilePath = (p: string) => /^[a-z]:[\\/]|^\\\\|^\//i.test(p);
+
+server.registerTool(
+  "mat_describe",
+  {
+    description:
+      "Describes a multilayered setup (.mlsetup) in plain words, layer by layer, as EDGEmat's setup editor shows it: each layer's surface, color (preset name and a plain name), " +
+      "roughness, metal and bumps, tiling, opacity and microblend; whether it shows, and why not; its share of the texture (from the mask set); and anything that looks wrong, " +
+      "such as a color name the surface lacks (the game draws that white). Layer 0 is the base; mask i belongs to layer i. " +
+      "setup: a game path (base\\...\\x.mlsetup) or a file on disk (.mlsetup or WolvenKit .mlsetup.json). " +
+      "mask: the .mlmask to use, a game path or a file; without it the best match beside the setup is used, and the others are listed. " +
+      "colorMap is a PNG of the setup's flat colors in texture space (where each layer goes, not the in-game look).",
+    inputSchema: { setup: z.string(), mask: z.string().optional(), hideUnused: z.boolean().default(true) },
+  },
+  async ({ setup, mask, hideUnused }) => {
+    try {
+      const b = await getBridge();
+      const o = await openSetup(b, await library(), cacheDir, isFilePath(setup) ? { file: setup } : { gamePath: setup }, mask);
+      const r3 = (v: number) => Math.round(v * 1000) / 1000;
+      const preset = (p?: { plain: string; name: string }) => (p ? `${p.plain} (${p.name})` : undefined);
+      return text({
+        setup,
+        layers: o.info.layers.length,
+        shown: o.info.shownCount,
+        ratio: o.info.ratio,
+        warnings: o.info.warnings.length ? o.info.warnings : undefined,
+        mask: o.masks ? { name: o.masks.name, from: o.maskFrom, count: o.masks.count } : { error: o.maskError },
+        otherMasks: o.maskChoices.length > 1 ? o.maskChoices.slice(1) : undefined,
+        colorMap: o.composite?.file,
+        layerList: o.info.layers
+          .filter((l) => !(hideUnused && (l.surface.unused || !l.surface.path)))
+          .map((l) => ({
+            index: l.index,
+            ...(l.shown ? {} : { hidden: l.hidden }),
+            surface: l.surface.title,
+            surfacePath: l.surface.path,
+            color: l.color ? { name: l.color.name, plain: l.color.plain, rgb: l.color.rgb.map(r3) } : undefined,
+            roughness: preset(l.roughness),
+            metal: preset(l.metal),
+            bumps: preset(l.bumps),
+            tiling: l.tiling,
+            opacity: l.opacity,
+            microblend: l.microblend.plain ? "plain (default)" : { name: l.microblend.name, path: l.microblend.path, tile: r3(l.microblend.tile), contrast: r3(l.microblend.contrast) },
+            share: l.share !== undefined ? `${(l.share * 100).toFixed(1)}%` : undefined,
+            warnings: l.warnings.length ? l.warnings : undefined,
+          })),
       });
     } catch (e) {
       return failure(e);
