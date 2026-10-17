@@ -45,6 +45,7 @@ export interface SurfaceInfo {
   roughness: PresetInfo[];
   roughnessContrast: PresetInfo[];
   metal: PresetInfo[];
+  metalContrast: PresetInfo[];
   bumps: PresetInfo[];
   textures: TextureInfo[];
   colorMaskLevels?: { in: number[]; out: number[] };
@@ -140,6 +141,7 @@ export function describeSurface(t: Template): SurfaceInfo {
     roughness: levelInfo(t, "roughLevelsOut", t.roughLevelsOut, plainRoughness, flatTextureValue(t.textures.roughness)),
     roughnessContrast: levelInfo(t, "roughLevelsIn", t.roughLevelsIn, plainContrast, flatTextureValue(t.textures.roughness)),
     metal: levelInfo(t, "metalLevelsOut", t.metalLevelsOut, plainMetal, flatTextureValue(t.textures.metalness)),
+    metalContrast: levelInfo(t, "metalLevelsIn", t.metalLevelsIn, plainContrast, flatTextureValue(t.textures.metalness)),
     bumps: t.normalStrength.map((p) => ({ name: p.name, plain: plainBumps(p), raw: n3(p.value), isDefault: t.defaults.normalStrength === p.name })),
     textures: (["color", "normal", "roughness", "metalness"] as const).map((kind) => ({ kind, path: t.textures[kind], isDefault: isDefaultTexture(t.textures[kind]) })),
     colorMaskLevels: t.colorMaskLevels,

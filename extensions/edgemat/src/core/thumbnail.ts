@@ -10,9 +10,10 @@ export type ThumbnailSource = "color" | "alpha" | "relief";
 
 /**
  * full: the levels stretched to black and white, to show detail at icon size. soft: stretched onto
- * light greys, for larger images and for tinting, so a near-white detail map stays light.
+ * light greys, for larger images and for tinting, so a near-white detail map stays light. none: the
+ * values as they are, greyscale from the red channel (masks); a flat image is written too.
  */
-export type ThumbnailContrast = "full" | "soft";
+export type ThumbnailContrast = "full" | "soft" | "none";
 
 /**
  * Reads a PNG, crops it to a centred square, scales it to `size` (a box filter down, bilinear up) and
@@ -70,6 +71,16 @@ export function writeThumbnail(srcFile: string, outFile: string, size = 96, sour
       const o = (ty * size + tx) * 3;
       acc[o] = r / n; acc[o + 1] = g / n; acc[o + 2] = b / n;
     }
+  }
+
+  if (contrast === "none") {
+    for (let i = 0; i < size * size; i++) {
+      const v = Math.max(0, Math.min(255, Math.round(acc[i * 3])));
+      out.data[i * 4] = out.data[i * 4 + 1] = out.data[i * 4 + 2] = v;
+      out.data[i * 4 + 3] = 255;
+    }
+    fs.writeFileSync(outFile, PNG.sync.write(out));
+    return true;
   }
 
   // A near-grey texture (most template diffuse maps) shows as grey: stretching its levels would turn

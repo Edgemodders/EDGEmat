@@ -106,9 +106,10 @@ export async function isCurrent(lib: Library, bridge: BridgeClient): Promise<boo
 
 type Json = Record<string, any>;
 
-const plain = (v: any): any => (v && typeof v === "object" ? ("$value" in v ? v.$value : "DepotPath" in v ? plain(v.DepotPath) : v) : v);
+/** A plain value from WolvenKit JSON: a CName's or a path's string, or the value itself. */
+export const jsonValue = (v: any): any => (v && typeof v === "object" ? ("$value" in v ? v.$value : "DepotPath" in v ? jsonValue(v.DepotPath) : v) : v);
 const rgb = (e: number[]): [number, number, number] => [e[0], e[1], e[2]];
-const levels = (rows: Json[] | undefined): LevelPreset[] => (rows ?? []).map((r) => ({ name: plain(r.n), scale: r.v.Elements[0], bias: r.v.Elements[1] }));
+const levels = (rows: Json[] | undefined): LevelPreset[] => (rows ?? []).map((r) => ({ name: jsonValue(r.n), scale: r.v.Elements[0], bias: r.v.Elements[1] }));
 
 /** A template's fields from its WolvenKit JSON. */
 export function parseTemplate(gamePath: string, json: Json): Template {
@@ -120,7 +121,7 @@ export function parseTemplate(gamePath: string, json: Json): Template {
   const group = at >= 0 && parts.length > at + 3 ? parts[at + 2] : "";
   const o = rc.overrides ?? {};
   const defaults: Partial<Record<PresetKind, string>> = {};
-  for (const k of PresetKinds) if (rc.defaultOverrides?.[k]) defaults[k] = plain(rc.defaultOverrides[k]);
+  for (const k of PresetKinds) if (rc.defaultOverrides?.[k]) defaults[k] = jsonValue(rc.defaultOverrides[k]);
   return {
     path: gamePath,
     name,
@@ -129,14 +130,14 @@ export function parseTemplate(gamePath: string, json: Json): Template {
     group,
     tiling: rc.tilingMultiplier ?? 1,
     textures: {
-      color: plain(rc.colorTexture) || undefined,
-      normal: plain(rc.normalTexture) || undefined,
-      roughness: plain(rc.roughnessTexture) || undefined,
-      metalness: plain(rc.metalnessTexture) || undefined,
+      color: jsonValue(rc.colorTexture) || undefined,
+      normal: jsonValue(rc.normalTexture) || undefined,
+      roughness: jsonValue(rc.roughnessTexture) || undefined,
+      metalness: jsonValue(rc.metalnessTexture) || undefined,
     },
     defaults,
-    colors: (o.colorScale ?? []).map((r: Json) => ({ name: plain(r.n), rgb: rgb(r.v.Elements) })),
-    normalStrength: (o.normalStrength ?? []).map((r: Json) => ({ name: plain(r.n), value: r.v })),
+    colors: (o.colorScale ?? []).map((r: Json) => ({ name: jsonValue(r.n), rgb: rgb(r.v.Elements) })),
+    normalStrength: (o.normalStrength ?? []).map((r: Json) => ({ name: jsonValue(r.n), value: r.v })),
     roughLevelsIn: levels(o.roughLevelsIn),
     roughLevelsOut: levels(o.roughLevelsOut),
     metalLevelsIn: levels(o.metalLevelsIn),
