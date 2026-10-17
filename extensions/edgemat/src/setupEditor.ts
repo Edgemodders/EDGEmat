@@ -255,9 +255,13 @@ export async function openSetupCommand(host: SetupEditorHost): Promise<void> {
   }
   const chosen = await vscode.window.showQuickPick(setups.map((n) => ({ label: n.split("\\").pop()!.replace(/\.mlsetup$/i, ""), detail: n })), { title: `${setups.length} setups in ${mod.name}`, matchOnDetail: true });
   if (!chosen?.detail) return;
-  const out = path.join(host.cacheDir(), "mods", mod.name.replace(/[^\w.-]+/g, "_"), chosen.detail);
+  const root = path.join(host.cacheDir(), "mods", mod.name.replace(/[^\w.-]+/g, "_"));
+  const out = path.join(root, chosen.detail);
   fs.mkdirSync(path.dirname(out), { recursive: true });
-  const r = await bridge.extractFromMod(file, [{ path: chosen.detail, outFile: out }]);
+  // The mod's own mask sets beside the setup come along, so the editor finds them beside it on disk.
+  const folder = chosen.detail.slice(0, chosen.detail.lastIndexOf("\\") + 1).toLowerCase();
+  const masks = mod.items.map((i) => i.name).filter((n) => /\.mlmask$/i.test(n) && n.toLowerCase().startsWith(folder) && !n.slice(folder.length).includes("\\"));
+  const r = await bridge.extractFromMod(file, [{ path: chosen.detail, outFile: out }, ...masks.map((m) => ({ path: m, outFile: path.join(root, m) }))]);
   if (!r.extracted) {
     void vscode.window.showErrorMessage(`Could not read ${chosen.detail} from ${mod.name}.`);
     return;
