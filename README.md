@@ -17,7 +17,7 @@ It edits multilayered materials (`.mlsetup`, `.mltemplate`, `.mlmask`) first, th
 **[Read the docs](https://edgemodders.github.io/EDGEmat/)** &middot; [Design](docs/design.md) &middot; [Dev setup](docs/dev-setup.md)
 
 > [!NOTE]
-> **Status: M1 done.** The behavior spec is checked against the game (M0). EDGEmat 0.1.0 has its activity bar container and a Library of every surface and microblend in your game, with thumbnails, built from the game in about 22 seconds; the MCP server searches it too. Next: M2, reading a garment's layers and a page for each surface.
+> **Status: M2 in progress.** The behavior spec is checked against the game (M0). EDGEmat has its activity bar container and a Library of every surface and microblend in your game, with thumbnails, built from the game in about 22 seconds (M1). Clicking a surface opens its page: every color as a named swatch, finish and bumps in plain words; assistants get the same through MCP. Next: reading a garment's layers.
 
 ## Repository layout
 

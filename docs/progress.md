@@ -8,16 +8,17 @@ Last updated 2026-10-17.
 
 | | |
 |---|---|
-| Phase | **M1 Library done.** Next: **M2 Read** |
-| Extension | 0.1.0: the EDGEmat icon in the activity bar, and a Library of every surface and microblend in your game, with thumbnails and search |
-| MCP server | `mat_library`, `mat_templates`, `mat_microblends` |
+| Phase | **M2 Read in progress**: the surface page is built, hand test pending |
+| Extension | 0.1.0 plus M2 so far: the EDGEmat icon in the activity bar; a Library of every surface and microblend in your game, with thumbnails and search; a page for each surface with its colors as named swatches |
+| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | M2: the surface page (click a surface in the Library), the read-only setup editor, finding an item's materials |
+| Next up | Your hand test of the surface page; then the read-only setup editor and finding an item's materials |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
+| Hand-test the surface page: F5, then click surfaces in the Library ([Tests](testing.html#surface-page)) | M2's first part; tell me what looks wrong or awkward | 2026-10-17 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Test the packaged VSIX from the CLI: `code --install-extension dist\edgemat-<version>.vsix` ([Tests](testing.html#cli-install-of-the-vsix)) | F5 runs the source; only the CLI install tests what a user gets. Planned for your next session at the PC | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
@@ -40,6 +41,8 @@ Last updated 2026-10-17.
 
 | What | Detail |
 |---|---|
+| Surface page built | Click a surface in the Library: a larger image tinted with the color you pick, every color as a swatch with a plain name, a filter ("red") and "closest to" a typed or picked color, roughness, metal and bumps in plain words, the textures, raw values one click away. Microblends get a page too. One tab is reused until you press Keep open. Assistants get the same through MCP `mat_colors` ("the closest dark red on this leather") |
+| Open question found | Preset colors may be linear rather than screen colors; if so, swatches should be brighter. Checked in M4 (design, "Open questions") |
 | EDGEfab's social preview | Uploaded by you |
 | Three requests shipped | REDcode #6 and #7 in REDcode 0.10.0, REDbridge #5 in REDbridge 0.9.0 (latest is 0.10.0). REDnode #12 and EDGEbuilder #1 still open. EDGEmat's design and EDGEfab's brief get updated to the shipped shapes once you report all done |
 
