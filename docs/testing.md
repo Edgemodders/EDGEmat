@@ -56,7 +56,7 @@ The counts change after a game patch. A patch that adds surfaces is fine as long
 
 ### Library view in VS Code
 
-Run 2026-10-16 by the owner: **all pass.**
+Run 2026-10-16 and again 2026-10-17 by the owner: **all pass.**
 
 1. Open this repo in VS Code, run `npm run build`, press **F5** and choose **Run EDGEmat**. A second VS Code window opens with EDGEmat loaded from source.
 2. In that window, check:
