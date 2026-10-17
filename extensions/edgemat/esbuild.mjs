@@ -11,6 +11,7 @@ const builds = [
   { ...common, entryPoints: ["src/core/index.ts"], outfile: "dist/core.js" },
   // The surface page's script, for the webview.
   { bundle: true, platform: "browser", format: "iife", target: "es2022", sourcemap: true, logLevel: "info", entryPoints: ["src/webview/surface.ts"], outfile: "dist/webview/surface.js" },
+  { bundle: true, platform: "browser", format: "iife", target: "es2022", sourcemap: true, logLevel: "info", entryPoints: ["src/webview/setup.ts"], outfile: "dist/webview/setup.js" },
 ];
 
 if (watch) {

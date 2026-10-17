@@ -5,6 +5,7 @@
 import * as vscode from "vscode";
 import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, resolveBridge, resolveGame, type GameChoice, type Library } from "./core";
 import { LibraryView } from "./libraryView";
+import { GameFiles, GameScheme, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
 import { SurfacePages } from "./surfacePage";
 
 /** The parts of REDcode's API (version 1, REDcode 0.9.0, docs/api.md) EDGEmat uses. */
@@ -178,6 +179,23 @@ export function activate(context: vscode.ExtensionContext): void {
   tree = vscode.window.createTreeView("edgemat.library", { treeDataProvider: view, showCollapseAll: true }) as vscode.TreeView<unknown>;
   void vscode.commands.executeCommand("setContext", "edgemat.filtered", false);
   const pages = new SurfacePages(context.extensionUri, () => cacheDir, bridgeNow, log);
+  const library = () => view.current ?? loadLibrary(cacheDir);
+  const host: SetupEditorHost = {
+    extensionUri: context.extensionUri,
+    cacheDir: () => cacheDir,
+    bridge: bridgeNow,
+    library,
+    log,
+    openSurface: (p) => {
+      const template = library()?.templates.find((t) => t.path.toLowerCase() === p.toLowerCase());
+      if (template) void pages.show({ kind: "surface", template });
+      else void vscode.window.showInformationMessage(`${p} is not in the library: a custom or missing surface.`);
+    },
+    openMicroblend: (p) => {
+      const found = library()?.microblends.find((m) => m.path.toLowerCase() === p.toLowerCase());
+      void pages.show({ kind: "microblend", microblend: found ?? { path: p, name: (p.split("\\").pop() ?? p).replace(/\.xbm$/i, "") } });
+    },
+  };
 
   context.subscriptions.push(
     output,
@@ -195,6 +213,9 @@ export function activate(context: vscode.ExtensionContext): void {
       view.setFilter("");
       tree.message = view.summary() || undefined;
     }),
+    vscode.workspace.registerFileSystemProvider(GameScheme, new GameFiles(bridgeNow, () => cacheDir), { isCaseSensitive: false, isReadonly: true }),
+    vscode.window.registerCustomEditorProvider(SetupEditor.viewType, new SetupEditor(host), { supportsMultipleEditorsPerDocument: true }),
+    vscode.commands.registerCommand("edgemat.openSetup", () => openSetupCommand(host)),
     vscode.commands.registerCommand("edgemat.openItem", (node) => {
       const subject = LibraryView.subjectOf(node);
       if (subject) void pages.show(subject);

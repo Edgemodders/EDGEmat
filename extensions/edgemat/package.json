@@ -34,7 +34,10 @@
     "onView:edgemat.library",
     "onCommand:edgemat.rebuildLibrary",
     "onCommand:edgemat.setGameFolder",
-    "onCommand:edgemat.searchLibrary"
+    "onCommand:edgemat.searchLibrary",
+    "onCommand:edgemat.openSetup",
+    "onCustomEditor:edgemat.setup",
+    "onFileSystem:edgemat-game"
   ],
   "contributes": {
     "viewsContainers": {
@@ -81,7 +84,24 @@
         "when": "edgemat.state == ready && edgemat.filtered"
       }
     ],
+    "customEditors": [
+      {
+        "viewType": "edgemat.setup",
+        "displayName": "EDGEmat Setup Editor",
+        "selector": [
+          { "filenamePattern": "*.mlsetup" },
+          { "filenamePattern": "*.mlsetup.json" }
+        ],
+        "priority": "default"
+      }
+    ],
     "commands": [
+      {
+        "command": "edgemat.openSetup",
+        "title": "Open Setup...",
+        "category": "EDGEmat",
+        "icon": "$(go-to-file)"
+      },
       {
         "command": "edgemat.searchLibrary",
         "title": "Search Library",
@@ -126,6 +146,11 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "edgemat.openSetup",
+          "when": "view == edgemat.library",
+          "group": "navigation@0"
+        },
         {
           "command": "edgemat.searchLibrary",
           "when": "view == edgemat.library",
