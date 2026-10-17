@@ -19,10 +19,9 @@ Last updated 2026-10-17.
 | To-do | Why | Since |
 |---|---|---|
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
-| Test the packaged VSIX from the CLI: `code --install-extension dist\edgemat-<version>.vsix` | F5 runs the source; only the CLI install tests what a user gets. At the latest in M6's test | 2026-10-16 |
-| Upload EDGEfab's `docs/assets/brand/social.png` in EDGEfab's Settings > General > Social preview | GitHub has no API for it | 2026-10-16 |
+| Test the packaged VSIX from the CLI: `code --install-extension dist\edgemat-<version>.vsix` ([Tests](testing.html#cli-install-of-the-vsix)) | F5 runs the source; only the CLI install tests what a user gets. Planned for your next session at the PC | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
-| Optional: try RED Hot Tools on the dev PC | Tells us whether hot-loading archives works today (design, "Hot-loading archives") | 2026-10-16 |
+| Try RED Hot Tools on the dev PC | Tells us whether hot-loading archives works today (design, "Hot-loading archives"), and tests REDcode's Pack and Try hot path. Planned for your next session at the PC | 2026-10-16 |
 
 ## Waiting on other repos
 
@@ -41,6 +40,7 @@ Last updated 2026-10-17.
 
 | What | Detail |
 |---|---|
+| EDGEfab's social preview | Uploaded by you |
 | Three requests shipped | REDcode #6 and #7 in REDcode 0.10.0, REDbridge #5 in REDbridge 0.9.0 (latest is 0.10.0). REDnode #12 and EDGEbuilder #1 still open. EDGEmat's design and EDGEfab's brief get updated to the shipped shapes once you report all done |
 
 ### 2026-10-16

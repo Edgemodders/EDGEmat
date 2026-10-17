@@ -112,7 +112,7 @@ Checklist items 1 to 10 in the [behavior spec](design/behavior.html#checklist-fo
 | Folder or file | What it is |
 |---|---|
 | `source\archive\...\s1_055_shoe__converse\textures\` | The eight edited sneaker setups for round 1, written 2026-10-14 |
-| `source\archive\...\t2_142_jacket__witcher\...` | A witcher jacket setup added 2026-10-15, not part of the tests. **Unverified** where it came from; it is in the round 1 archive below |
+| `source\archive\...\t2_142_jacket__witcher\...` | A witcher jacket setup added 2026-10-15 by the owner, from tests for another EDGE mod. Not part of EDGEmat's tests, but it is in the round 1 archive below |
 | `packed\archive\pc\mod\EDGEmat_M0.archive` | Round 1, packed by WolvenKit on 2026-10-15 |
 | `tests\round2\archive\pc\mod\EDGEmat_M0_round2_ratio.archive` | Round 2 |
 | `*_stage` folders | The working copies each archive was packed from: `round1_marked_stage` (round 1), `round1b_stage` (every layer hidden but a green base), `probe_stage` (a file only our archive has, to prove it mounts), `ratio_stage` (round 2) |
