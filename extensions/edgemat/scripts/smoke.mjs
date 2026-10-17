@@ -1,5 +1,5 @@
-// M1's test outside VS Code: builds the material library from the game with the bundled core
-// (dist/core.js, so run `npm run build` first) and checks its counts against the game's own listing.
+// The test outside VS Code (M1, M2): builds the material library from the game with the bundled core
+// (dist/core.js, so run `npm run build` first) and checks its counts against the game's own listing, then the surface page's data and images.
 //
 //   node scripts/smoke.mjs [--cache <dir>]
 //
@@ -56,6 +56,24 @@ try {
   const leather = core.searchTemplates(lib, "leather");
   check(leather.length > 0, `search "leather": ${leather.length} surfaces, such as ${leather.slice(0, 3).map((t) => t.name).join(", ")}`);
   console.log(`\nlibrary.json ${(fs.statSync(core.libraryFile(cache)).size / 1e6).toFixed(1)} MB, ${path.join(cache, "thumbs")}`);
+
+  // M2: the surface page's data for every surface, and its images for one.
+  console.log("\nsurface page");
+  const pages = lib.templates.map((t) => core.describeSurface(t));
+  const unnamed = pages.flatMap((p) => p.colors).filter((c) => !c.plain || !/^#[0-9a-f]{6}$/.test(c.hex)).length;
+  check(pages.every((p) => p.defaultColor && p.roughness.length && p.metal.length && p.bumps.length) && unnamed === 0,
+    `every surface described: a default color, roughness, metal and bump presets; ${pages.reduce((n, p) => n + p.colors.length, 0)} colors, ${unnamed} without a plain name or swatch`);
+  const names = new Set(pages.flatMap((p) => p.colors.map((c) => c.plain)));
+  console.log(`     ${names.size} distinct plain color names`);
+  const red = core.parseColor("dark red"), leatherPage = core.describeSurface(leather[0]);
+  const nearest = red && core.nearestColors(leatherPage, red, 1)[0];
+  check(!!nearest && nearest.plain.includes("red"), `closest to "dark red" on ${leather[0].name}: ${nearest?.plain} (${nearest?.name}, distance ${nearest?.distance})`);
+  check(core.parseColor("banana") === undefined && core.swatchHex(core.parseColor("#a03030")) === "#a03030", "reading typed colors: words, hex, and unknown words refused");
+  const started = Date.now();
+  const tex = leatherPage.textures.filter((x) => !x.isDefault && x.path);
+  const made = [];
+  for (const x of tex) made.push(await core.textureImage(bridge, cache, x.path, x.kind === "color" ? 512 : 192, x.kind === "normal" ? "relief" : "color", x.kind === "color" ? "soft" : "full"));
+  check(made.length > 0 && made[0] && fs.existsSync(core.imageFile(cache, made[0])), `page images for ${leather[0].name}: ${made.filter(Boolean).length} of ${tex.length} made in ${Date.now() - started} ms`);
 } finally {
   bridge.stop();
 }
