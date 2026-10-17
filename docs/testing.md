@@ -116,8 +116,8 @@ Built 2026-10-17; **not yet run in VS Code.** Rendered before that in headless C
 | 6 | Open beside Surface; Open beside Microblend on layer 10 (graphics logos 004) | The surface page, then the microblend page, in the reused tab |
 | 7 | Raw values | The game's names and values beside the plain words; useNormal and the JSON version in the header |
 | 8 | Mask set › Change | A list with `ml_s1_055_pma_shoe__converse_masksset` (in use) and `ml_songbird_masksset`, plus Search and a file on disk. Picking songbird redraws the map with other shapes; pick converse again to go back |
-| 9 | Open Setup › A file on disk › `Projects\EDGEmat_M0\sourcerchive\...\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup` | "Setup · project file", 18 of 20 show. Layer 4 has ⚠: its color "edgemat_unknown" shows white. Layer 9: "not shown: all presets set to None". Layer 7 is dark red: the M0 round 1 edits |
-| 10 | Open Setup › A file on disk › `Projects\EDGEmat_M0	estsound2rchive\pc\mod\EDGEmat_M0_round2_ratio.archive` › a setup | "Setup · from the mod EDGEmat_M0_round2_ratio.archive", ratio 4 |
+| 9 | Open Setup › A file on disk › `Projects\EDGEmat_M0\source\archive\...\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup` | "Setup · project file", 18 of 20 show. Layer 4 has ⚠: its color "edgemat_unknown" shows white. Layer 9: "not shown: all presets set to None". Layer 7 is dark red: the M0 round 1 edits |
+| 10 | Open Setup › A file on disk › `Projects\EDGEmat_M0\tests\round2\archive\pc\mod\EDGEmat_M0_round2_ratio.archive` › a setup | "Setup · from the mod EDGEmat_M0_round2_ratio.archive", ratio 4 |
 | 11 | In REDcode's Game Assets, open any `.mlsetup` | VS Code asks which editor to use, or opens one; **Reopen Editor With...** › EDGEmat Setup Editor shows it |
 | 12 | Hide unused slots, on a setup with unused slots (Open Setup › From the game › `t2_078 samurai`) | Unused slots disappear and come back |
 | 13 | Another theme | Readable; the lit mask uses the theme's link color |
