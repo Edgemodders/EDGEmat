@@ -8,16 +8,17 @@ Last updated 2026-10-17.
 
 | | |
 |---|---|
-| Phase | **M2 Read in progress**: the surface page is done (hand test passed); the setup editor is next |
+| Phase | **M2 Read in progress**: the surface page is done; the setup editor is built, hand test pending |
 | Extension | 0.1.0 plus M2 so far: the EDGEmat icon in the activity bar; a Library of every surface and microblend in your game, with thumbnails and search; a page for each surface with its colors as named swatches |
-| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors` |
+| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | The read-only setup editor and finding an item's materials |
+| Next up | Your hand test of the setup editor; then finding an item's materials |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
+| Hand-test the setup editor: F5, then Open Setup in the Library's title bar ([Tests](testing.html#setup-editor)) | M2's second part; tell me what looks wrong or awkward | 2026-10-17 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Test the packaged VSIX from the CLI: `code --install-extension dist\edgemat-<version>.vsix` ([Tests](testing.html#cli-install-of-the-vsix)) | F5 runs the source; only the CLI install tests what a user gets. Planned for your next session at the PC | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
@@ -40,6 +41,7 @@ Last updated 2026-10-17.
 
 | What | Detail |
 |---|---|
+| Setup editor built (read-only) | Open any setup: from the game by name, a file, a project, a mod archive, or REDcode's Game Assets. Each layer in plain words, and a color map of where each layer goes on the garment's texture; click a spot to find its layer, and the selected layer's area lights up. It flags what looks wrong: on our M0 test setup it points at layer 4's unknown color ("shows white") and layer 9's all-None presets. Assistants get the same through MCP `mat_describe` |
 | Surface page hand test passed | Your run through F5: all 13 checks, and the Library view checks again (including the new log line naming the bridge) |
 | Surface page built | Click a surface in the Library: a larger image tinted with the color you pick, every color as a swatch with a plain name, a filter ("red") and "closest to" a typed or picked color, roughness, metal and bumps in plain words, the textures, raw values one click away. Microblends get a page too. One tab is reused until you press Keep open. Assistants get the same through MCP `mat_colors` ("the closest dark red on this leather") |
 | Open question found | Preset colors may be linear rather than screen colors; if so, swatches should be brighter. Checked in M4 (design, "Open questions") |

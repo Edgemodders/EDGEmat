@@ -13,6 +13,7 @@ Last updated 2026-10-17.
 | [MCP server](#mcp-server) | By hand, over stdio | M1, M2 | 2026-10-17 | Pass |
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
+| [Setup editor](#setup-editor) | By hand, F5 | M2 | Not run | Rendered outside VS Code with real data on 2026-10-17 |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M6 at the latest | Not run | |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
@@ -48,6 +49,7 @@ Needs the game and REDbridge, found from the VS Code settings as the extension f
 | Time | About 22 to 25 s; 4 s when thumbnails are cached |
 | Surface page data (M2) | Every surface described with a default color and roughness, metal and bump presets; all 155,099 colors with a plain name and swatch; 139 distinct names |
 | Typed colors (M2) | "dark red" on `leather_bull_01_30` finds a dark red preset (`c2162c_69039f`, distance 0.032); "banana" is refused; `#a03030` reads back as itself |
+| Setup editor data (M2) | On `ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup`: 20 layers, 19 shown, layer 11 hidden (opacity 0); mask set `ml_s1_055_pma_shoe__converse_masksset` (20 masks) found beside it, of 2 in the folder; layer 7 (the sole, in-game test R1-B) is rubber bumper damaged, 11.3% of the texture; every surface found, no warnings; the 0.0.1 and oldest JSON shapes (made from the current one) read the same layers. Read in about 0.3 s with the masks cached |
 | Page images (M2) | 3 of 3 for `leather_bull_01_30`: the first in about 1.6 s while the bridge warms up, the rest in well under half a second, then instant from the cache |
 
 The counts change after a game patch. A patch that adds surfaces is fine as long as "read" matches "listing".
@@ -97,6 +99,29 @@ Where things are: the Copy buttons sit after the game path at the top, beside Pr
 | 12 | Switch to another tab and back | The page keeps the selected color, filter and raw-values setting |
 | 13 | Try another theme (Dark Modern, Light Modern) | Readable; headings and the selection use the theme's link color |
 
+### Setup editor
+
+Built 2026-10-17; **not yet run in VS Code.** Rendered before that in headless Chrome with real data, and run outside VS Code on a game setup, a project file and a mod archive.
+
+1. `npm run build`, then **F5** (**Run EDGEmat**).
+2. In the development host, check:
+
+| # | Check | Expected |
+|---|---|---|
+| 1 | **Open Setup** (the go-to-file icon in the Library's title bar) › From the game › `s1_055 red yellow` › `ml_s1_055_pma_shoe__red_yellow_graphic` | A tab "ml_s1_055_pma_shoe__red_yellow_graphic", "Setup · game file", "19 of 20 layers show · ratio 1". A color map of the sneaker's texture (yellow canvas, red panels, black sole) and 20 layers |
+| 2 | The layers | Each with its index, color swatch, surface thumbnail, "Surface · color", finish words, and its share of the texture with a bar. Layer 11 is dimmed: "not shown: opacity 0" |
+| 3 | Click layer 7 | Its details open: surface (rubber bumper damaged, with Open), color, roughness, metal, bumps, tiling ×10.1, opacity, microblend, "Shows on 11% of the texture". The map switches to Selected layer, with the sole and rubber band lit in yellow |
+| 4 | Click spots on the map: a red panel, the yellow canvas, the sole | The layer that shows there is selected and scrolled into view |
+| 5 | All layers / Selected layer | Switches the map |
+| 6 | Open beside Surface; Open beside Microblend on layer 10 (graphics logos 004) | The surface page, then the microblend page, in the reused tab |
+| 7 | Raw values | The game's names and values beside the plain words; useNormal and the JSON version in the header |
+| 8 | Mask set › Change | A list with `ml_s1_055_pma_shoe__converse_masksset` (in use) and `ml_songbird_masksset`, plus Search and a file on disk. Picking songbird redraws the map with other shapes; pick converse again to go back |
+| 9 | Open Setup › A file on disk › `Projects\EDGEmat_M0\sourcerchive\...\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup` | "Setup · project file", 18 of 20 show. Layer 4 has ⚠: its color "edgemat_unknown" shows white. Layer 9: "not shown: all presets set to None". Layer 7 is dark red: the M0 round 1 edits |
+| 10 | Open Setup › A file on disk › `Projects\EDGEmat_M0	estsound2rchive\pc\mod\EDGEmat_M0_round2_ratio.archive` › a setup | "Setup · from the mod EDGEmat_M0_round2_ratio.archive", ratio 4 |
+| 11 | In REDcode's Game Assets, open any `.mlsetup` | VS Code asks which editor to use, or opens one; **Reopen Editor With...** › EDGEmat Setup Editor shows it |
+| 12 | Hide unused slots, on a setup with unused slots (Open Setup › From the game › `t2_078 samurai`) | Unused slots disappear and come back |
+| 13 | Another theme | Readable; the lit mask uses the theme's link color |
+
 ### CLI install of the VSIX
 
 Not run yet. Asked for by the owner on 2026-10-16; part of M6's test at the latest. F5 runs the source; this tests what a user installs.
@@ -110,7 +135,7 @@ Then **Developer: Reload Window** (this restarts a Claude panel in the same wind
 
 ### MCP server
 
-Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`): **pass.** Register the server ([dev setup](dev-setup.html), section 4), start a new Claude Code session, and ask:
+Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`, `mat_describe`): **pass.** Register the server ([dev setup](dev-setup.html), section 4), start a new Claude Code session, and ask:
 
 | Ask | Tool | Expected |
 |---|---|---|
@@ -119,6 +144,7 @@ Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`): **pass.** Register the 
 | "Find logo microblends" | `mat_microblends` `logos` | 6 microblends |
 | "What's the closest dark red on leather bull?" | `mat_colors` `leather_bull_01_30`, near `dark red` | The surface's dark reds, closest first, each with its preset name, a plain name, RGB and distance; roughness, metal and bumps in words. Run 2026-10-17 over stdio: `c2162c_69039f` first, distance 0.032 |
 | "Colors of leather" | `mat_colors` `leather` | Several surfaces fit: the 7 candidates, asking for one path |
+| "Describe the sneakers' red_yellow_graphic setup" | `mat_describe` with the game path | 20 layers, 19 shown, the converse mask set and the songbird one as another choice, a color map file, each layer in plain words with its share. Run 2026-10-17 over stdio: layer 7 rubber bumper damaged, black, 11.3% |
 
 ## M0: the spec against the game
 

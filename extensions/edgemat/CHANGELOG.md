@@ -3,6 +3,7 @@
 ## Unreleased (M2 Read, in progress)
 
 - The surface page: click a surface or microblend in the Library to open it in an editor tab. One tab is reused as you click around; Keep Open detaches it. It shows a larger image, tinted with the color you pick; every color as a swatch with a plain name ("dark muted blue"); a filter by words and "closest to" a typed or picked color; roughness, metal and bump presets in plain words; the textures; raw values one click away.
+- The setup editor, read-only: open any `.mlsetup` or `.mlsetup.json` (from the game, disk, a project, a mod archive, or REDcode's Game Assets) and see each layer in plain words, a color map of where each layer goes, and what looks wrong. **Open Setup** in the Library's title bar finds a game setup by name, or takes a file or a mod archive.
 - The log names REDcode's bridge when EDGEmat uses it.
 
 ## 0.1.0 (2026-10-16), M1 Library
