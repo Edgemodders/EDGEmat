@@ -11,8 +11,8 @@ Last updated 2026-10-17.
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
 | [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1, M2 | 2026-10-17 | Pass |
 | [MCP server](#mcp-server) | By hand, over stdio | M1, M2 | 2026-10-17 | Pass |
-| [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-16 | Pass |
-| [Surface page](#surface-page) | By hand, F5 | M2 | Not run | Rendered outside VS Code with real data on 2026-10-17 |
+| [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
+| [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M6 at the latest | Not run | |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
@@ -74,7 +74,9 @@ Run 2026-10-16 by the owner: **all pass.**
 
 ### Surface page
 
-Built 2026-10-17; **not yet run in VS Code.** Before the hand test it was rendered in headless Chrome with real library data and a stand-in for VS Code, to catch layout and script errors.
+Run 2026-10-17 by the owner: **all pass.** Before that it was rendered in headless Chrome with real library data and a stand-in for VS Code, to catch layout and script errors.
+
+Where things are: the Copy buttons sit after the game path at the top, beside Preset, RGB and Swatch in the color panel under the image, and under each texture image. Below about 760 px wide the page is one column, with the image and color panel above Colors.
 
 1. `npm run build`, then **F5** (**Run EDGEmat**), as for the Library view.
 2. In the development host, check:
