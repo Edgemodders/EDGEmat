@@ -5,6 +5,7 @@
 import * as vscode from "vscode";
 import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, resolveBridge, resolveGame, type GameChoice, type Library } from "./core";
 import { LibraryView } from "./libraryView";
+import { SurfacePages } from "./surfacePage";
 
 /** The parts of REDcode's API (version 1, REDcode 0.9.0, docs/api.md) EDGEmat uses. */
 interface REDcodeApi {
@@ -82,6 +83,12 @@ async function getBridge(game: GameChoice): Promise<BridgeClient | undefined> {
   ownBridge = b;
   ownBridgeGame = game.path;
   return b;
+}
+
+/** The bridge for the game in use now, for work outside a library build such as the surface page. */
+async function bridgeNow(): Promise<BridgeClient | undefined> {
+  const game = await findGame(false);
+  return game ? getBridge(game) : undefined;
 }
 
 function show(library: Library | undefined): void {
@@ -170,6 +177,7 @@ export function activate(context: vscode.ExtensionContext): void {
   view = new LibraryView();
   tree = vscode.window.createTreeView("edgemat.library", { treeDataProvider: view, showCollapseAll: true }) as vscode.TreeView<unknown>;
   void vscode.commands.executeCommand("setContext", "edgemat.filtered", false);
+  const pages = new SurfacePages(context.extensionUri, () => cacheDir, bridgeNow, log);
 
   context.subscriptions.push(
     output,
@@ -186,6 +194,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("edgemat.clearSearch", () => {
       view.setFilter("");
       tree.message = view.summary() || undefined;
+    }),
+    vscode.commands.registerCommand("edgemat.openItem", (node) => {
+      const subject = LibraryView.subjectOf(node);
+      if (subject) void pages.show(subject);
     }),
     vscode.commands.registerCommand("edgemat.copyGamePath", async (node) => {
       const p = LibraryView.gamePathOf(node);

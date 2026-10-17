@@ -113,6 +113,11 @@
         "icon": "$(output)"
       },
       {
+        "command": "edgemat.openItem",
+        "title": "Open",
+        "category": "EDGEmat"
+      },
+      {
         "command": "edgemat.copyGamePath",
         "title": "Copy Game Path",
         "category": "EDGEmat",
@@ -162,6 +167,10 @@
       "commandPalette": [
         {
           "command": "edgemat.copyGamePath",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.openItem",
           "when": "false"
         },
         {

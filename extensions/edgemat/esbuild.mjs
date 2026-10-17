@@ -9,6 +9,8 @@ const common = { bundle: true, platform: "node", format: "cjs", target: "node18"
 const builds = [
   { ...common, entryPoints: ["src/extension.ts"], outfile: "dist/extension.js", external: ["vscode"] },
   { ...common, entryPoints: ["src/core/index.ts"], outfile: "dist/core.js" },
+  // The surface page's script, for the webview.
+  { bundle: true, platform: "browser", format: "iife", target: "es2022", sourcemap: true, logLevel: "info", entryPoints: ["src/webview/surface.ts"], outfile: "dist/webview/surface.js" },
 ];
 
 if (watch) {

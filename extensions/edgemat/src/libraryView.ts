@@ -103,6 +103,7 @@ export class LibraryView implements vscode.TreeDataProvider<Node> {
         item.tooltip = m.path;
         item.contextValue = "edgemat.gamePath";
         item.id = m.path;
+        item.command = { command: "edgemat.openItem", title: "Open", arguments: [node] };
         if (m.thumbnail) item.iconPath = vscode.Uri.file(thumbnailFile(this.cacheDir, m.thumbnail));
         return item;
       }
@@ -113,6 +114,7 @@ export class LibraryView implements vscode.TreeDataProvider<Node> {
     const item = new vscode.TreeItem(t.title);
     item.id = t.path;
     item.contextValue = "edgemat.gamePath";
+    item.command = { command: "edgemat.openItem", title: "Open", arguments: [{ kind: "template", template: t }] };
     item.description = `${t.group ? t.group + " · " : ""}${plural(t.colors.length, "color")}`;
     if (t.thumbnail) item.iconPath = vscode.Uri.file(thumbnailFile(this.cacheDir, t.thumbnail));
     const tip = new vscode.MarkdownString();
@@ -123,6 +125,11 @@ export class LibraryView implements vscode.TreeDataProvider<Node> {
     tip.appendCodeblock(t.path, "text");
     item.tooltip = tip;
     return item;
+  }
+
+  /** What a node opens on the surface page. */
+  static subjectOf(node: Node | undefined): { kind: "surface"; template: Template } | { kind: "microblend"; microblend: Microblend } | undefined {
+    return node?.kind === "template" ? { kind: "surface", template: node.template } : node?.kind === "microblend" ? { kind: "microblend", microblend: node.microblend } : undefined;
   }
 
   /** The game path behind a node, for "Copy Game Path". */
