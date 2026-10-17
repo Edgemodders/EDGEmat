@@ -67,7 +67,7 @@ Run 2026-10-16 by the owner: **all pass.**
 | 2 | The Library on first open | "386 surfaces · 131 microblends · built <date>". A first build shows progress in the view and takes under half a minute |
 | 3 | Surfaces | Grouped by category (fabric, metal, plastic and so on), each with a thumbnail |
 | 4 | Hover a surface | A larger thumbnail, its color count and its game path |
-| 5 | Microblends | Listed with thumbnails |
+| 5 | Microblends: the second top-level group, below all the surface categories (Collapse All in the view's title bar shows both groups) | Listed with thumbnails when opened |
 | 6 | Search (magnifier) for `leather` | 7 surfaces. Clear search restores the full list |
 | 7 | Rebuild (refresh) | Progress in the view; done in a few seconds |
 | 8 | Output › EDGEmat | Names the bridge used: "Using REDcode's REDbridge" when REDcode is active with the same game, otherwise "Starting REDbridge from ...". The first line was added after the 2026-10-16 run; before it, only EDGEmat's own bridge was named |
