@@ -8,3 +8,9 @@ export {
   buildLibrary, byCategory, gameKey, isCurrent, libraryFile, loadLibrary, searchMicroblends, searchTemplates, thumbnailFile,
   LibraryVersion, PresetKinds, type Library, type Microblend, type Progress, type Template,
 } from "./library";
+export { colorDistance, fromLab, isBright, parseColor, plainColorName, swatchHex, toLab, toLch, type Lab, type Rgb } from "./colors";
+export {
+  describeSurface, findSurface, flatTextureValue, nearestColors, plainBumps, plainContrast, plainMetal, plainRoughness,
+  type ColorInfo, type PresetInfo, type SurfaceInfo, type TextureInfo,
+} from "./surface";
+export { imageFile, textureImage } from "./images";

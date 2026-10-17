@@ -9,10 +9,16 @@ import { PNG } from "pngjs";
 export type ThumbnailSource = "color" | "alpha" | "relief";
 
 /**
- * Reads a PNG, crops it to a centred square, scales it to `size` with a box filter and writes it.
- * Returns false, and writes nothing, when the image is flat: one tone with no detail to show.
+ * full: the levels stretched to black and white, to show detail at icon size. soft: stretched onto
+ * light greys, for larger images and for tinting, so a near-white detail map stays light.
  */
-export function writeThumbnail(srcFile: string, outFile: string, size = 96, source: ThumbnailSource = "color"): boolean {
+export type ThumbnailContrast = "full" | "soft";
+
+/**
+ * Reads a PNG, crops it to a centred square, scales it to `size` (a box filter down, bilinear up) and
+ * writes it. Returns false, and writes nothing, when the image is flat: one tone with no detail to show.
+ */
+export function writeThumbnail(srcFile: string, outFile: string, size = 96, source: ThumbnailSource = "color", contrast: ThumbnailContrast = "full"): boolean {
   const src = PNG.sync.read(fs.readFileSync(srcFile));
   const side = Math.min(src.width, src.height);
   const x0 = Math.floor((src.width - side) / 2);
@@ -28,8 +34,26 @@ export function writeThumbnail(srcFile: string, outFile: string, size = 96, sour
     useAlpha = hi - lo > 8;
   }
 
+  const sample = (x: number, y: number, c: number): number => {
+    const i = (y * src.width + x) * 4;
+    return useAlpha ? src.data[i + 3] : source === "relief" ? src.data[i] : src.data[i + c];
+  };
   const acc = new Float64Array(size * size * 3);
-  for (let ty = 0; ty < size; ty++) {
+  if (step < 1) {
+    // Enlarging: bilinear, so a small texture is smooth rather than blocky.
+    for (let ty = 0; ty < size; ty++) {
+      for (let tx = 0; tx < size; tx++) {
+        const fx = Math.min(side - 1, Math.max(0, (tx + 0.5) * step - 0.5)), fy = Math.min(side - 1, Math.max(0, (ty + 0.5) * step - 0.5));
+        const xa = Math.floor(fx), ya = Math.floor(fy), xb = Math.min(side - 1, xa + 1), yb = Math.min(side - 1, ya + 1), wx = fx - xa, wy = fy - ya;
+        for (let c = 0; c < 3; c++) {
+          const top = sample(x0 + xa, y0 + ya, c) * (1 - wx) + sample(x0 + xb, y0 + ya, c) * wx;
+          const bottom = sample(x0 + xa, y0 + yb, c) * (1 - wx) + sample(x0 + xb, y0 + yb, c) * wx;
+          acc[(ty * size + tx) * 3 + c] = top * (1 - wy) + bottom * wy;
+        }
+      }
+    }
+  }
+  for (let ty = 0; ty < size && step >= 1; ty++) {
     for (let tx = 0; tx < size; tx++) {
       const sx0 = x0 + Math.floor(tx * step), sx1 = Math.max(sx0 + 1, x0 + Math.floor((tx + 1) * step));
       const sy0 = y0 + Math.floor(ty * step), sy1 = Math.max(sy0 + 1, y0 + Math.floor((ty + 1) * step));
@@ -63,9 +87,10 @@ export function writeThumbnail(srcFile: string, outFile: string, size = 96, sour
   const lum = Array.from({ length: size * size }, (_, i) => (acc[i * 3] + acc[i * 3 + 1] + acc[i * 3 + 2]) / 3).sort((a, b) => a - b);
   const lo = lum[Math.floor(lum.length * 0.02)], hi = lum[Math.floor(lum.length * 0.98)];
   if (hi - lo <= 4) return false;
-  const scale = 255 / (hi - lo), bias = lo;
+  const floor = contrast === "soft" ? 150 : 0;
+  const scale = (255 - floor) / (hi - lo), bias = lo;
   for (let i = 0; i < size * size; i++) {
-    for (let c = 0; c < 3; c++) out.data[i * 4 + c] = Math.max(0, Math.min(255, Math.round((acc[i * 3 + c] - bias) * scale)));
+    for (let c = 0; c < 3; c++) out.data[i * 4 + c] = Math.max(0, Math.min(255, Math.round(floor + (acc[i * 3 + c] - bias) * scale)));
     out.data[i * 4 + 3] = 255;
   }
   fs.writeFileSync(outFile, PNG.sync.write(out));
