@@ -284,9 +284,12 @@ h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: v
 .path code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meta { color: var(--vscode-descriptionForeground); margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 code { font-family: var(--vscode-editor-font-family); font-size: .92em; color: var(--vscode-textPreformat-foreground); }
-button { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: 1px solid var(--line); padding: 2px 8px; cursor: pointer; font: inherit; }
-button:hover { background: var(--vscode-button-secondaryHoverBackground); }
+/* Buttons must read as buttons: a clear outline, and the accent color for actions such as Open. */
+button { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: 1px solid var(--vscode-button-border, var(--vscode-descriptionForeground)); border-radius: 2px; padding: 2px 8px; cursor: pointer; font: inherit; }
+button:hover { background: var(--vscode-button-secondaryHoverBackground); border-color: var(--accent); }
 button.copy, button.small { font-size: 11px; padding: 0 6px; }
+button.small { color: var(--accent); border-color: var(--accent); background: transparent; font-weight: 600; }
+button.small:hover { background: var(--accent); color: var(--vscode-editor-background); }
 button.link { background: none; border: none; color: var(--accent); padding: 0; text-decoration: underline; cursor: pointer; }
 .toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; user-select: none; }
 .warnings { border-left: 2px solid var(--warn); padding: 4px 10px; margin: 0 0 14px; color: var(--warn); }

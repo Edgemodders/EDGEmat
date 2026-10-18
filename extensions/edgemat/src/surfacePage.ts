@@ -140,8 +140,9 @@ h2 .count { color: var(--vscode-descriptionForeground); text-transform: none; le
 .path { display: flex; gap: 6px; align-items: center; min-width: 0; }
 .path code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 code { font-family: var(--vscode-editor-font-family); font-size: .92em; color: var(--vscode-textPreformat-foreground); }
-button { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: 1px solid var(--line); padding: 2px 8px; cursor: pointer; font: inherit; }
-button:hover { background: var(--vscode-button-secondaryHoverBackground); }
+/* Buttons must read as buttons: a clear outline, and the accent color for actions such as Open. */
+button { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: 1px solid var(--vscode-button-border, var(--vscode-descriptionForeground)); border-radius: 2px; padding: 2px 8px; cursor: pointer; font: inherit; }
+button:hover { background: var(--vscode-button-secondaryHoverBackground); border-color: var(--accent); }
 button.copy { font-size: 11px; padding: 0 6px; }
 input[type=search], input[type=text] { background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, var(--line)); padding: 3px 6px; font: inherit; min-width: 0; flex: 1; }
 input.bad { border-color: var(--vscode-inputValidation-errorBorder); }
