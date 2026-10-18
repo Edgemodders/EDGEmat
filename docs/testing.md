@@ -168,6 +168,7 @@ Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`, `mat_describe`, `mat_fin
 | "Colors of leather" | `mat_colors` `leather` | Several surfaces fit: the 7 candidates, asking for one path |
 | "Which materials do the punk jeans use?" | `mat_find` item `punk jeans` | The item `Items.Pants_03_basic_01` (its crafting copy shares the look, so it is not asked about); feminine: `l1_066_pwa_pants__rogue.mesh` with `ml_l1_066_black_punk.mlsetup` and its mask set; masculine: `l1_062_pma_pants__jeans.mesh` with `ml_l1_062_black_punk.mlsetup`. Run 2026-10-17 over stdio |
 | "Find s1_055" | `mat_find` query `s1_055` | The two sneaker meshes, `_pma_` and `_pwa_` |
+| Started as a Claude Code plugin with its options left empty (`EDGEMAT_GAME_PATH`, `REDBRIDGE_EXE` and `EDGEMAT_CACHE` set to "") | `mat_find` item `sunny ammo` | Empty counts as unset: it falls back to the VS Code settings and walks the item (2 looks). Run 2026-10-17 over stdio |
 | "Describe the sneakers' red_yellow_graphic setup" | `mat_describe` with the game path | 20 layers, 19 shown, the converse mask set and the songbird one as another choice, a color map file, each layer in plain words with its share. Run 2026-10-17 over stdio: layer 7 rubber bumper damaged, black, 11.3% |
 
 ## M0: the spec against the game

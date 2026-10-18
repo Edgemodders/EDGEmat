@@ -1,10 +1,11 @@
-// EDGEmat as an MCP server over stdio (M1 skeleton): the material library, built from the user's game,
-// for AI assistants such as Claude Code and REDagent. It shares the library cache with the extension.
+// EDGEmat as an MCP server over stdio: the material library built from the user's game, surfaces, setups
+// and finding an item's materials, for AI assistants such as Claude Code and REDagent. It shares the
+// library cache with the extension; every tool is the twin of a part of the extension's UI.
 //
 //   edgemat-mcp [--bridge <REDbridge.exe or its folder>] [--game <Cyberpunk 2077 folder>] [--cache <dir>]
 //
-// Without options it finds the game and REDbridge as the extension does, from the VS Code settings
-// (edgemat.*, then redcode.*). The bridge starts only when the library has to be built.
+// Without options (or with empty ones) it finds the game and REDbridge as the extension does, from the VS Code settings
+// (edgemat.*, then redcode.*). Variables: EDGEMAT_GAME_PATH, REDBRIDGE_EXE, EDGEMAT_CACHE. The bridge starts only when a tool needs it.
 // stdout is the MCP channel; logs go to stderr.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -18,18 +19,22 @@ import {
 
 declare const __VERSION__: string;
 
+// An empty option or variable counts as unset: a Claude Code plugin passes an unset optional setting
+// as an empty string, which must not hide the VS Code settings behind it.
+const set = (v: string | undefined) => (v && v.trim() ? v.trim() : undefined);
 const arg = (name: string) => {
   const i = process.argv.indexOf(name);
-  return i >= 0 ? process.argv[i + 1] : undefined;
+  return i >= 0 ? set(process.argv[i + 1]) : undefined;
 };
+const env = (name: string) => set(process.env[name]);
 const log = (line: string) => process.stderr.write(`[edgemat-mcp] ${line}\n`);
 
 const fromVsCode = vscodeUserSettings();
 const settings: SettingsReader = (key) =>
-  key === "edgemat.gamePath" ? arg("--game") ?? process.env.EDGEMAT_GAME_PATH ?? fromVsCode(key)
-  : key === "edgemat.bridgePath" ? arg("--bridge") ?? process.env.REDBRIDGE_EXE ?? fromVsCode(key)
+  key === "edgemat.gamePath" ? arg("--game") ?? env("EDGEMAT_GAME_PATH") ?? fromVsCode(key)
+  : key === "edgemat.bridgePath" ? arg("--bridge") ?? env("REDBRIDGE_EXE") ?? fromVsCode(key)
   : fromVsCode(key);
-const cacheDir = arg("--cache") ?? process.env.EDGEMAT_CACHE ?? defaultCacheDir();
+const cacheDir = arg("--cache") ?? env("EDGEMAT_CACHE") ?? defaultCacheDir();
 
 let bridge: BridgeClient | undefined;
 
