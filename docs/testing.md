@@ -14,6 +14,7 @@ Last updated 2026-10-17.
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
+| [Find view](#find-view) | By hand, F5 | M2 | Not run | Walks checked outside VS Code on 2026-10-17 |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M6 at the latest | Not run | |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
@@ -50,6 +51,7 @@ Needs the game and REDbridge, found from the VS Code settings as the extension f
 | Surface page data (M2) | Every surface described with a default color and roughness, metal and bump presets; all 155,099 colors with a plain name and swatch; 139 distinct names |
 | Typed colors (M2) | "dark red" on `leather_bull_01_30` finds a dark red preset (`c2162c_69039f`, distance 0.032); "banana" is refused; `#a03030` reads back as itself |
 | Setup editor data (M2) | On `ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup`: 20 layers, 19 shown, layer 11 hidden (opacity 0); mask set `ml_s1_055_pma_shoe__converse_masksset` (20 masks) found beside it, of 2 in the folder; layer 7 (the sole, in-game test R1-B) is rubber bumper damaged, 11.3% of the texture; every surface found, no warnings; the 0.0.1 and oldest JSON shapes (made from the current one) read the same layers. Read in about 0.3 s with the masks cached |
+| Find (M2) | 1,997 clothing items with in-game names (8.5 s the first time, then cached); "sunny ammo high-tops" finds `Items.CasualShoes_01_basic_01` and "Pants_03_basic_01" finds `Items.Pants_03_basic_01`; the sneakers walk to two bodies (`_pwa_` and `_pma_` meshes), each with red_yellow_graphic's setup and the converse mask set; the jeans' feminine body wears `l1_066` pants; the jacket mesh's body and bags share one setup and `no_bags` hides them with `mesh_decal.mt`; a found setup opens with the mask set its material names. Each item walk takes about 0.15 to 0.35 s |
 | Page images (M2) | 3 of 3 for `leather_bull_01_30`: the first in about 1.6 s while the bridge warms up, the rest in well under half a second, then instant from the cache |
 
 The counts change after a game patch. A patch that adds surfaces is fine as long as "read" matches "listing".
@@ -122,6 +124,26 @@ Run 2026-10-17 by the owner: **all pass**, including opening from REDcode's Game
 | 12 | Open a setup with unused slots: Open Setup › From the game › type `t2_078 samurai`, pick any. Then untick and tick **Hide unused slots** (top right, beside Raw values) | The header counts the unused slots. Unticked, they appear in the list as dimmed "unused" layers; ticked, they disappear |
 | 13 | Another theme | Readable; the lit mask uses the theme's link color |
 
+### Find view
+
+Built 2026-10-17; **not yet run in VS Code.** The walks behind it were run outside VS Code on the test set (smoke test, and `mat_find` over stdio).
+
+1. `npm run build`, then **F5** (**Run EDGEmat**).
+2. In the development host, open EDGEmat's activity bar container. **Find** is the second view, below **Library**: collapse Library (click its header) if Find is squeezed.
+
+| # | Check | Expected |
+|---|---|---|
+| 1 | The Find view before any search | A short text on what Find does, with a **Find...** button. The same command is the magnifier in Find's title bar (hover the view's header to see it) |
+| 2 | Press **Find...** and type `sunny ammo` | The first time, a progress bar runs along the top of the Find view for several seconds while the item list is read from TweakDB (later searches are instant). Then an **Items** group with "Sunny Ammo synthetic high-tops", described "Feet · Items.CasualShoes_01_basic_01", first. The view's header line says `"sunny ammo": 3 items, 0 meshes` |
+| 3 | Expand "Sunny Ammo synthetic high-tops" (click the arrow) | "Feminine body" (`s1_casual_01.app › basic_01_w`) and "Masculine body" (`› basic_01_m`). Each holds its mesh, `s1_055_pwa_shoe__converse.mesh` and `s1_055_pma_shoe__converse.mesh`, described "look red_yellow_graphic · 1 multilayered of 2", and under it two materials: **red_yellow_graphic** (layers icon, "multilayered · ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup") and **dec_lights** ("metal_base.remt") |
+| 4 | Hover **red_yellow_graphic** | A tooltip with its setup and mask paths |
+| 5 | Click **red_yellow_graphic** under Feminine body | The setup editor opens. Its top line reads "Setup · game file · from Sunny Ammo synthetic high-tops, feminine". Under the map: "Mask set: ml_s1_055_pma_shoe__converse_masksset (named by the mesh's material)" |
+| 6 | Find `punk jeans`, expand "Sturdy-stitched punk jeans" | The feminine body wears `l1_066_pwa_pants__rogue.mesh` with `ml_l1_066_black_punk.mlsetup`; the masculine body wears `l1_062_pma_pants__jeans.mesh` with `ml_l1_062_black_punk.mlsetup`: two different garments for one item |
+| 7 | Find `t2_078 samurai` | A **Meshes** group with the samurai jacket meshes. Expand `t2_078_ma_jacket__samurai.mesh`: its appearances (default, no_bags and others). Expand **default**: two multilayered materials (the body and the bags) that share one setup. Expand **no_bags**: the bags' materials are `mesh_decal.mt`, which hides them |
+| 8 | Right-click a mesh or a multilayered material › **Copy Game Path** (also the copy icon that appears on hover) | The mesh's path, or the material's setup path, on the clipboard |
+| 9 | Find `nothing like this` | One line: Nothing matches, with a hint |
+| 10 | **Clear Find** (the clear icon in Find's title bar) | The view goes back to its first text |
+
 ### CLI install of the VSIX
 
 Not run yet. Asked for by the owner on 2026-10-16; part of M6's test at the latest. F5 runs the source; this tests what a user installs.
@@ -135,7 +157,7 @@ Then **Developer: Reload Window** (this restarts a Claude panel in the same wind
 
 ### MCP server
 
-Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`, `mat_describe`): **pass.** Register the server ([dev setup](dev-setup.html), section 4), start a new Claude Code session, and ask:
+Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`, `mat_describe`, `mat_find`): **pass.** Register the server ([dev setup](dev-setup.html), section 4), start a new Claude Code session, and ask:
 
 | Ask | Tool | Expected |
 |---|---|---|
@@ -144,6 +166,8 @@ Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`, `mat_describe`): **pass.
 | "Find logo microblends" | `mat_microblends` `logos` | 6 microblends |
 | "What's the closest dark red on leather bull?" | `mat_colors` `leather_bull_01_30`, near `dark red` | The surface's dark reds, closest first, each with its preset name, a plain name, RGB and distance; roughness, metal and bumps in words. Run 2026-10-17 over stdio: `c2162c_69039f` first, distance 0.032 |
 | "Colors of leather" | `mat_colors` `leather` | Several surfaces fit: the 7 candidates, asking for one path |
+| "Which materials do the punk jeans use?" | `mat_find` item `punk jeans` | The item `Items.Pants_03_basic_01` (its crafting copy shares the look, so it is not asked about); feminine: `l1_066_pwa_pants__rogue.mesh` with `ml_l1_066_black_punk.mlsetup` and its mask set; masculine: `l1_062_pma_pants__jeans.mesh` with `ml_l1_062_black_punk.mlsetup`. Run 2026-10-17 over stdio |
+| "Find s1_055" | `mat_find` query `s1_055` | The two sneaker meshes, `_pma_` and `_pwa_` |
 | "Describe the sneakers' red_yellow_graphic setup" | `mat_describe` with the game path | 20 layers, 19 shown, the converse mask set and the songbird one as another choice, a color map file, each layer in plain words with its share. Run 2026-10-17 over stdio: layer 7 rubber bumper damaged, black, 11.3% |
 
 ## M0: the spec against the game

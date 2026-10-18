@@ -13,7 +13,8 @@ EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: a standalone VS C
 - **M1 Library done on 2026-10-16** (smoke test, and the owner's hand test through F5): extension 0.1.0 (`extensions/edgemat`: activity bar container, Library view with thumbnails, plain-words search), MCP skeleton (`packages/edgemat-mcp`: `mat_library`, `mat_templates`, `mat_microblends`), the bridge client copied from REDcode `9f54c80`, the library cached in `%LOCALAPPDATA%\EDGEmat`. `npm run smoke` builds it from the game and checks counts (386 surfaces, 131 microblends, ~22 s). Build steps: `docs/dev-setup.md` section 4.
 - **M2 Read in progress.** Surface page and MCP `mat_colors` built 2026-10-17 (core `colors.ts`, `surface.ts`, `images.ts`; `surfacePage.ts` with its webview script `src/webview/surface.ts`); the owner's hand test passed the same day.
 - **Setup editor (read-only) and MCP `mat_describe` built 2026-10-17** (core `setup.ts`, `masks.ts`, `openSetup.ts`; `setupEditor.ts` with `src/webview/setup.ts`); the owner's hand test passed the same day.
-- **Next:** finding an item's materials (the Find view, `mat_find`) (design, "In VS Code" and "Phases"). **Owner asked on 2026-10-16:** test the CLI install of the packaged VSIX too, before release at the latest (in M6's test).
+- **Find view and MCP `mat_find` built 2026-10-17** (core `find.ts`; `findView.ts`; a found setup opens with its material's mask set through `edgemat-game:` URI options), hand test pending.
+- **Next:** the owner's hand test of Find (`docs/testing.md`); then M2's phase test (design, "Phases") and M3 Edit (design, "In VS Code" and "Phases"). **Owner asked on 2026-10-16:** test the CLI install of the packaged VSIX too, before release at the latest (in M6's test).
 
 ## Conventions
 

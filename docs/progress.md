@@ -8,16 +8,17 @@ Last updated 2026-10-17.
 
 | | |
 |---|---|
-| Phase | **M2 Read in progress**: the surface page and the setup editor are done; finding an item's materials is next |
+| Phase | **M2 Read in progress**: the surface page and the setup editor are done; Find is built, hand test pending |
 | Extension | 0.1.0 plus M2 so far: the EDGEmat icon in the activity bar; a Library of every surface and microblend in your game, with thumbnails and search; a page for each surface with its colors as named swatches |
-| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe` |
+| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Finding an item's materials: from an item to its mesh, materials, setups and their exact mask sets |
+| Next up | Your hand test of Find; then M2's own test and M3 Edit |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
+| Hand-test the Find view: F5, then Find in EDGEmat's container, below Library ([Tests](testing.html#find-view)) | M2's last part; tell me what looks wrong or awkward | 2026-10-17 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Test the packaged VSIX from the CLI: `code --install-extension dist\edgemat-<version>.vsix` ([Tests](testing.html#cli-install-of-the-vsix)) | F5 runs the source; only the CLI install tests what a user gets. Planned for your next session at the PC | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
@@ -40,6 +41,7 @@ Last updated 2026-10-17.
 
 | What | Detail |
 |---|---|
+| Find built | A new **Find** view under the Library: type an item's in-game name ("punk jeans") or part of a mesh path. An item opens into its looks per body, then meshes, then materials; clicking a multilayered material opens its setup with the exact mask set its material names, no guessing. On the jeans it shows the feminine body wearing other pants (`l1_066`) than the masculine (`l1_062`). Assistants get the same through MCP `mat_find` |
 | Setup editor hand test passed | All 13 checks, including a setup opened from REDcode's Game Assets. Buttons got a clearer outline along the way, and the test steps now say where each control is |
 | Setup editor built (read-only) | Open any setup: from the game by name, a file, a project, a mod archive, or REDcode's Game Assets. Each layer in plain words, and a color map of where each layer goes on the garment's texture; click a spot to find its layer, and the selected layer's area lights up. It flags what looks wrong: on our M0 test setup it points at layer 4's unknown color ("shows white") and layer 9's all-None presets. Assistants get the same through MCP `mat_describe` |
 | Surface page hand test passed | Your run through F5: all 13 checks, and the Library view checks again (including the new log line naming the bridge) |
