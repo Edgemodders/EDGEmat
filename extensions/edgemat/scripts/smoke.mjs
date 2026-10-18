@@ -96,6 +96,30 @@ try {
   const oldest = { Chunks: [{ Properties: { ...current.Data.RootChunk, layers: current.Data.RootChunk.layers.map(wrap) } }] };
   const same = (a, b) => JSON.stringify(a.layers) === JSON.stringify(b.layers);
   check(same(core.parseSetup(v001), opened.setup) && same(core.parseSetup(oldest), opened.setup), "the 0.0.1 and oldest JSON shapes read the same layers");
+
+  // M2: finding an item's materials (behavior spec, section 1), on the test set.
+  console.log("\nfind");
+  let t1 = Date.now();
+  const items = await core.loadItems(bridge, cache);
+  check(items.length > 1500 && items.some((i) => i.name === "Sunny Ammo synthetic high-tops"), `clothing items: ${items.length}, with in-game names, in ${Date.now() - t1} ms`);
+  const shoes = core.searchItems(items, "sunny ammo high-tops")[0];
+  const jeans = core.searchItems(items, "Pants_03_basic_01")[0];
+  check(shoes?.id === "Items.CasualShoes_01_basic_01" && jeans?.id === "Items.Pants_03_basic_01", `search: "sunny ammo high-tops" finds ${shoes?.id}; "Pants_03_basic_01" finds ${jeans?.id}`);
+  t1 = Date.now();
+  const shoeWalk = await core.itemMaterials(bridge, shoes);
+  const ml = (look) => look.meshes.flatMap((m) => m.materials.filter((x) => x.multilayered));
+  const fem = shoeWalk.looks.find((l) => l.body === "feminine"), mas = shoeWalk.looks.find((l) => l.body === "masculine");
+  check(!!fem && !!mas && ml(fem)[0]?.setup === sneakers && /ml_s1_055_pma_shoe__converse_masksset\.mlmask$/.test(ml(fem)[0]?.mask ?? "") && fem.meshes[0].mesh.includes("_pwa_") && mas.meshes[0].mesh.includes("_pma_"),
+    `sneakers walked in ${Date.now() - t1} ms: two bodies (pwa and pma meshes), each with red_yellow_graphic's setup and the converse mask set`);
+  const jeansWalk = await core.itemMaterials(bridge, jeans);
+  const jf = jeansWalk.looks.find((l) => l.body === "feminine");
+  check(!!jf && jf.meshes[0].mesh.includes("l1_066"), `jeans: the feminine body wears ${jf?.meshes[0].mesh.split("\\").pop()} (spec: l1_066 rogue pants)`);
+  const jacket = await core.meshMaterials(bridge, "base\\characters\\garment\\corp_arasaka\\torso\\t2_078_jacket__samurai\\t2_078_ma_jacket__samurai.mesh");
+  const def = jacket.find((l) => l.appearance === "default"), noBags = jacket.find((l) => l.appearance === "no_bags");
+  check(ml({ meshes: [def] }).length === 2 && new Set(ml({ meshes: [def] }).map((x) => x.setup)).size === 1 && noBags?.materials.some((x) => /mesh_decal\.mt$/.test(x.base)),
+    `jacket mesh: ${jacket.length} appearances; body and bags share one setup; no_bags hides parts with mesh_decal.mt`);
+  const given = await core.openSetup(bridge, lib, cache, { gamePath: ml(fem)[0].setup }, ml(fem)[0].mask);
+  check(given.maskFrom === "given" && given.masks?.name === "ml_s1_055_pma_shoe__converse_masksset", "opening a found setup uses the mask set its material names");
 } finally {
   bridge.stop();
 }
