@@ -12,8 +12,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
-  BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, openSetup, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame,
-  searchMicroblends, searchTemplates, vscodeUserSettings, type ColorInfo, type Library, type SettingsReader, type Template,
+  BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, itemMaterials, loadItems, meshMaterials, openSetup, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame,
+  searchMicroblends, searchTemplates, vscodeUserSettings, type ColorInfo, type Library, type MaterialUse, type MeshLook, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
 declare const __VERSION__: string;
@@ -222,6 +222,60 @@ server.registerTool(
             share: l.share !== undefined ? `${(l.share * 100).toFixed(1)}%` : undefined,
             warnings: l.warnings.length ? l.warnings : undefined,
           })),
+      });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+const materialOut = (m: MaterialUse) =>
+  m.multilayered
+    ? { name: m.name, multilayered: true, setup: m.setup, mask: m.mask, chunks: m.chunks, ...(m.instances.length ? { via: m.instances } : {}) }
+    : { name: m.name, base: m.base, chunks: m.chunks, ...(m.instances.length ? { via: m.instances } : {}) };
+const meshOut = (l: MeshLook) => ({ mesh: l.mesh, appearance: l.appearance, ...(l.component ? { component: l.component } : {}), materials: l.materials.map(materialOut) });
+
+server.registerTool(
+  "mat_find",
+  {
+    description:
+      "Finds what to recolor. query: words that match clothing items by in-game name or record id ('punk jeans', 'Sunny Ammo', 'CasualShoes_01') and meshes by path ('s1_055'); returns both lists. " +
+      "item: a clothing record id (Items.Pants_03_basic_01), or words matching one item: walks item > clothing.csv > root entity > .app appearance (one per body type: masculine, feminine) > mesh and mesh appearance > materials, " +
+      "and for each multilayered material its setup (.mlsetup) and the mask set (.mlmask) it names. The two bodies can use different meshes. " +
+      "mesh (with optional appearance): a mesh's materials, in one appearance or all. Pass a found setup and its mask to mat_describe. Items from mods (ArchiveXL) are not followed yet.",
+    inputSchema: { query: z.string().optional(), item: z.string().optional(), mesh: z.string().optional(), appearance: z.string().optional(), limit: z.number().int().min(1).max(500).default(30) },
+  },
+  async ({ query, item, mesh, appearance, limit }) => {
+    try {
+      const b = await getBridge();
+      if (mesh) return text({ mesh, appearances: (await meshMaterials(b, mesh, appearance)).map(meshOut) });
+      const items = await loadItems(b, cacheDir);
+      if (item) {
+        const exact = items.find((i) => i.id.toLowerCase() === item.toLowerCase());
+        const found = exact ? [exact] : searchItems(items, item);
+        // Records that share an entity and appearance (an item and its crafting or test copies) are one garment.
+        const sameLook = found.length > 0 && found.every((i) => i.entityName === found[0].entityName && i.appearanceName === found[0].appearanceName);
+        if (!sameLook) {
+          return text({ found: false, matches: found.length, candidates: found.slice(0, limit).map((i) => ({ id: i.id, name: i.name, slot: i.slot })), hint: found.length ? "Several items fit: pass one id." : "No item fits: try mat_find with query." });
+        }
+        const m = await itemMaterials(b, found[0]);
+        return text({
+          item: { id: m.item.id, name: m.item.name, slot: m.item.slot },
+          root: m.root,
+          looks: m.looks.map((l) => ({ body: l.body, app: l.app, appearance: l.appAppearance, meshes: l.meshes.map(meshOut) })),
+          warnings: m.warnings.length ? m.warnings : undefined,
+        });
+      }
+      if (!query) return failure(new Error("Pass query, item or mesh."));
+      const foundItems = searchItems(items, query);
+      const words = query.toLowerCase().replace(/[.]/g, " ").split(/\s+/).filter(Boolean);
+      const longest = [...words].sort((a, c) => c.length - a.length)[0];
+      const meshes = (await b.search(longest, 20000)).items
+        .map((i) => i.name)
+        .filter((n) => n.toLowerCase().endsWith(".mesh") && !/\\shadow_meshes\\|_shadow\.mesh$/i.test(n) && words.every((w) => n.toLowerCase().includes(w)));
+      return text({
+        items: { total: foundItems.length, list: foundItems.slice(0, limit).map((i) => ({ id: i.id, name: i.name, slot: i.slot })) },
+        meshes: { total: meshes.length, list: meshes.slice(0, limit) },
       });
     } catch (e) {
       return failure(e);
