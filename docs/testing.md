@@ -13,7 +13,7 @@ Last updated 2026-10-17.
 | [MCP server](#mcp-server) | By hand, over stdio | M1, M2 | 2026-10-17 | Pass |
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
-| [Setup editor](#setup-editor) | By hand, F5 | M2 | Not run | Rendered outside VS Code with real data on 2026-10-17 |
+| [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M6 at the latest | Not run | |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
@@ -101,7 +101,7 @@ Where things are: the Copy buttons sit after the game path at the top, beside Pr
 
 ### Setup editor
 
-Built 2026-10-17; **not yet run in VS Code.** Rendered before that in headless Chrome with real data, and run outside VS Code on a game setup, a project file and a mod archive.
+Run 2026-10-17 by the owner: **all pass**, including opening from REDcode's Game Assets. Before that it was rendered in headless Chrome with real data, and run outside VS Code on a game setup, a project file and a mod archive. During the test the buttons got a clearer outline (the first ones did not read as buttons).
 
 1. `npm run build`, then **F5** (**Run EDGEmat**).
 2. In the development host, check:
