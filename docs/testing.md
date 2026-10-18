@@ -113,7 +113,7 @@ Built 2026-10-17; **not yet run in VS Code.** Rendered before that in headless C
 | 3 | Click layer 7 | Its details open: surface (rubber bumper damaged, with Open), color, roughness, metal, bumps, tiling ×10.1, opacity, microblend, "Shows on 11% of the texture". The map switches to Selected layer, with the sole and rubber band lit in yellow |
 | 4 | Click spots on the map: a red panel, the yellow canvas, the sole | The layer that shows there is selected and scrolled into view |
 | 5 | All layers / Selected layer | Switches the map |
-| 6 | Open beside Surface; Open beside Microblend on layer 10 (graphics logos 004) | The surface page, then the microblend page, in the reused tab |
+| 6 | Click layer 10 (cotton shirt clean 02 30, red) to open its details. In the details table, press the small **Open** after the surface name in the Surface row, then the **Open** after "graphics logos 004" in the Microblend row | The surface page, then the microblend page, in the reused tab |
 | 7 | Raw values | The game's names and values beside the plain words; useNormal and the JSON version in the header |
 | 8 | Mask set › Change | A list with `ml_s1_055_pma_shoe__converse_masksset` (in use) and `ml_songbird_masksset`, plus Search and a file on disk. Picking songbird redraws the map with other shapes; pick converse again to go back |
 | 9 | Open Setup › A file on disk › `Projects\EDGEmat_M0\source\archive\...\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup` | "Setup · project file", 18 of 20 show. Layer 4 has ⚠: its color "edgemat_unknown" shows white. Layer 9: "not shown: all presets set to None". Layer 7 is dark red: the M0 round 1 edits |
