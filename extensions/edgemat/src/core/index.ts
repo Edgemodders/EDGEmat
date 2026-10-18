@@ -17,3 +17,4 @@ export { imageFile, textureImage } from "./images";
 export { describeSetup, parseSetup, type LayerInfo, type Setup, type SetupInfo, type SetupLayer } from "./setup";
 export { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, MaskSize, PickSize, type Composite, type MaskSet, type MaskSource } from "./masks";
 export { gamePathInProject, openSetup, readSetup, type OpenedSetup, type SetupSource } from "./openSetup";
+export { itemMaterials, loadItems, meshMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook } from "./find";
