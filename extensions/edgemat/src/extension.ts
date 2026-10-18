@@ -4,6 +4,7 @@
 
 import * as vscode from "vscode";
 import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, resolveBridge, resolveGame, type GameChoice, type Library } from "./core";
+import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
 import { GameFiles, GameScheme, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
 import { SurfacePages } from "./surfacePage";
@@ -180,6 +181,8 @@ export function activate(context: vscode.ExtensionContext): void {
   void vscode.commands.executeCommand("setContext", "edgemat.filtered", false);
   const pages = new SurfacePages(context.extensionUri, () => cacheDir, bridgeNow, log);
   const library = () => view.current ?? loadLibrary(cacheDir);
+  const find = new FindView(bridgeNow, () => cacheDir, log);
+  const findTree = vscode.window.createTreeView("edgemat.find", { treeDataProvider: find, showCollapseAll: true });
   const host: SetupEditorHost = {
     extensionUri: context.extensionUri,
     cacheDir: () => cacheDir,
@@ -220,8 +223,22 @@ export function activate(context: vscode.ExtensionContext): void {
       const subject = LibraryView.subjectOf(node);
       if (subject) void pages.show(subject);
     }),
+    findTree,
+    vscode.commands.registerCommand("edgemat.find", async () => {
+      const q = await vscode.window.showInputBox({ title: "Find", prompt: "A garment's in-game name, such as punk jeans or Sunny Ammo, or part of a mesh path, such as s1_055" });
+      if (!q?.trim()) return;
+      await vscode.window.withProgress({ location: { viewId: "edgemat.find" }, title: "Finding" }, () => find.search(q));
+      findTree.message = find.summary || undefined;
+      void vscode.commands.executeCommand("setContext", "edgemat.findActive", true);
+    }),
+    vscode.commands.registerCommand("edgemat.clearFind", () => {
+      find.clear();
+      findTree.message = undefined;
+      void vscode.commands.executeCommand("setContext", "edgemat.findActive", false);
+    }),
+    vscode.commands.registerCommand("edgemat.openFoundSetup", (setup: string, mask?: string, via?: string) => openFoundSetup(setup, mask, via)),
     vscode.commands.registerCommand("edgemat.copyGamePath", async (node) => {
-      const p = LibraryView.gamePathOf(node);
+      const p = LibraryView.gamePathOf(node) ?? FindView.gamePathOf(node);
       if (p) await vscode.env.clipboard.writeText(p);
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {

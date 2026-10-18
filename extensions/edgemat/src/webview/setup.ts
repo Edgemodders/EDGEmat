@@ -12,7 +12,7 @@ export type SetupPageData =
       origin: string;
       path: string;
       info: SetupInfo;
-      mask?: { name: string; from: "given" | "beside"; path: string; images: string[]; choices: number };
+      mask?: { name: string; from: "given" | "beside" | "material"; path: string; images: string[]; choices: number };
       maskError?: string;
       map?: { image: string; pick: number[] };
       surfaceThumbs: Record<string, string | undefined>;
@@ -85,7 +85,7 @@ function render(d: Extract<SetupPageData, { kind: "setup" }>): void {
   const segOne = button("Selected layer", () => setView("layer"));
   const setView = (v: "all" | "layer") => { state.view = v; save(); paintMap(); };
   const maskLine = d.mask
-    ? el("div", { class: "note" }, `Mask set: `, el("code", {}, d.mask.name), d.mask.from === "beside" ? " (found beside the setup)" : " (chosen)", " ", button("Change", () => vscode.postMessage({ type: "chooseMask" }), "small"))
+    ? el("div", { class: "note" }, `Mask set: `, el("code", {}, d.mask.name), d.mask.from === "beside" ? " (found beside the setup)" : d.mask.from === "material" ? " (named by the mesh's material)" : " (chosen)", " ", button("Change", () => vscode.postMessage({ type: "chooseMask" }), "small"))
     : el("div", { class: "note warn" }, d.maskError ?? "No mask set.", " ", button("Choose a mask set", () => vscode.postMessage({ type: "chooseMask" }), "small"));
 
   const paintMap = () => {

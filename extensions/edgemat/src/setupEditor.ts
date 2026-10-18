@@ -12,8 +12,26 @@ import type { SetupPageData } from "./webview/setup";
 export const GameScheme = "edgemat-game";
 const RedcodeGameScheme = "redcode-game";
 
-/** edgemat-game:/base/x.mlsetup for base\x.mlsetup. */
-export const gameUri = (gamePath: string) => vscode.Uri.from({ scheme: GameScheme, path: "/" + gamePath.replace(/\\/g, "/") });
+/**
+ * edgemat-game:/base/x.mlsetup for base\x.mlsetup. `mask`: the mask set a mesh's material names for it;
+ * `via`: where it was found, such as an item's name. Both ride in the query as base64 JSON, which
+ * survives VS Code decoding the URI and names holding & or =.
+ */
+export const gameUri = (gamePath: string, opts: { mask?: string; via?: string } = {}) =>
+  vscode.Uri.from({
+    scheme: GameScheme,
+    path: "/" + gamePath.replace(/\\/g, "/"),
+    query: opts.mask || opts.via ? `o=${Buffer.from(JSON.stringify(opts)).toString("base64url")}` : "",
+  });
+
+const uriOptions = (uri: vscode.Uri): { mask?: string; via?: string } => {
+  const o = /(?:^|&)o=([\w-]+)/.exec(uri.query)?.[1];
+  try {
+    return o ? JSON.parse(Buffer.from(o, "base64url").toString("utf8")) : {};
+  } catch {
+    return {};
+  }
+};
 const gamePathOfUri = (uri: vscode.Uri) =>
   uri.scheme === GameScheme || uri.scheme === RedcodeGameScheme ? uri.path.replace(/^\/+/, "").replace(/\//g, "\\") : undefined;
 
@@ -47,7 +65,14 @@ export class GameFiles implements vscode.FileSystemProvider {
 }
 
 class SetupDocument implements vscode.CustomDocument {
-  constructor(readonly uri: vscode.Uri, readonly source: SetupSource, readonly origin: string) {}
+  /** The mask set named by the mesh's material, when the setup was opened from Find. */
+  readonly mask?: string;
+  readonly origin: string;
+  constructor(readonly uri: vscode.Uri, readonly source: SetupSource, origin: string) {
+    const { mask, via } = uriOptions(uri);
+    this.mask = mask;
+    this.origin = via ? `${origin} · from ${via}` : origin;
+  }
   dispose(): void {}
 }
 
@@ -89,7 +114,7 @@ export class SetupEditor implements vscode.CustomReadonlyEditorProvider<SetupDoc
   async resolveCustomEditor(doc: SetupDocument, panel: vscode.WebviewPanel): Promise<void> {
     const w = panel.webview;
     w.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(this.host.extensionUri, "dist"), vscode.Uri.file(this.host.cacheDir())] };
-    let mask: string | undefined;
+    let mask: string | undefined = doc.mask;
     let opened: OpenedSetup | undefined;
     let serial = 0;
 
@@ -101,7 +126,7 @@ export class SetupEditor implements vscode.CustomReadonlyEditorProvider<SetupDoc
         const o = await openSetup(bridge, this.host.library(), this.host.cacheDir(), doc.source, mask);
         if (id !== serial) return;
         opened = o;
-        w.html = this.html(w, this.data(w, doc, o));
+        w.html = this.html(w, this.data(w, doc, o, !!doc.mask && mask === doc.mask));
       } catch (e) {
         if (id !== serial) return;
         const message = e instanceof Error ? e.message : String(e);
@@ -166,7 +191,8 @@ export class SetupEditor implements vscode.CustomReadonlyEditorProvider<SetupDoc
     return chosen?.detail;
   }
 
-  private data(w: vscode.Webview, doc: SetupDocument, o: OpenedSetup): SetupPageData {
+  /** `fromMaterial`: the mask set in use is the one the mesh's material names. */
+  private data(w: vscode.Webview, doc: SetupDocument, o: OpenedSetup, fromMaterial: boolean): SetupPageData {
     const uri = (f: string) => w.asWebviewUri(vscode.Uri.file(f)).toString();
     const sourcePath = "gamePath" in o.source && o.source.gamePath ? o.source.gamePath : "file" in o.source ? o.source.file : "";
     return {
@@ -176,7 +202,7 @@ export class SetupEditor implements vscode.CustomReadonlyEditorProvider<SetupDoc
       path: "file" in doc.source && fromMods.has(doc.source.file.toLowerCase()) ? fromMods.get(doc.source.file.toLowerCase())!.gamePath : "file" in doc.source ? doc.source.file : sourcePath,
       info: o.info,
       mask: o.masks
-        ? { name: o.masks.name, from: o.maskFrom!, path: "gamePath" in o.masks.source ? o.masks.source.gamePath : o.masks.source.file, images: o.masks.files.map(uri), choices: o.maskChoices.length }
+        ? { name: o.masks.name, from: fromMaterial ? "material" : o.maskFrom!, path: "gamePath" in o.masks.source ? o.masks.source.gamePath : o.masks.source.file, images: o.masks.files.map(uri), choices: o.maskChoices.length }
         : undefined,
       maskError: o.maskError,
       map: o.composite ? { image: uri(o.composite.file), pick: o.composite.pick } : undefined,

@@ -36,6 +36,8 @@
     "onCommand:edgemat.setGameFolder",
     "onCommand:edgemat.searchLibrary",
     "onCommand:edgemat.openSetup",
+    "onCommand:edgemat.find",
+    "onView:edgemat.find",
     "onCustomEditor:edgemat.setup",
     "onFileSystem:edgemat-game"
   ],
@@ -54,10 +56,18 @@
         {
           "id": "edgemat.library",
           "name": "Library"
+        },
+        {
+          "id": "edgemat.find",
+          "name": "Find"
         }
       ]
     },
     "viewsWelcome": [
+      {
+        "view": "edgemat.find",
+        "contents": "Find a garment by its in-game name, such as punk jeans or Sunny Ammo, or a mesh by part of its path. Then open its materials: each multilayered one opens in the setup editor with its own mask set.\n[Find...](command:edgemat.find)"
+      },
       {
         "view": "edgemat.library",
         "contents": "EDGEmat needs your Cyberpunk 2077 folder to build its material library from your game.\n[Set Game Folder](command:edgemat.setGameFolder)",
@@ -96,6 +106,23 @@
       }
     ],
     "commands": [
+      {
+        "command": "edgemat.find",
+        "title": "Find...",
+        "category": "EDGEmat",
+        "icon": "$(search)"
+      },
+      {
+        "command": "edgemat.clearFind",
+        "title": "Clear Find",
+        "category": "EDGEmat",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "edgemat.openFoundSetup",
+        "title": "Open Setup",
+        "category": "EDGEmat"
+      },
       {
         "command": "edgemat.openSetup",
         "title": "Open Setup...",
@@ -147,6 +174,16 @@
     "menus": {
       "view/title": [
         {
+          "command": "edgemat.find",
+          "when": "view == edgemat.find",
+          "group": "navigation@1"
+        },
+        {
+          "command": "edgemat.clearFind",
+          "when": "view == edgemat.find && edgemat.findActive",
+          "group": "navigation@2"
+        },
+        {
           "command": "edgemat.openSetup",
           "when": "view == edgemat.library",
           "group": "navigation@0"
@@ -180,12 +217,12 @@
       "view/item/context": [
         {
           "command": "edgemat.copyGamePath",
-          "when": "view == edgemat.library && viewItem == edgemat.gamePath",
+          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem == edgemat.gamePath",
           "group": "inline"
         },
         {
           "command": "edgemat.copyGamePath",
-          "when": "view == edgemat.library && viewItem == edgemat.gamePath",
+          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem == edgemat.gamePath",
           "group": "copy@1"
         }
       ],
@@ -197,6 +234,14 @@
         {
           "command": "edgemat.openItem",
           "when": "false"
+        },
+        {
+          "command": "edgemat.openFoundSetup",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.clearFind",
+          "when": "edgemat.findActive"
         },
         {
           "command": "edgemat.clearSearch",
