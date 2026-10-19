@@ -42,6 +42,7 @@ Last updated 2026-10-19.
 
 | What | Detail |
 |---|---|
+| Changelog and release notes | Kept as REDnode keeps them: [Changelog](changelog.html) on the docs site is the one changelog, with each change under **Unreleased** as it is made. The GitHub release notes, the extension's Changelog tab in VS Code and later the Nexus changelog are made from it by a script; the release stops if the version has no section. Steps in [Dev setup, "Releasing"](dev-setup.html#releasing) |
 | **View in 3D built** | Your idea. An eye on each mesh in Find opens it in REDcode's 3D view, and EDGEmat now gives that view the colors: a layered material's color map, or a textured material's own texture. Colors only for now, marked approximate; bumps and shine come with M5. REDcode's side already existed. The smoke test checks it on the sneakers and the jacket. Your hand test is next ([Tests](testing.html#view-in-3d)), then the 0.2.0 release |
 | Find hand test passed | All 10 checks, through F5. The test steps now say where Find is: a header below the Library, and the Library's magnifier is Search Library, not Find |
 | **Roadmap revised** | A new **M4 Make** ahead of the preview: materials for new meshes, which EDGEfab needs for the clothes and objects it makes. The preview moves to M5, Beyond mlsetup to M6, Ship to M7. Make holds materials from a model's textures, **Generate a material**, game materials on a new mesh and the Looks editor ([design, "Phases"](design.html#phases)) |

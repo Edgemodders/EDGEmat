@@ -10,3 +10,6 @@ dist/
 *.dll
 *.exe
 rtti-dump*
+
+# generated from docs/changelog.md when the extension is packaged (tools/release/notes.mjs)
+extensions/edgemat/CHANGELOG.md
