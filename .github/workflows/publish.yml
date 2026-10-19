@@ -58,10 +58,13 @@ jobs:
           cp packages/edgemat-mcp/dist/server.cjs "${MCP}"
           cd extensions/edgemat
           "${GITHUB_WORKSPACE}/node_modules/.bin/vsce" package --no-dependencies --target win32-x64 --out "${VSIX}"
+          cd "${GITHUB_WORKSPACE}"
+          # The Nexus Mods file (nexus/README.md); it also writes dist/THIRD-PARTY-NOTICES.txt.
+          node tools/release/nexus-zip.mjs
 
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           pre=""; case "${VERSION}" in 0.*) pre="--prerelease" ;; esac
-          gh release create "${GITHUB_REF_NAME}" "${VSIX}" "${MCP}" --title "EDGEmat ${VERSION}" --notes-file "${RUNNER_TEMP}/notes.md" ${pre}
+          gh release create "${GITHUB_REF_NAME}" "${VSIX}" "${MCP}" "dist/EDGEmat-${VERSION}-nexus.zip" dist/THIRD-PARTY-NOTICES.txt --title "EDGEmat ${VERSION}" --notes-file "${RUNNER_TEMP}/notes.md" ${pre}

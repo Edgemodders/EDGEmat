@@ -295,7 +295,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "node ../../tools/release/notes.mjs --extension && node esbuild.mjs",
+    "vscode:prepublish": "node ../../tools/release/notes.mjs --extension && node esbuild.mjs && node ../../tools/release/notices.mjs --extension",
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
