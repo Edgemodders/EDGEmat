@@ -129,7 +129,7 @@ Run 2026-10-17 by the owner: **all pass**, including opening from REDcode's Game
 Built 2026-10-17; **not yet run in VS Code.** The walks behind it were run outside VS Code on the test set (smoke test, and `mat_find` over stdio).
 
 1. `npm run build`, then **F5** (**Run EDGEmat**).
-2. In the development host, open EDGEmat's activity bar container. **Find** is the second view, below **Library**: collapse Library (click its header) if Find is squeezed.
+2. In the development host, open EDGEmat's activity bar container. **Find** is the second view, a **FIND** header below **Library**, often collapsed at the bottom of the sidebar: click its header to expand it, and collapse Library (click its header) if Find is squeezed. The magnifier at the top of the Library is **Search Library**, not Find; Find's own magnifier shows only when you hover over Find's header.
 
 | # | Check | Expected |
 |---|---|---|
