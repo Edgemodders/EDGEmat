@@ -81,7 +81,7 @@ claude mcp add edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgem
 
 ### Releasing
 
-From 0.2.0, the first preview. `.github/workflows/publish.yml` runs on a `v*` tag: it checks the tag against both packages' versions, takes the release notes from the version's section of [`docs/changelog.md`](changelog.html) (and stops when there is none), typechecks, builds, packages the VSIX for Windows x64, and makes the GitHub release with the VSIX and the MCP server as `edgemat-mcp-<version>.cjs`. Versions before 1.0 are marked pre-release. No Marketplace, Open VSX or npm until M7.
+From 0.2.0, the first preview. `.github/workflows/publish.yml` runs on a `v*` tag: it checks the tag against both packages' versions, takes the release notes from the version's section of [`docs/changelog.md`](changelog.html) (and stops when there is none), typechecks, builds, packages the VSIX for Windows x64, and makes the GitHub release with the VSIX, the MCP server as `edgemat-mcp-<version>.cjs`, the Nexus Mods zip `EDGEmat-<version>-nexus.zip` ([`nexus/README.md`](https://github.com/Edgemodders/EDGEmat/blob/main/nexus/README.md)) and `THIRD-PARTY-NOTICES.txt`. Versions before 1.0 are marked pre-release. No Marketplace, Open VSX or npm until M7.
 
 **The changelog** is `docs/changelog.md`, kept the same way as REDnode's: each change a modder would notice gets a line under **Unreleased** in its group (**New**, **Changed**, **Fixed**, **Other**), in the same commit as the change. `tools/release/notes.mjs` turns it into the GitHub notes, plain lines for Nexus (`--nexus`), and the extension's `CHANGELOG.md` (`--extension`, run by `vscode:prepublish` when the VSIX is packaged; that file is generated, not committed).
 
@@ -90,6 +90,9 @@ From 0.2.0, the first preview. `.github/workflows/publish.yml` runs on a `v*` ta
 3. Set the same version in `extensions/edgemat/package.json` and `packages/edgemat-mcp/package.json`, and run `npm install` to update the lock file.
 4. Commit and push, then `git tag v<version>` and `git push origin v<version>`.
 5. Watch the run in the Actions tab; then download the release's VSIX and install it with `code --install-extension`.
+6. Update the user manual in EDGEweb (`docs/wiki/edgemat/`) and `nexus/description.bbcode` for what changed. When the Nexus page is up, upload the release's Nexus zip there (`nexus/README.md`, "Updating the page").
+
+**Licenses.** The extension and the MCP server bundle npm packages (MIT, ISC, BSD-3-Clause). `tools/release/notices.mjs` lists them from the builds' source maps with their license texts: into the VSIX (`vscode:prepublish`), and into `dist/THIRD-PARTY-NOTICES.txt` for the release and the Nexus zip. Generated, never committed.
 
 ```powershell
 npm run release:notes                  # the GitHub notes of the extension's version

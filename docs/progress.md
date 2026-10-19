@@ -8,17 +8,20 @@ Last updated 2026-10-19.
 
 | | |
 |---|---|
-| Phase | **M2 Read**: every hand test passed (Library, surface page, setup editor, Find, View in 3D) and the CLI install test; M2's own test, then the 0.2.0 preview |
-| Extension | 0.1.0 plus M2 so far: the EDGEmat icon in the activity bar; a Library of every surface and microblend in your game, with thumbnails and search; a page for each surface with its colors as named swatches |
+| Phase | **M2 Read done** 2026-10-19: every test passed, the phase test too. Next: the 0.2.0 preview release, then M3 Edit |
+| Extension | 0.1.0 plus M2: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor; Find; View in 3D |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your hand test of Find; then M2's own test, the 0.2.0 preview release on GitHub, and M3 Edit |
+| Next up | Cut the 0.2.0 preview on GitHub (wiki and Nexus files are ready), then M3 Edit |
 | Roadmap | M3 Edit, **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
+| Decide whether the 0.2 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
+| Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
+| Say which git identity EDGEweb uses | Its CLAUDE.md says `Edgemodders`, but its git config is now `CyberbuildsAI`, which the last commits used, the wiki update included | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
 | Try RED Hot Tools on the dev PC | Tells us whether hot-loading archives works today (design, "Hot-loading archives"), and tests REDcode's Pack and Try hot path. Planned for your next session at the PC | 2026-10-16 |
@@ -40,6 +43,10 @@ Last updated 2026-10-19.
 
 | What | Detail |
 |---|---|
+| **M2 done** | The phase test passed: the Arasaka jacket's 20 layers match WolvenKit's own reading of the file in all 360 fields, and you judged Claude's description from `mat_describe` accurate. The white stitching you saw is a separate decal material on the mesh, not part of the setup ([Tests](testing.html#m2-phase-test)) |
+| Wiki | EDGEmat's user manual on [edgemodders.ai](https://edgemodders.ai/wiki/edgemat/), ten pages on EDGEdeck's template with screenshot placeholders; EDGEmat's cards and the wiki home now say preview |
+| Nexus page ready | `nexus/description.bbcode` in REDnode's style, with six screenshot placeholders, and `nexus/README.md` with the form fields. Each release now also makes `EDGEmat-<version>-nexus.zip` (the VSIX, the MCP server, an install README, the licenses). Not posted: your call |
+| Licenses shipped | The extension and the MCP server bundle 10 npm packages (MIT, ISC, BSD-3-Clause). Their notices now travel in the VSIX, the release and the Nexus zip (`THIRD-PARTY-NOTICES.txt`, made from the builds) |
 | View in 3D and CLI install passed | Your hand test of View in 3D (all 7 checks), and the packaged VSIX installed from the command line into a normal VS Code. Every M2 hand test has now passed |
 | Changelog and release notes | Kept as REDnode keeps them: [Changelog](changelog.html) on the docs site is the one changelog, with each change under **Unreleased** as it is made. The GitHub release notes, the extension's Changelog tab in VS Code and later the Nexus changelog are made from it by a script; the release stops if the version has no section. Steps in [Dev setup, "Releasing"](dev-setup.html#releasing) |
 | **View in 3D built** | Your idea. An eye on each mesh in Find opens it in REDcode's 3D view, and EDGEmat now gives that view the colors: a layered material's color map, or a textured material's own texture. Colors only for now, marked approximate; bumps and shine come with M5. REDcode's side already existed. The smoke test checks it on the sneakers and the jacket. Your hand test is next ([Tests](testing.html#view-in-3d)), then the 0.2.0 release |
@@ -119,6 +126,7 @@ Last updated 2026-10-19.
 | M4 Make comes before the preview | EDGEfab needs materials for new meshes; a textured `.mi` is seen without the layered bake | 2026-10-19 |
 | Generated images become textured `.mi` materials, not layers | A layer has no color texture | 2026-10-19 |
 | AI generation follows EDGEwave's idiom; keys in VS Code's secret storage, environment variables for MCP | One look across the EDGE tools; the MCP server cannot read VS Code's secrets | 2026-10-19 |
+| The Nexus page is prepared now, posted when the owner decides | The owner reviews the roadmap to M7 first | 2026-10-19 |
 | A 0.2.0 preview on GitHub only, at the end of M2 | Something real to show; the stores wait for editing (M7) | 2026-10-18 |
 
 Still open: how a recolor is saved, in place (needs MTO for every player) or at a new path (needs nothing extra; how most recolor mods ship). Leaning new path by default; settled in M3. Other open questions are in the [design](design.html#open-questions).

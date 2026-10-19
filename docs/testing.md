@@ -16,6 +16,7 @@ Last updated 2026-10-17.
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
 | [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | 2026-10-19 | Pass |
+| [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | Each release | 2026-10-19 | Pass |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
@@ -163,6 +164,16 @@ Built 2026-10-19. **Last run 2026-10-19 by the owner through F5: all 7 checks pa
 | 5 | Find `t2_078 samurai`, expand **Meshes**, right-click `t2_078_ma_jacket__samurai.mesh` › **View in 3D** | The jacket opens in 3D. On its first look it is near-black (the Arasaka jacket is black), with the Arasaka decals and stitches showing as textures |
 | 6 | Switch the 3D view's appearance list to **no_bags** | The bags change to a flat color or disappear (their material is `mesh_decal.mt` without a texture) |
 | 7 | **Show Log** (Library's `...` menu) | Lines like `3D view: 5 of 5 materials for base\...\t2_078_ma_jacket__samurai.mesh, look default, in 1055 ms` |
+
+### M2 phase test
+
+**Passed 2026-10-19.** The test in the design: a game jacket shows the same layers WolvenKit shows, and Claude describes it correctly; a setup from a mod archive outside any project opens and reads the same.
+
+| Part | How | Result |
+|---|---|---|
+| The same layers as WolvenKit | The Arasaka samurai jacket's setup (`ml_t2_078_ma_jacket__samurai.mlsetup`, the material `ml_t2_078_ma_jacket__samurai_masksset` on `t2_078_ma_jacket__samurai.mesh`, look `default`), read by EDGEmat and compared field by field with WolvenKit's own JSON of the file (REDbridge's `toJson` runs WolvenKit's reader) | 20 of 20 layers; all 360 fields equal (surface, color, tiling, offsets, opacity, levels, microblend and its settings); no field EDGEmat ignores; ratio and useNormal equal |
+| Claude describes it correctly | `mat_describe` over stdio, as Claude Code calls it, and Claude's description from it | 14 of 20 layers shown, with their surfaces, colors, finishes and shares. The owner: "100% accurate". The white stitching is not in the setup but a separate decal material on the mesh (`pasted__decal_stitches`, `garment_decals_d01.xbm`), which `mat_find` lists: a whole-garment description combines the two |
+| A setup from a mod archive | The setup editor hand test, step 10 (2026-10-17) | Pass |
 
 ### CLI install of the VSIX
 
