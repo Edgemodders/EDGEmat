@@ -144,7 +144,7 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         t.description = node.path.slice(0, node.path.lastIndexOf("\\"));
         t.tooltip = node.path;
         t.iconPath = new vscode.ThemeIcon("symbol-structure");
-        t.contextValue = "edgemat.gamePath";
+        t.contextValue = "edgemat.mesh";
         return t;
       }
       case "mesh": {
@@ -153,7 +153,7 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         t.description = `${node.label === "file" ? `look ${node.mesh.appearance} · ` : ""}${ml} multilayered of ${node.mesh.materials.length}`;
         t.tooltip = `${node.mesh.mesh}\nmesh appearance ${node.mesh.appearance}${node.mesh.component ? `\ncomponent ${node.mesh.component}` : ""}`;
         t.iconPath = new vscode.ThemeIcon(node.label === "file" ? "symbol-structure" : "symbol-color");
-        t.contextValue = "edgemat.gamePath";
+        t.contextValue = "edgemat.mesh";
         return t;
       }
       case "material": {
@@ -171,7 +171,8 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         } else {
           t.description = file(u.base || "unknown material");
           t.iconPath = new vscode.ThemeIcon("circle-outline");
-          md.appendMarkdown("Not multilayered: EDGEmat edits these later (M5).\n\n");
+          md.appendMarkdown(`Not multilayered: EDGEmat edits these later (M6).${u.baseColor ? " Its color texture shows in View in 3D." : ""}\n\n`);
+          if (u.baseColor) md.appendCodeblock(`color ${u.baseColor}`, "text");
         }
         if (u.base) md.appendCodeblock(`base ${u.base}${u.instances.length ? `\nvia  ${u.instances.join("\n     ")}` : ""}`, "text");
         t.tooltip = md;
@@ -189,6 +190,12 @@ export class FindView implements vscode.TreeDataProvider<Node> {
   static gamePathOf(node: unknown): string | undefined {
     const n = node as Node | undefined;
     return n?.kind === "meshFile" ? n.path : n?.kind === "mesh" ? n.mesh.mesh : n?.kind === "material" ? n.use.setup : undefined;
+  }
+
+  /** The mesh behind a node, for View in 3D, with the look (mesh appearance) the node shows. */
+  static meshOf(node: unknown): { mesh: string; appearance?: string } | undefined {
+    const n = node as Node | undefined;
+    return n?.kind === "meshFile" ? { mesh: n.path } : n?.kind === "mesh" ? { mesh: n.mesh.mesh, appearance: n.mesh.appearance } : undefined;
   }
 }
 

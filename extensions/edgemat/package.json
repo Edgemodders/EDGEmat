@@ -99,8 +99,12 @@
         "viewType": "edgemat.setup",
         "displayName": "EDGEmat Setup Editor",
         "selector": [
-          { "filenamePattern": "*.mlsetup" },
-          { "filenamePattern": "*.mlsetup.json" }
+          {
+            "filenamePattern": "*.mlsetup"
+          },
+          {
+            "filenamePattern": "*.mlsetup.json"
+          }
         ],
         "priority": "default"
       }
@@ -169,6 +173,12 @@
         "title": "Copy Game Path",
         "category": "EDGEmat",
         "icon": "$(copy)"
+      },
+      {
+        "command": "edgemat.viewIn3D",
+        "title": "View in 3D",
+        "category": "EDGEmat",
+        "icon": "$(eye)"
       }
     ],
     "menus": {
@@ -216,13 +226,23 @@
       ],
       "view/item/context": [
         {
+          "command": "edgemat.viewIn3D",
+          "when": "view == edgemat.find && viewItem == edgemat.mesh",
+          "group": "inline"
+        },
+        {
+          "command": "edgemat.viewIn3D",
+          "when": "view == edgemat.find && viewItem == edgemat.mesh",
+          "group": "view@1"
+        },
+        {
           "command": "edgemat.copyGamePath",
-          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem == edgemat.gamePath",
+          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)$/",
           "group": "inline"
         },
         {
           "command": "edgemat.copyGamePath",
-          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem == edgemat.gamePath",
+          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)$/",
           "group": "copy@1"
         }
       ],
@@ -246,6 +266,10 @@
         {
           "command": "edgemat.clearSearch",
           "when": "edgemat.filtered"
+        },
+        {
+          "command": "edgemat.viewIn3D",
+          "when": "false"
         }
       ]
     },

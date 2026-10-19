@@ -30,9 +30,18 @@ export interface MaterialUse {
   setup?: string;
   mask?: string;
   globalNormal?: string;
+  /** A textured material's color texture: its BaseColor, DiffuseTexture, Albedo or Diffuse parameter, the nearest in its chain. */
+  baseColor?: string;
   /** The .mi files between the mesh and the base material, when the material is external. */
   instances: string[];
 }
+
+/**
+ * The parameters that hold a material's color texture, in order. Sampled from the game on 2026-10-19:
+ * BaseColor in metal_base.remt and its kin, DiffuseTexture in the mesh_decal family, Albedo in skin.mt,
+ * Diffuse in hologram.mt.
+ */
+const ColorParameters = ["BaseColor", "DiffuseTexture", "Albedo", "Diffuse"];
 
 export interface MeshLook {
   mesh: string;
@@ -100,14 +109,21 @@ export function searchItems(items: ItemEntry[], query: string): ItemEntry[] {
   return items.filter((i) => words.every((w) => hay(i).includes(w))).sort((a, b) => rank(a) - rank(b) || a.id.localeCompare(b.id));
 }
 
-/** Reads game files as JSON once per walk. */
+/** A path on disk rather than a game path. */
+export const isFilePath = (p: string) => /^[a-z]:[\\/]|^\\\\/i.test(p);
+
+/**
+ * Reads files as JSON once per walk: a file on disk, a game path, or a game path that a project
+ * overrides (a file at the same path under `root`, its source\archive folder).
+ */
 class Reader {
   private readonly cache = new Map<string, Promise<Json>>();
-  constructor(private readonly bridge: BridgeClient) {}
+  constructor(private readonly bridge: BridgeClient, private readonly root?: string) {}
   json(p: string): Promise<Json> {
     const k = p.toLowerCase();
     if (!this.cache.has(k)) {
-      this.cache.set(k, this.bridge.toJson(p).then((r) => {
+      const local = isFilePath(p) ? p : this.root && fs.existsSync(path.join(this.root, p)) ? path.join(this.root, p) : undefined;
+      this.cache.set(k, (local ? this.bridge.fileToJson(local) : this.bridge.toJson(p)).then((r) => {
         if (!r.json) throw new Error(`REDbridge returned no JSON for ${p}.`);
         return JSON.parse(r.json) as Json;
       }));
@@ -128,6 +144,15 @@ async function resolveMaterial(read: Reader, material: Json, name: string, chunk
       if (value.MultilayerMask && !use.mask) use.mask = v(value.MultilayerMask) || undefined;
       if (value.GlobalNormal && !use.globalNormal) use.globalNormal = v(value.GlobalNormal) || undefined;
     }
+    if (!use.baseColor) {
+      for (const key of ColorParameters) {
+        const found = (current.values ?? []).map((value: Json) => v(value[key])).find((p: unknown) => typeof p === "string" && /\.xbm$/i.test(p));
+        if (found) {
+          use.baseColor = found;
+          break;
+        }
+      }
+    }
     const base = v(current.baseMaterial) as string | undefined;
     if (!base) break;
     use.base = base;
@@ -145,6 +170,11 @@ async function meshLook(read: Reader, meshPath: string, appearance: string, comp
   const look = looks.find((a: Json) => v(a.name) === appearance) ?? looks.find((a: Json) => v(a.name) === "default") ?? looks[0];
   const counts = new Map<string, number>();
   for (const n of look?.chunkMaterials ?? []) counts.set(v(n), (counts.get(v(n)) ?? 0) + 1);
+  return { mesh: meshPath, appearance: v(look?.name) ?? appearance, component, materials: await materialsOf(read, mesh, counts) };
+}
+
+/** The materials a mesh names, with how many render chunks use each, resolved to their setups or textures. */
+async function materialsOf(read: Reader, mesh: Json, counts: Map<string, number>): Promise<MaterialUse[]> {
   const entries: Json[] = mesh.materialEntries ?? [];
   const materials: MaterialUse[] = [];
   for (const [name, chunks] of counts) {
@@ -163,12 +193,22 @@ async function meshLook(read: Reader, meshPath: string, appearance: string, comp
       materials.push(use);
     }
   }
-  return { mesh: meshPath, appearance: v(look?.name) ?? appearance, component, materials };
+  return materials;
+}
+
+/**
+ * Named materials of a mesh (a game path or a file), resolved as Find resolves them. A mesh in a
+ * project reads the project's own copies of its .mi files first, given `root`, its source\archive folder.
+ */
+export async function namedMaterials(bridge: BridgeClient, meshPath: string, names: string[], root?: string): Promise<MaterialUse[]> {
+  const read = new Reader(bridge, root);
+  const mesh = (await read.json(meshPath)).Data.RootChunk;
+  return materialsOf(read, mesh, new Map(names.map((n) => [n, 0])));
 }
 
 /** A mesh's materials in one appearance, or in every appearance when none is given. */
-export async function meshMaterials(bridge: BridgeClient, meshPath: string, appearance?: string): Promise<MeshLook[]> {
-  const read = new Reader(bridge);
+export async function meshMaterials(bridge: BridgeClient, meshPath: string, appearance?: string, root?: string): Promise<MeshLook[]> {
+  const read = new Reader(bridge, root);
   if (appearance) return [await meshLook(read, meshPath, appearance)];
   const mesh = (await read.json(meshPath)).Data.RootChunk;
   const names: string[] = (mesh.appearances ?? []).map((a: Json) => v((a.Data ?? a).name));

@@ -5,7 +5,7 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { BridgeClient } from "./bridgeClient";
-import { writeThumbnail, type ThumbnailContrast, type ThumbnailSource } from "./thumbnail";
+import { fitImage, writeThumbnail, type ThumbnailContrast, type ThumbnailSource } from "./thumbnail";
 
 const ImagesFolder = "images";
 
@@ -29,6 +29,26 @@ export async function textureImage(bridge: BridgeClient, dir: string, texture: s
     if (writeThumbnail(png, out, size, source, contrast)) return name;
     fs.writeFileSync(out + ".flat", "");
     return undefined;
+  } finally {
+    fs.rmSync(png, { force: true });
+  }
+}
+
+/**
+ * A texture as it is, for showing on a mesh: whole, not cropped, at most `maxSide` pixels on its longer
+ * side. From the game, or from a file on disk (a project's copy). Returns the image's full path; cached.
+ */
+export async function wholeTexture(bridge: BridgeClient, dir: string, texture: { gamePath: string } | { file: string }, maxSide = 1024): Promise<string> {
+  const id = "file" in texture ? `${texture.file}:${fs.statSync(texture.file).mtimeMs}` : texture.gamePath;
+  const out = imageFile(dir, crypto.createHash("sha1").update(`whole:${maxSide}:${id}`).digest("hex").slice(0, 20) + ".png");
+  if (fs.existsSync(out)) return out;
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  const png = `${out}.tmp-${process.pid}.png`;
+  try {
+    if ("file" in texture) await bridge.fileToPng(texture.file, png);
+    else await bridge.toPng(texture.gamePath, png);
+    fitImage(png, out, maxSide);
+    return out;
   } finally {
     fs.rmSync(png, { force: true });
   }

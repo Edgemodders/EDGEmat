@@ -3,7 +3,8 @@
 // REDcode is active, and builds the material library from the user's game in the background.
 
 import * as vscode from "vscode";
-import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, resolveBridge, resolveGame, type GameChoice, type Library } from "./core";
+import type { EdgematApi } from "./api";
+import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library } from "./core";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
 import { GameFiles, GameScheme, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
@@ -52,7 +53,8 @@ function activeApi<T extends { apiVersion: number }>(id: string): T | undefined 
   return api?.apiVersion === 1 ? api : undefined;
 }
 
-const redcode = () => activeApi<REDcodeApi>("edgemodders.redcode-cyberpunk");
+const REDcodeId = "edgemodders.redcode-cyberpunk";
+const redcode = () => activeApi<REDcodeApi>(REDcodeId);
 const reddeck = () => activeApi<REDdeckApi>("edgemodders.reddeck");
 
 async function findGame(search: boolean): Promise<GameChoice | undefined> {
@@ -174,7 +176,32 @@ async function setGameFolder(): Promise<void> {
   await vscode.workspace.getConfiguration("edgemat").update("gamePath", dir, vscode.ConfigurationTarget.Global);
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+/**
+ * Opens a mesh in REDcode's 3D view, which asks EDGEmat for its materials (renderMaterials below).
+ * REDcode opens it at the mesh's first look; the look to pick is shown in the status bar.
+ */
+async function viewIn3D(target: { mesh: string; appearance?: string } | undefined): Promise<void> {
+  if (!target) return;
+  const ext = vscode.extensions.getExtension<REDcodeApi>(REDcodeId);
+  if (!ext) {
+    const pick = await vscode.window.showInformationMessage("View in 3D uses REDcode's 3D view, and REDcode is not installed.", "Show REDcode");
+    if (pick) await vscode.commands.executeCommand("extension.open", REDcodeId);
+    return;
+  }
+  const api = ext.isActive ? ext.exports : await ext.activate();
+  // REDcode starts its bridge when VS Code starts; give a fresh start a moment to load the game.
+  for (let i = 0; i < 30 && !api?.bridge()?.running; i++) await new Promise((r) => setTimeout(r, 500));
+  if (!api?.bridge()?.running) {
+    const pick = await vscode.window.showWarningMessage("REDcode's REDbridge is not running, so its 3D view cannot open game files.", "Restart REDbridge");
+    if (pick) await vscode.commands.executeCommand("redcode.restartBridge");
+    return;
+  }
+  const uri = vscode.Uri.from({ scheme: "redcode-game", path: "/" + target.mesh.replace(/\\/g, "/") });
+  await vscode.commands.executeCommand("vscode.openWith", uri, "redcode.cr2w");
+  if (target.appearance) vscode.window.setStatusBarMessage(`$(eye) EDGEmat: pick the look "${target.appearance}" in the 3D view`, 15000);
+}
+
+export function activate(context: vscode.ExtensionContext): EdgematApi {
   output = vscode.window.createOutputChannel("EDGEmat");
   view = new LibraryView();
   tree = vscode.window.createTreeView("edgemat.library", { treeDataProvider: view, showCollapseAll: true }) as vscode.TreeView<unknown>;
@@ -183,6 +210,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const library = () => view.current ?? loadLibrary(cacheDir);
   const find = new FindView(bridgeNow, () => cacheDir, log);
   const findTree = vscode.window.createTreeView("edgemat.find", { treeDataProvider: find, showCollapseAll: true });
+  const materialsChanged = new vscode.EventEmitter<{ mesh?: string; materials: string[] }>();
   const host: SetupEditorHost = {
     extensionUri: context.extensionUri,
     cacheDir: () => cacheDir,
@@ -241,6 +269,8 @@ export function activate(context: vscode.ExtensionContext): void {
       const p = LibraryView.gamePathOf(node) ?? FindView.gamePathOf(node);
       if (p) await vscode.env.clipboard.writeText(p);
     }),
+    vscode.commands.registerCommand("edgemat.viewIn3D", (node) => viewIn3D(FindView.meshOf(node))),
+    materialsChanged,
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (["edgemat.gamePath", "edgemat.bridgePath", "edgemat.dotnetRoot", "redcode.gamePath", "redcode.bridgePath"].some((k) => e.affectsConfiguration(k))) {
         ownBridge?.stop();
@@ -253,6 +283,21 @@ export function activate(context: vscode.ExtensionContext): void {
 
   setState("building");
   void refresh();
+
+  return {
+    apiVersion: 1,
+    async renderMaterials(req) {
+      const bridge = await bridgeNow();
+      if (!bridge) throw new Error("EDGEmat needs the game folder and REDbridge.");
+      // Layer colors come from the library: wait for a first build.
+      if (!view.current && building) await building;
+      const started = Date.now();
+      const maps = await renderMaterials(bridge, library(), cacheDir, req, log);
+      log(`3D view: ${Object.keys(maps).length} of ${req.materials?.length ?? "the"} materials for ${req.mesh}${req.appearance ? `, look ${req.appearance}` : ""}, in ${Date.now() - started} ms`);
+      return maps;
+    },
+    onDidChangeMaterials: materialsChanged.event,
+  };
 }
 
 export function deactivate(): void {

@@ -16,6 +16,28 @@ export type ThumbnailSource = "color" | "alpha" | "relief";
 export type ThumbnailContrast = "full" | "soft" | "none";
 
 /**
+ * Copies a PNG whole, colors and alpha as they are, halving it until its longer side is at most
+ * `maxSide`. Unlike a thumbnail it is never cropped, so it still lines up with the mesh's UVs.
+ */
+export function fitImage(srcFile: string, outFile: string, maxSide: number): void {
+  let img: PNG = PNG.sync.read(fs.readFileSync(srcFile));
+  while (Math.max(img.width, img.height) > maxSide && img.width > 1 && img.height > 1) {
+    const w = img.width >> 1, h = img.height >> 1;
+    const half = new PNG({ width: w, height: h });
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        for (let c = 0; c < 4; c++) {
+          const at = (dx: number, dy: number) => img.data[((y * 2 + dy) * img.width + x * 2 + dx) * 4 + c];
+          half.data[(y * w + x) * 4 + c] = (at(0, 0) + at(1, 0) + at(0, 1) + at(1, 1) + 2) >> 2;
+        }
+      }
+    }
+    img = half;
+  }
+  fs.writeFileSync(outFile, PNG.sync.write(img));
+}
+
+/**
  * Reads a PNG, crops it to a centred square, scales it to `size` (a box filter down, bilinear up) and
  * writes it. Returns false, and writes nothing, when the image is flat: one tone with no detail to show.
  */

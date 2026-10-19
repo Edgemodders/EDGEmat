@@ -114,12 +114,25 @@ try {
   const jeansWalk = await core.itemMaterials(bridge, jeans);
   const jf = jeansWalk.looks.find((l) => l.body === "feminine");
   check(!!jf && jf.meshes[0].mesh.includes("l1_066"), `jeans: the feminine body wears ${jf?.meshes[0].mesh.split("\\").pop()} (spec: l1_066 rogue pants)`);
-  const jacket = await core.meshMaterials(bridge, "base\\characters\\garment\\corp_arasaka\\torso\\t2_078_jacket__samurai\\t2_078_ma_jacket__samurai.mesh");
+  const jacketPath = "base\\characters\\garment\\corp_arasaka\\torso\\t2_078_jacket__samurai\\t2_078_ma_jacket__samurai.mesh";
+  const jacket = await core.meshMaterials(bridge, jacketPath);
   const def = jacket.find((l) => l.appearance === "default"), noBags = jacket.find((l) => l.appearance === "no_bags");
   check(ml({ meshes: [def] }).length === 2 && new Set(ml({ meshes: [def] }).map((x) => x.setup)).size === 1 && noBags?.materials.some((x) => /mesh_decal\.mt$/.test(x.base)),
     `jacket mesh: ${jacket.length} appearances; body and bags share one setup; no_bags hides parts with mesh_decal.mt`);
   const given = await core.openSetup(bridge, lib, cache, { gamePath: ml(fem)[0].setup }, ml(fem)[0].mask);
   check(given.maskFrom === "given" && given.masks?.name === "ml_s1_055_pma_shoe__converse_masksset", "opening a found setup uses the mask set its material names");
+
+  // M2: colors for REDcode's 3D view (renderMaterials, first version: color only).
+  console.log("\n3D view");
+  const isPng = (u) => !!u && u[0] === 0x89 && u[1] === 0x50 && u[2] === 0x4e && u[3] === 0x47;
+  let t2 = Date.now();
+  const shoeMaps = await core.renderMaterials(bridge, lib, cache, { mesh: fem.meshes[0].mesh, appearance: "red_yellow_graphic", materials: ["red_yellow_graphic", "dec_lights"] });
+  check(isPng(shoeMaps.red_yellow_graphic?.baseColor) && shoeMaps.red_yellow_graphic.fidelity === "approximate" && !shoeMaps.dec_lights,
+    `sneakers in ${Date.now() - t2} ms: the layered material's color map; dec_lights has no color texture, so the viewer keeps its flat color`);
+  t2 = Date.now();
+  const jacketMaps = await core.renderMaterials(bridge, lib, cache, { mesh: jacketPath, appearance: "default" });
+  check(Object.keys(jacketMaps).length === 5 && isPng(jacketMaps.bags?.baseColor) && isPng(jacketMaps.decals?.baseColor),
+    `jacket in ${Date.now() - t2} ms: ${Object.keys(jacketMaps).length} materials, the two layered ones and three textured decals`);
 } finally {
   bridge.stop();
 }

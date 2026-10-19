@@ -13,8 +13,9 @@ export {
   describeSurface, findSurface, flatTextureValue, nearestColors, plainBumps, plainContrast, plainMetal, plainRoughness,
   type ColorInfo, type PresetInfo, type SurfaceInfo, type TextureInfo,
 } from "./surface";
-export { imageFile, textureImage } from "./images";
+export { imageFile, textureImage, wholeTexture } from "./images";
 export { describeSetup, parseSetup, type LayerInfo, type Setup, type SetupInfo, type SetupLayer } from "./setup";
 export { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, MaskSize, PickSize, type Composite, type MaskSet, type MaskSource } from "./masks";
 export { gamePathInProject, openSetup, readSetup, type OpenedSetup, type SetupSource } from "./openSetup";
-export { itemMaterials, loadItems, meshMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook } from "./find";
+export { isFilePath, itemMaterials, loadItems, meshMaterials, namedMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook } from "./find";
+export { projectArchive, renderMaterials, type RenderedMaterial, type RenderRequest } from "./render";
