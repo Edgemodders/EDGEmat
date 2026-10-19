@@ -10,6 +10,7 @@ The EDGE material editor for Cyberpunk 2077. Part of the EDGE modding platform b
 | **Surface page** | Click a surface: a larger image tinted with the color you pick, every color as a swatch with a plain name ("dark muted blue"), the closest color to one you type or pick, and roughness, metal and bumps in plain words |
 | **Setup editor** | Open any `.mlsetup` from the game, a file, a project, a mod archive, or REDcode's Game Assets: each layer in plain words, a map of where each layer goes on the garment, and warnings for what looks wrong. **Open Setup** is in the Library's title bar |
 | **Find** | Type a garment's in-game name ("punk jeans") or part of a mesh path: its looks per body, its meshes and materials. Click a layered material to open its setup with the right masks |
+| **View in 3D** | The eye on a mesh opens it in [REDcode](https://github.com/Edgemodders/REDcode)'s 3D view, with its colors from EDGEmat. Colors only for now: bumps and shine come later |
 
 Next: recoloring (M3), then making new materials, from a model's textures or from words through an AI image service you choose (M4).
 

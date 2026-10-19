@@ -8,7 +8,7 @@ Last updated 2026-10-19.
 
 | | |
 |---|---|
-| Phase | **M2 Read**: every hand test passed (Library, surface page, setup editor, Find); M2's own test and the CLI install test remain |
+| Phase | **M2 Read**: hand tests passed for the Library, surface page, setup editor and Find; View in 3D built, hand test pending; then M2's own test and the CLI install test |
 | Extension | 0.1.0 plus M2 so far: the EDGEmat icon in the activity bar; a Library of every surface and microblend in your game, with thumbnails and search; a page for each surface with its colors as named swatches |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
@@ -19,6 +19,7 @@ Last updated 2026-10-19.
 
 | To-do | Why | Since |
 |---|---|---|
+| Hand-test View in 3D: F5, Find `sunny ammo`, then the eye on a mesh row ([Tests](testing.html#view-in-3d)) | The last feature before the 0.2.0 preview | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Test the packaged VSIX from the CLI: `code --install-extension dist\edgemat-<version>.vsix` ([Tests](testing.html#cli-install-of-the-vsix)) | F5 runs the source; only the CLI install tests what a user gets. Planned for your next session at the PC | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
@@ -41,6 +42,7 @@ Last updated 2026-10-19.
 
 | What | Detail |
 |---|---|
+| **View in 3D built** | Your idea. An eye on each mesh in Find opens it in REDcode's 3D view, and EDGEmat now gives that view the colors: a layered material's color map, or a textured material's own texture. Colors only for now, marked approximate; bumps and shine come with M5. REDcode's side already existed. The smoke test checks it on the sneakers and the jacket. Your hand test is next ([Tests](testing.html#view-in-3d)), then the 0.2.0 release |
 | Find hand test passed | All 10 checks, through F5. The test steps now say where Find is: a header below the Library, and the Library's magnifier is Search Library, not Find |
 | **Roadmap revised** | A new **M4 Make** ahead of the preview: materials for new meshes, which EDGEfab needs for the clothes and objects it makes. The preview moves to M5, Beyond mlsetup to M6, Ship to M7. Make holds materials from a model's textures, **Generate a material**, game materials on a new mesh and the Looks editor ([design, "Phases"](design.html#phases)) |
 | Generate a material designed | Your idea: a non-artist types "brown leather" and gets a material. An AI image service (Nano Banana, Nano Banana Pro, GPT Image), opt-in with your own key, or your own photo. EDGEmat makes it seamless, derives bumps and shine, and writes a textured `.mi`. One general prompt prefix plus your words; presets only if tests show the need. The UI follows EDGEwave's generation dialog, with a tiled preview to show seams ([design](design.html#generate-a-material)) |

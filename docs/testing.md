@@ -9,12 +9,13 @@ Last updated 2026-10-17.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
-| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1, M2 | 2026-10-17 | Pass |
+| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1, M2 | 2026-10-19 | Pass |
 | [MCP server](#mcp-server) | By hand, over stdio | M1, M2 | 2026-10-17 | Pass |
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
+| [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | Not run | Colors checked outside VS Code on 2026-10-19 |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M7 at the latest | Not run | |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
@@ -52,6 +53,7 @@ Needs the game and REDbridge, found from the VS Code settings as the extension f
 | Typed colors (M2) | "dark red" on `leather_bull_01_30` finds a dark red preset (`c2162c_69039f`, distance 0.032); "banana" is refused; `#a03030` reads back as itself |
 | Setup editor data (M2) | On `ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup`: 20 layers, 19 shown, layer 11 hidden (opacity 0); mask set `ml_s1_055_pma_shoe__converse_masksset` (20 masks) found beside it, of 2 in the folder; layer 7 (the sole, in-game test R1-B) is rubber bumper damaged, 11.3% of the texture; every surface found, no warnings; the 0.0.1 and oldest JSON shapes (made from the current one) read the same layers. Read in about 0.3 s with the masks cached |
 | Find (M2) | 1,997 clothing items with in-game names (8.5 s the first time, then cached); "sunny ammo high-tops" finds `Items.CasualShoes_01_basic_01` and "Pants_03_basic_01" finds `Items.Pants_03_basic_01`; the sneakers walk to two bodies (`_pwa_` and `_pma_` meshes), each with red_yellow_graphic's setup and the converse mask set; the jeans' feminine body wears `l1_066` pants; the jacket mesh's body and bags share one setup and `no_bags` hides them with `mesh_decal.mt`; a found setup opens with the mask set its material names. Each item walk takes about 0.15 to 0.35 s |
+| 3D view colors (M2) | The sneakers' `red_yellow_graphic` as a 512 px color map, in about 0.5 s; `dec_lights` left out (no color texture). The jacket's `default` look: 5 materials, the two layered ones as color maps and three decals as their own textures (`decals_arasaka_d01.xbm`, `garment_decals_d01.xbm`), in about 1 s |
 | Page images (M2) | 3 of 3 for `leather_bull_01_30`: the first in about 1.6 s while the bridge warms up, the rest in well under half a second, then instant from the cache |
 
 The counts change after a game patch. A patch that adds surfaces is fine as long as "read" matches "listing".
@@ -143,6 +145,24 @@ Built 2026-10-17. **Last run 2026-10-19 by the owner through F5: all 10 checks p
 | 8 | Right-click a mesh or a multilayered material › **Copy Game Path** (also the copy icon that appears on hover) | The mesh's path, or the material's setup path, on the clipboard |
 | 9 | Find `nothing like this` | One line: Nothing matches, with a hint |
 | 10 | **Clear Find** (the clear icon in Find's title bar) | The view goes back to its first text |
+
+### View in 3D
+
+Built 2026-10-19; **not yet run in VS Code.** The colors behind it were checked outside VS Code (smoke test, "3D view"). Needs REDcode installed in the development host's VS Code (it is, when REDcode is installed in your normal VS Code), with its REDbridge running.
+
+1. `npm run build`, then **F5** (**Run EDGEmat**).
+2. In the development host, open EDGEmat's activity bar container, expand **FIND** below the Library, press **Find...** and type `sunny ammo`.
+3. Expand "Sunny Ammo synthetic high-tops", then **Feminine body**. Under it is the mesh row `s1_055_pwa_shoe__converse.mesh`.
+
+| # | Check | Expected |
+|---|---|---|
+| 1 | Hover the mesh row `s1_055_pwa_shoe__converse.mesh` | Two icons at its right end: an **eye** (View in 3D) and **copy** (Copy Game Path) |
+| 2 | Click the **eye** | REDcode's editor opens the mesh in a new tab, on its **3D** view. The status bar (bottom of the window) says: EDGEmat: pick the look "red_yellow_graphic" in the 3D view |
+| 3 | In the 3D view's toolbar, pick **red_yellow_graphic** in the appearance list | The sneaker shows its colors: black sole, red trim, an orange-brown upper, as in the setup editor's color map. The 3D view says "EDGEmat: approximate". Nothing shiny or bumpy yet: colors only |
+| 4 | Rotate the sneaker (drag in the view) | The colors sit where they belong on the shoe: the sole is black, the laces area matches the map. If the colors look scrambled or upside down, tell me: it means the map's orientation is off |
+| 5 | Find `t2_078 samurai`, expand **Meshes**, right-click `t2_078_ma_jacket__samurai.mesh` › **View in 3D** | The jacket opens in 3D. On its first look it is near-black (the Arasaka jacket is black), with the Arasaka decals and stitches showing as textures |
+| 6 | Switch the 3D view's appearance list to **no_bags** | The bags change to a flat color or disappear (their material is `mesh_decal.mt` without a texture) |
+| 7 | **Show Log** (Library's `...` menu) | Lines like `3D view: 5 of 5 materials for base\...\t2_078_ma_jacket__samurai.mesh, look default, in 1055 ms` |
 
 ### CLI install of the VSIX
 
