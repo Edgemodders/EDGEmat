@@ -14,7 +14,7 @@ Last updated 2026-10-17.
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
-| [Find view](#find-view) | By hand, F5 | M2 | Not run | Walks checked outside VS Code on 2026-10-17 |
+| [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M7 at the latest | Not run | |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
@@ -126,7 +126,7 @@ Run 2026-10-17 by the owner: **all pass**, including opening from REDcode's Game
 
 ### Find view
 
-Built 2026-10-17; **not yet run in VS Code.** The walks behind it were run outside VS Code on the test set (smoke test, and `mat_find` over stdio).
+Built 2026-10-17. **Last run 2026-10-19 by the owner through F5: all 10 checks pass.** The walks behind it were also run outside VS Code on the test set (smoke test, and `mat_find` over stdio).
 
 1. `npm run build`, then **F5** (**Run EDGEmat**).
 2. In the development host, open EDGEmat's activity bar container. **Find** is the second view, a **FIND** header below **Library**, often collapsed at the bottom of the sidebar: click its header to expand it, and collapse Library (click its header) if Find is squeezed. The magnifier at the top of the Library is **Search Library**, not Find; Find's own magnifier shows only when you hover over Find's header.
