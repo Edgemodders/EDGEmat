@@ -1,0 +1,140 @@
+[center][img]https://raw.githubusercontent.com/Edgemodders/EDGEmat/main/docs/assets/brand/banner.png[/img][/center]
+
+[center][size=5][b][color=#fcee0a]See what every garment is made of. Then recolor it, or ask an AI to.[/color][/b][/size][/center]
+
+[center][size=3]EDGEmat is a material editor for Cyberpunk 2077's clothing, in VS Code. Type a garment's in-game name and it shows each of its layers in plain words, a map of where each layer sits, and the garment in 3D with its colors. Claude and other AI assistants can ask it the same questions.[/size][/center]
+
+[line]
+
+[quote][size=4][b][color=#fcee0a]STATUS: PREVIEW[/color][/b][/size]
+Version 0.2 reads a garment's materials and shows them. It does not change them yet: recoloring is the next phase. Everything on this page is built and tested on the developer's PC, on game version 2.31.
+[b]This is a VS Code extension, not a game mod.[/b] It reads your game's files and never changes them. Do not install it with Vortex.[/quote]
+
+[line]
+
+[color=#19f3ff][i]» Screenshot 1: EDGEmat in VS Code: the Library and Find in the sidebar, the setup editor open on the Sunny Ammo sneakers with its color map and layer list.[/i][/color]
+
+[size=5][b][color=#fcee0a]What EDGEmat is[/color][/b][/size]
+
+Most clothing in Cyberpunk 2077 gets its look from [b]multilayered materials[/b]: a stack of up to 20 layers, such as leather, metal studs and stitching. Each layer has a surface, a color from that surface's list, and a mask that paints it onto part of the garment. Recoloring means editing that stack, and today that takes specialist tools and a good map of which file is which.
+
+EDGEmat is built by [url=https://edgemodders.ai/]EDGEmodders[/url], a modding community whose idea is simple: [b]anyone can mod[/b]. Plain words first, raw values one click away, and every feature in the buttons and for an AI assistant alike.
+
+[size=5][b][color=#fcee0a]Highlights[/color][/b][/size]
+
+[size=4][b][color=#19f3ff]Find a garment by its name[/color][/b][/size]
+Type "punk jeans" or "Sunny Ammo". EDGEmat walks the game's chain of files for you: the item, its look for each body type, its meshes, and their materials. The two bodies can even wear different meshes, and EDGEmat shows both.
+
+[color=#19f3ff][i]» Screenshot 2: the Find view after searching "sunny ammo": the item open into Feminine body and Masculine body, down to the mesh and its materials.[/i][/color]
+
+[size=4][b][color=#19f3ff]Every layer in plain words[/color][/b][/size]
+"Leather, black, mostly glossy, faint bumps, 6% of the jacket." Each layer's surface, color, shine, metal, bumps, tiling and detail texture, and how much of the garment it covers. Tick Raw values for the game's own names and numbers. Layers that don't show say why, and EDGEmat flags what looks wrong, such as a color the surface doesn't have (the game draws it white).
+
+[size=4][b][color=#19f3ff]A color map you can click[/color][/b][/size]
+The garment's texture, unwrapped flat, with each layer painted in its color where its mask puts it. Click a spot to find its layer; select a layer to light up exactly where it goes.
+
+[color=#19f3ff][i]» Screenshot 3: the setup editor with one layer selected, its area lit on the color map and its details open.[/i][/color]
+
+[size=4][b][color=#19f3ff]The garment in 3D[/color][/b][/size]
+One click opens the mesh in REDcode's 3D viewer, with its colors from EDGEmat: each layer where it belongs, and the decals and stitching as their own textures. Colors only for now; shine and bumps come with the full preview.
+
+[color=#19f3ff][i]» Screenshot 4: REDcode's 3D view of the Sunny Ammo sneakers with their colors, and the Arasaka jacket beside it.[/i][/color]
+
+[size=4][b][color=#19f3ff]Every surface and every color, named[/color][/b][/size]
+A library of all the game's surfaces (about 390) and detail textures (about 130), built from your own game with thumbnails. Each surface's page shows every color it offers as a swatch with a plain name ("dark muted blue"), and sorts them by how close they are to a color you type or pick.
+
+[color=#19f3ff][i]» Screenshot 5: a surface page: the tinted image, the selected color's panel, and the swatches sorted closest to "dark red".[/i][/color]
+
+[size=4][b][color=#19f3ff]Open any material file[/color][/b][/size]
+From the game, your WolvenKit project, a file on disk, or inside another mod's archive, without unpacking it. EDGEmat finds the right masks, and never changes the original.
+
+[size=4][b][color=#19f3ff]Ask Claude[/color][/b][/size]
+EDGEmat comes with an MCP server, so Claude Code can find a garment's materials, describe its layers and find the closest color a surface has. "Which materials do the punk jeans use?" "What's the closest dark red that leather can take?" It makes no network calls of its own, and sends no telemetry.
+
+[color=#19f3ff][i]» Screenshot 6: Claude Code describing the Arasaka jacket's layers through EDGEmat.[/i][/color]
+
+[size=5][b][color=#fcee0a]What is in the download[/color][/b][/size]
+
+[list]
+[*][b]edgemat-x.y.z.vsix[/b]: the VS Code extension.[/*]
+[*][b]edgemat-mcp-x.y.z.cjs[/b]: the MCP server for AI assistants, one file. Optional.[/*]
+[*]README.txt (how to install), LICENSE.txt and THIRD-PARTY-NOTICES.txt.[/*]
+[/list]
+Nothing from the game is in it: EDGEmat builds its library from your own game the first time it runs, in under half a minute, and stays current after game patches.
+
+[size=5][b][color=#fcee0a]Requirements[/color][/b][/size]
+
+[list]
+[*]Cyberpunk 2077 on PC, Windows 10 or 11, 64-bit. Tested on game version 2.31.[/*]
+[*][url=https://code.visualstudio.com/]VS Code[/url] 1.70 or later (or VSCodium, or EDGEkit).[/*]
+[*]REDbridge 0.8.0 or later, the engine that reads the game's files. The easy way: install [url=https://github.com/Edgemodders/REDcode]REDcode[/url] and run its [b]Install REDbridge[/b], which also fetches .NET 10 for your Windows user. With REDcode set up, EDGEmat needs no configuration at all.[/*]
+[*]For View in 3D: REDcode.[/*]
+[*]For the assistant: Node.js 20 or later, and Claude Code or another MCP client.[/*]
+[/list]
+
+[size=5][b][color=#fcee0a]Install[/color][/b][/size]
+
+[list]
+[*]Download the zip and extract it anywhere.[/*]
+[*]In VS Code, open the Extensions view (Ctrl+Shift+X), click [b]...[/b] at its top, choose [b]Install from VSIX...[/b] and pick [i]edgemat-x.y.z.vsix[/i].[/*]
+[*]Click the EDGEmat icon in the activity bar. The library builds itself.[/*]
+[/list]
+Or from a terminal: [i]code --install-extension edgemat-x.y.z.vsix[/i]. The step-by-step guide: [url=https://edgemodders.ai/wiki/edgemat/install.html]Install and set up[/url].
+
+[b]Uninstall:[/b] in VS Code's Extensions view. The library lives in [i]%LOCALAPPDATA%\EDGEmat[/i]; delete that folder too for a clean slate.
+
+[size=5][b][color=#fcee0a]Roadmap[/color][/b][/size]
+
+[list]
+[*][b]Library[/b] and [b]Read[/b]: the library, surface pages, the setup editor, Find, View in 3D, the assistant's tools. Done: this version.[/*]
+[*][color=#19f3ff]Next:[/color] [b]Edit[/b]: change a layer's surface, color, tiling and detail, with undo, and save it into your mod project, or ask an assistant to.[/*]
+[*][b]Make[/b]: materials for new clothes and objects, from a model's textures, from a photo, or generated from your words ("brown leather") by an AI image service you choose, with your own key.[/*]
+[*][b]Preview[/b]: shine, bumps, metal and detail on the 3D model, not just colors.[/*]
+[*][b]Beyond layers[/b]: colors no surface offers, other kinds of material.[/*]
+[*][b]Ship[/b]: the VS Code Marketplace and Open VSX.[/*]
+[/list]
+The full plan, with every test: [url=https://edgemodders.github.io/EDGEmat/]EDGEmat docs[/url].
+
+[size=5][b][color=#fcee0a]Questions[/color][/b][/size]
+
+[b]Is this a game mod?[/b]
+No. It's a tool for making mods, running in VS Code. It reads the game's files and never changes them. Your game doesn't need it.
+
+[b]Can I recolor clothes with it now?[/b]
+Not yet. This preview shows you everything you need to know first: which files, which layers, which colors each surface offers. Editing is the next phase.
+
+[b]Do I need an AI or an account?[/b]
+No. EDGEmat works fully on its own. The AI assistant is optional; it uses your own Claude account.
+
+[b]How is it different from MlsetupBuilder?[/b]
+MlsetupBuilder is the editor many modders know, and EDGEmat learned from how it behaves. EDGEmat is a new editor written from scratch, in VS Code: it finds a garment's files from its name, describes layers in plain words, builds its library from your own game, and works with AI assistants.
+
+[b]Single-player only?[/b]
+Yes. Cyberpunk 2077 is a single-player game, and EDGEmat is for single-player modding.
+
+[b]Is it free?[/b]
+Yes, and open source under the MIT license. The code is on [url=https://github.com/Edgemodders/EDGEmat]GitHub[/url].
+
+[line]
+
+[size=5][b][color=#fcee0a]Links[/color][/b][/size]
+
+[list]
+[*]Manual: [url=https://edgemodders.ai/wiki/edgemat/]edgemodders.ai/wiki/edgemat[/url][/*]
+[*]Docs and changelog: [url=https://edgemodders.github.io/EDGEmat/]edgemodders.github.io/EDGEmat[/url][/*]
+[*]Source and issues: [url=https://github.com/Edgemodders/EDGEmat]github.com/Edgemodders/EDGEmat[/url][/*]
+[*]REDcode: [url=https://github.com/Edgemodders/REDcode]github.com/Edgemodders/REDcode[/url][/*]
+[*]EDGEmodders: [url=https://edgemodders.ai/]edgemodders.ai[/url][/*]
+[*]Community Discord: [url=https://discord.gg/63qP3Erw43]discord.gg/63qP3Erw43[/url][/*]
+[/list]
+
+[size=5][b][color=#fcee0a]Credits[/color][/b][/size]
+
+[list]
+[*][b][url=https://www.nexusmods.com/profile/Cyberbuilds]Cyberbuilds[/url][/b] for making EDGEmodders and these tools.[/*]
+[*][b]MlsetupBuilder[/b] by Neurolinked: EDGEmat studied how it behaves, and uses none of its code or data. EDGEmat is not made with or endorsed by its author.[/*]
+[*][b]WolvenKit[/b] and its team, whose libraries REDbridge runs to read the game's files.[/*]
+[*]The [b]Cyberpunk 2077 modding wiki[/b] and the wider modding community, whose knowledge of the material system this builds on.[/*]
+[*]Bundled open-source packages, listed with their licenses in THIRD-PARTY-NOTICES.txt.[/*]
+[/list]
+[size=2]EDGEmat is not affiliated with CD PROJEKT RED or Anthropic. Cyberpunk 2077 and REDengine are trademarks of CD PROJEKT. Claude and Claude Code are trademarks of Anthropic.[/size]
