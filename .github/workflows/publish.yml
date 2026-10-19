@@ -1,0 +1,68 @@
+# Makes a GitHub release when a version tag is pushed:
+#   git tag v0.2.0 && git push origin v0.2.0
+# Checks the tag against the extension's and the MCP server's package.json, typechecks, builds,
+# packages the extension (Windows x64, since REDbridge is Windows only) and makes the GitHub release
+# with the vsix, the MCP server as one file, and the CHANGELOG section. Versions before 1.0 are marked
+# pre-release. No Marketplace, Open VSX or npm until M6 (docs/progress.md, "Decisions").
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: The tag matches both packages
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          for dir in extensions/edgemat packages/edgemat-mcp; do
+            have=$(node -p "require('./${dir}/package.json').version")
+            if [ "${have}" != "${version}" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match ${dir}/package.json version ${have}"
+              exit 1
+            fi
+          done
+          {
+            echo "VERSION=${version}"
+            echo "VSIX=${GITHUB_WORKSPACE}/dist/edgemat-${version}.vsix"
+            echo "MCP=${GITHUB_WORKSPACE}/dist/edgemat-mcp-${version}.cjs"
+          } >> "$GITHUB_ENV"
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          npm run mcp:build
+          cp packages/edgemat-mcp/dist/server.cjs "${MCP}"
+          cd extensions/edgemat
+          "${GITHUB_WORKSPACE}/node_modules/.bin/vsce" package --no-dependencies --target win32-x64 --out "${VSIX}"
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes=$(node -e "const s=require('fs').readFileSync(process.argv[2],'utf8');const m=s.split(/^## /m).find(p=>p.startsWith(process.argv[1]+' ')||p.startsWith(process.argv[1]+'\n'));console.log(m?m.split('\n').slice(1).join('\n').trim():'')" "${VERSION}" extensions/edgemat/CHANGELOG.md)
+          if [ -z "${notes}" ]; then
+            echo "::error::No '## ${VERSION}' section in extensions/edgemat/CHANGELOG.md"
+            exit 1
+          fi
+          pre=""; case "${VERSION}" in 0.*) pre="--prerelease" ;; esac
+          gh release create "${GITHUB_REF_NAME}" "${VSIX}" "${MCP}" --title "EDGEmat ${VERSION}" --notes "${notes}" ${pre}

@@ -79,6 +79,11 @@ Register the MCP server with Claude Code (no options needed on a PC with REDcode
 claude mcp add edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
 ```
 
+**Releasing** (from 0.2.0, the first preview). `.github/workflows/publish.yml` runs on a `v*` tag: it checks the tag against both packages' versions, typechecks, builds, packages the VSIX for Windows x64, and makes the GitHub release with the VSIX, the MCP server as `edgemat-mcp-<version>.cjs`, and the CHANGELOG section of that version. Versions before 1.0 are marked pre-release. No Marketplace, Open VSX or npm until M7.
+
+1. Set the same version in `extensions/edgemat/package.json` and `packages/edgemat-mcp/package.json`, run `npm install` to update the lock file, and turn the CHANGELOG's "Unreleased" heading into `## <version> (<date>), <phase>`.
+2. Commit and push, then `git tag v<version>` and `git push origin v<version>`.
+
 ## 5. Docs site and brand images
 
 The site at https://edgemodders.github.io/EDGEmat/ is built by `.github/workflows/pages.yml` on every push to `main`. **Settings > Pages > Source** must be **GitHub Actions**.

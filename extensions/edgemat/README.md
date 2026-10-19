@@ -2,13 +2,28 @@
 
 The EDGE material editor for Cyberpunk 2077. Part of the EDGE modding platform by [EDGEmodders](https://github.com/Edgemodders).
 
-**Version 0.1 (M1, Library).** EDGEmat adds its own place in the activity bar with a **Library**: every surface (multilayered material template) in your game with its colors, and every microblend, each with a thumbnail, searchable by plain words such as *leather*, *denim* or *dirt*. The library is built from your own game on first use, in well under a minute, and rebuilt after a game update. Nothing from the game ships with EDGEmat.
+**Version 0.2 (M2, Read): a preview that reads materials, and does not edit them yet.** EDGEmat adds its own place in the activity bar:
 
-Recoloring garments comes in the next versions: reading a garment's layers (M2) and editing them (M3).
+| Part | What it does |
+|---|---|
+| **Library** | Every surface (multilayered material template) in your game with its colors, and every microblend, each with a thumbnail, searchable by plain words such as *leather*, *denim* or *dirt*. Built from your own game on first use, in well under a minute, and rebuilt after a game update. Nothing from the game ships with EDGEmat |
+| **Surface page** | Click a surface: a larger image tinted with the color you pick, every color as a swatch with a plain name ("dark muted blue"), the closest color to one you type or pick, and roughness, metal and bumps in plain words |
+| **Setup editor** | Open any `.mlsetup` from the game, a file, a project, a mod archive, or REDcode's Game Assets: each layer in plain words, a map of where each layer goes on the garment, and warnings for what looks wrong. **Open Setup** is in the Library's title bar |
+| **Find** | Type a garment's in-game name ("punk jeans") or part of a mesh path: its looks per body, its meshes and materials. Click a layered material to open its setup with the right masks |
+
+Next: recoloring (M3), then making new materials, from a model's textures or from words through an AI image service you choose (M4).
+
+### For AI assistants
+
+The same features are in EDGEmat's MCP server, so Claude or another assistant can find a garment's materials, describe its layers and pick colors. Each GitHub release carries the server as one file, `edgemat-mcp-<version>.cjs`. It needs Node.js 20 or later, and finds the game and REDbridge as the extension does. For Claude Code, with the file's full path:
+
+```
+claude mcp add edgemat -- node "<folder>\edgemat-mcp-<version>.cjs"
+```
 
 ## Setup
 
-EDGEmat reads the game through REDbridge, the engine [REDcode](https://github.com/Edgemodders/REDcode) uses. With REDcode set up, EDGEmat needs no configuration: it uses REDcode's game folder and bridge. Otherwise set:
+EDGEmat runs on Windows and reads the game through REDbridge 0.8.0 or later, the engine [REDcode](https://github.com/Edgemodders/REDcode) uses. With REDcode set up, EDGEmat needs no configuration: it uses REDcode's game folder and bridge. Otherwise set:
 
 | Setting | What |
 |---|---|
