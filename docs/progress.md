@@ -8,7 +8,7 @@ Last updated 2026-10-19.
 
 | | |
 |---|---|
-| Phase | **M2 Read**: hand tests passed for the Library, surface page, setup editor and Find; View in 3D built, hand test pending; then M2's own test and the CLI install test |
+| Phase | **M2 Read**: every hand test passed (Library, surface page, setup editor, Find, View in 3D) and the CLI install test; M2's own test, then the 0.2.0 preview |
 | Extension | 0.1.0 plus M2 so far: the EDGEmat icon in the activity bar; a Library of every surface and microblend in your game, with thumbnails and search; a page for each surface with its colors as named swatches |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
@@ -19,9 +19,7 @@ Last updated 2026-10-19.
 
 | To-do | Why | Since |
 |---|---|---|
-| Hand-test View in 3D: F5, Find `sunny ammo`, then the eye on a mesh row ([Tests](testing.html#view-in-3d)) | The last feature before the 0.2.0 preview | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
-| Test the packaged VSIX from the CLI: `code --install-extension dist\edgemat-<version>.vsix` ([Tests](testing.html#cli-install-of-the-vsix)) | F5 runs the source; only the CLI install tests what a user gets. Planned for your next session at the PC | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
 | Try RED Hot Tools on the dev PC | Tells us whether hot-loading archives works today (design, "Hot-loading archives"), and tests REDcode's Pack and Try hot path. Planned for your next session at the PC | 2026-10-16 |
 
@@ -42,6 +40,7 @@ Last updated 2026-10-19.
 
 | What | Detail |
 |---|---|
+| View in 3D and CLI install passed | Your hand test of View in 3D (all 7 checks), and the packaged VSIX installed from the command line into a normal VS Code. Every M2 hand test has now passed |
 | Changelog and release notes | Kept as REDnode keeps them: [Changelog](changelog.html) on the docs site is the one changelog, with each change under **Unreleased** as it is made. The GitHub release notes, the extension's Changelog tab in VS Code and later the Nexus changelog are made from it by a script; the release stops if the version has no section. Steps in [Dev setup, "Releasing"](dev-setup.html#releasing) |
 | **View in 3D built** | Your idea. An eye on each mesh in Find opens it in REDcode's 3D view, and EDGEmat now gives that view the colors: a layered material's color map, or a textured material's own texture. Colors only for now, marked approximate; bumps and shine come with M5. REDcode's side already existed. The smoke test checks it on the sneakers and the jacket. Your hand test is next ([Tests](testing.html#view-in-3d)), then the 0.2.0 release |
 | Find hand test passed | All 10 checks, through F5. The test steps now say where Find is: a header below the Library, and the Library's magnifier is Search Library, not Find |

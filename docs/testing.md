@@ -15,8 +15,8 @@ Last updated 2026-10-17.
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
-| [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | Not run | Colors checked outside VS Code on 2026-10-19 |
-| [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M7 at the latest | Not run | |
+| [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | 2026-10-19 | Pass |
+| [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | Each release | 2026-10-19 | Pass |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
 | [In-game round 2](#in-game-round-2-ratio) | In the game | M0 | 2026-10-15 | Done |
@@ -148,7 +148,7 @@ Built 2026-10-17. **Last run 2026-10-19 by the owner through F5: all 10 checks p
 
 ### View in 3D
 
-Built 2026-10-19; **not yet run in VS Code.** The colors behind it were checked outside VS Code (smoke test, "3D view"). Needs REDcode installed in the development host's VS Code (it is, when REDcode is installed in your normal VS Code), with its REDbridge running.
+Built 2026-10-19. **Last run 2026-10-19 by the owner through F5: all 7 checks pass**, colors the right way up on the sneaker and the jacket. The colors behind it are also checked outside VS Code (smoke test, "3D view"). Needs REDcode installed in the development host's VS Code (it is, when REDcode is installed in your normal VS Code), with its REDbridge running.
 
 1. `npm run build`, then **F5** (**Run EDGEmat**).
 2. In the development host, open EDGEmat's activity bar container, expand **FIND** below the Library, press **Find...** and type `sunny ammo`.
@@ -166,7 +166,7 @@ Built 2026-10-19; **not yet run in VS Code.** The colors behind it were checked 
 
 ### CLI install of the VSIX
 
-Not run yet. Asked for by the owner on 2026-10-16; part of M7's test at the latest. Your laptop install of the test build (2026-10-18) counts if it uses the command line. F5 runs the source; this tests what a user installs.
+Asked for by the owner on 2026-10-16. **Last run 2026-10-19 by the owner: pass.** F5 runs the source; this tests what a user installs. Run it on every release's VSIX, downloaded from the GitHub release ([Dev setup, "Releasing"](dev-setup.html#releasing)).
 
 ```powershell
 npm run edgemat:package
