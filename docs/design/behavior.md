@@ -88,7 +88,7 @@ A `Multilayer_LayerTemplate` is a surface and its presets. The game has **386**,
 |---|---|---|
 | `colorTexture`, `normalTexture`, `roughnessTexture`, `metalnessTexture` | Paths, usually suffixed `_d`, `_n`, `_r`, `_m`. Missing ones point at `base\surfaces\materials\default\`: `default_d.xbm` (11 templates, one more uses `debug_d.xbm`), `default_n.xbm` (28), `white`, `gray` or `black.xbm` for roughness (22). **Metalness is mostly a default**: `black.xbm` in 241 templates, `white.xbm` in 109; only 36 have their own map | **Corrected** 2026-10-14: metal maps are rare, and the defaults include `default_d` and `default_n` |
 | Normal maps | Two-channel: red and green hold X and Y, blue is 0, so Z is rebuilt | **Confirmed** 2026-10-14 on `silk_clean_01_30_n.xbm`; one sample |
-| Diffuse | The sampled diffuse (`silk_clean_01_30_d.xbm`) is near-grey: detail and shading, with the color coming from the preset | One sample, 2026-10-14. Check more in M4 |
+| Diffuse | The sampled diffuse (`silk_clean_01_30_d.xbm`) is near-grey: detail and shading, with the color coming from the preset | One sample, 2026-10-14. Check more in M5 |
 | `tilingMultiplier` | A template-level tiling: 1 in 307 templates; others from 0.5 to 20 | **Confirmed** 2026-10-14 |
 | `overrides` | **The preset tables.** `colorScale`: rows `{ n, v: [r, g, b] }`. `normalStrength`: rows `{ n, v }`, one float. `roughLevelsIn`, `roughLevelsOut`, `metalLevelsIn`, `metalLevelsOut`: rows `{ n, v: [a, b] }` | **Corrected** 2026-10-14: the draft did not name where presets live |
 | `defaultOverrides` | The default selection: one name for each of the six lists (`colorScale`, `normalStrength`, the four levels). Every default exists in its list | **Corrected** 2026-10-14: a default for all six, not only the color |
@@ -118,11 +118,11 @@ The draft asked whether a level pair `[a, b]` is (min, max) or (multiply, add). 
 | Metal Out presets `[0, 0.25]`, `[0, 0.5]`, `[0, 0.75]`, `[0, 1]`, `[0, 0]` | Under scale and bias: constant metalness 0.25, 0.5, 0.75, 1, 0. A natural preset set. As ranges they would be inverted ranges |
 | No metal Out pair has `a + b > 1` | The output stays inside 0..1 under scale and bias |
 
-So for EDGEmat: an In preset stretches the texture's contrast; an Out preset maps the result into a range. Read as levels, an Out pair `[a, b]` covers `b` to `a + b`. **Confirmed from data** 2026-10-14. The order of In and Out, and any clamping, is tested in M4 against in-game screenshots. The same form likely applies to `colorMaskLevelsIn/Out` (unverified).
+So for EDGEmat: an In preset stretches the texture's contrast; an Out preset maps the result into a range. Read as levels, an Out pair `[a, b]` covers `b` to `a + b`. **Confirmed from data** 2026-10-14. The order of In and Out, and any clamping, is tested in M5 against in-game screenshots. The same form likely applies to `colorMaskLevelsIn/Out` (unverified).
 
 Consequences for EDGEmat:
 
-- **Colors are presets.** A layer can only take a color its template offers. "Make it red" means the nearest red preset in that template, or another template with a better red. Free colors need a custom `.mltemplate` (M5). What the game shows for a name the template lacks: checklist item 7.
+- **Colors are presets.** A layer can only take a color its template offers. "Make it red" means the nearest red preset in that template, or another template with a better red. Free colors need a custom `.mltemplate` (M6). What the game shows for a name the template lacks: checklist item 7.
 - **EDGEmat names colors itself.** It shows each preset as a swatch with a plain name it generates ("dark red", "warm grey") and finds the nearest preset to any color with a perceptual color distance (for example in OKLab). Raw codes stay one click away. Swatches must allow values above 1 (bright, not just saturated).
 - **Roughness and metal in plain words** come from the pairs: an Out preset with `a = 0` is a fixed value ("fully metal", "matte"); others are ranges.
 
@@ -139,7 +139,7 @@ A `Multilayer_Mask` holds one greyscale mask per layer: white where the layer sh
 
 ## 5. How the game blends layers
 
-This is the least known part and the heart of the M4 preview. MlsetupBuilder does not blend layers: its 3D view shows only the selected layer, cut out by its mask, with the template's diffuse texture tinted by the color. It ignores microblends, levels and normal strength. So this section is a hypothesis to test, not a description.
+This is the least known part and the heart of the M5 preview. MlsetupBuilder does not blend layers: its 3D view shows only the selected layer, cut out by its mask, with the template's diffuse texture tinted by the color. It ignores microblends, levels and normal strength. So this section is a hypothesis to test, not a description.
 
 | Step, per layer from 0 up | Hypothesis |
 |---|---|
@@ -149,9 +149,9 @@ This is the least known part and the heart of the M4 preview. MlsetupBuilder doe
 | Normal | The template's normal at the preset strength, plus the microblend normal at its strength, added to the global normal (a "whiteout" style blend) |
 | Result | Each layer's values mixed over the result so far by its coverage |
 
-Observed on 2026-10-14 and 15, for M4: a microblend texture (`fine_filth.xbm`) holds a normal in red and green and a mask in alpha; a microblend can also be a graphic atlas used as a print (`graphics_logos_004.xbm` at a low `mbTile`, cutting a layer like a stencil); `ratio` changes the microblend mapping (section 2); the template diffuse sampled is near-grey; `colorMaskLevels` has no place in the hypothesis yet.
+Observed on 2026-10-14 and 15, for M5: a microblend texture (`fine_filth.xbm`) holds a normal in red and green and a mask in alpha; a microblend can also be a graphic atlas used as a print (`graphics_logos_004.xbm` at a low `mbTile`, cutting a layer like a stencil); `ratio` changes the microblend mapping (section 2); the template diffuse sampled is near-grey; `colorMaskLevels` has no place in the hypothesis yet.
 
-M4 tests this against in-game screenshots, template by template, and records how close it gets.
+M5 tests this against in-game screenshots, template by template, and records how close it gets.
 
 ## 6. The JSON form and saving
 
@@ -201,15 +201,15 @@ From MlsetupBuilder's feature set, sorted by what EDGEmat keeps, changes or drop
 | Color swatches with hash names, sorted by brightness | **Improve:** plain names, sorting by hue, "nearest preset to this color", search by color words | M2, M3 |
 | A "luminosity" slider that only changes how swatches look | Drop | |
 | Roughness, metal and normal presets shown as raw codes and numbers | **Improve:** a few plain choices ("matte", "satin", "glossy", "fully metal") mapped to presets through the scale and bias reading (section 3), raw lists one click away | M3 |
-| Microblend gallery, packages, custom microblends | Keep the gallery from the game (144 microblends used); custom microblends later | M3, M5 |
-| Place a microblend visually over the mask | Keep, inside the preview | M4 |
-| Show the selected layer's mask on the model | Keep, plus a true blended preview of all layers | M2, M4 |
+| Microblend gallery, packages, custom microblends | Keep the gallery from the game (144 microblends used); custom microblends later | M3, M6 |
+| Place a microblend visually over the mask | Keep, inside the preview | M5 |
+| Show the selected layer's mask on the model | Keep, plus a true blended preview of all layers | M2, M5 |
 | Randomize layers in a range | Keep as "Surprise me" on selected layers; also an MCP use ("try three looks") | M3 |
 | Export with a JSON version choice and a "compile" checkbox | **Drop.** Saves straight into the project in the current format | M3 |
-| Viewport settings: lights, fog, camera, flips, wireframe | Keep a few sensible defaults; the rest behind an "advanced" switch. No mask flip switch: section 4 found none is needed | M4 |
+| Viewport settings: lights, fog, camera, flips, wireframe | Keep a few sensible defaults; the rest behind an "advanced" switch. No mask flip switch: section 4 found none is needed | M5 |
 | UV layout image, texture browser | Later, if asked | |
 | Mask painting | Unfinished in MlsetupBuilder. A good later feature: paint where a layer shows | Later |
-| Material instance editor (`.Material.json`, `.mi` parameters against their template's defaults) | M5, beside `.mi` editing | M5 |
+| Material instance editor (`.Material.json`, `.mi` parameters against their template's defaults) | M6, beside `.mi` editing | M6 |
 | Hair color profiles (`.hp`, root-to-tip gradients) | Out of scope for now; possibly its own tool | |
 
 ## 9. Mistakes not to repeat
@@ -268,7 +268,7 @@ Run against the real game through REDbridge (`cr2w_read`, `texture_to_png`, `arc
 | 2 | Every field in section 2, its type and default | Read a few game `.mlsetup` files as JSON | Done 2026-10-14 on all 17,734. Six defaults and three ranges corrected; `ratio` and `overrides` open |
 | 3 | The largest layer count in the game | `archive_search` for `.mlsetup`, read a sample, count layers | Done 2026-10-14: 20, confirmed |
 | 4 | Section 3: what an `.mltemplate` holds, where the presets live, how names look | Read `base\surfaces\materials\special\unused.mltemplate` and a fabric and a metal template | Done 2026-10-14 on all 386. Presets live in `overrides`, defaults in `defaultOverrides`; colors run to 2 |
-| 5 | Whether roughness and metal pairs are (min, max) or (multiply, add) | Compare presets across templates; then test in game in M4 | Done 2026-10-14 from data: scale and bias. In-game check stays with M4 |
+| 5 | Whether roughness and metal pairs are (min, max) or (multiply, add) | Compare presets across templates; then test in game in M5 | Done 2026-10-14 from data: scale and bias. In-game check stays with M5 |
 | 6 | Mask count against layer count, and mask order | Read a garment's `.mlmask` next to its `.mlsetup`; export the mask layers to PNG | Done 2026-10-14: 20 and 20; no flip. Order confirmed in game 2026-10-15 (R1-B) |
 | 7 | What the game does with a color name the template lacks | Set one in a copy, pack, look in game | Done 2026-10-15 (R1-A): the layer renders white or near-white |
 | 8 | Which JSON shape REDbridge writes and reads | `cr2w_read` an `.mlsetup`; compare with section 6 | Done 2026-10-14: the current shape, version 0.0.9 |

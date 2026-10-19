@@ -2,7 +2,7 @@
 
 EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: a VS Code extension and an MCP server. A modder picks a garment, clicks a layer, chooses a color and sees it on the model. Or they skip the UI and tell REDagent or Claude "make this jacket red".
 
-**Status: draft 0.2.** Agreed with the user on 2026-10-14: a standalone extension in the EDGE family, `.mlsetup` editing first, an MCP server beside the UI, and MlsetupBuilder studied for behavior, never copied. M0 done on 2026-10-16: the [behavior spec](design/behavior.html) is checked against the game and agreed, and Neurolinked contacted. Since then the design gained the activity bar container, opening files from anywhere, the game folder and bridge through REDcode's API, and the preview split with REDcode. M1 done on 2026-10-16. Next: M2.
+**Status: draft 0.2.** Agreed with the user on 2026-10-14: a standalone extension in the EDGE family, `.mlsetup` editing first, an MCP server beside the UI, and MlsetupBuilder studied for behavior, never copied. M0 done on 2026-10-16: the [behavior spec](design/behavior.html) is checked against the game and agreed, and Neurolinked contacted. Since then the design gained the activity bar container, opening files from anywhere, the game folder and bridge through REDcode's API, and the preview split with REDcode. M1 done on 2026-10-16. Next: M2. **Revised 2026-10-19 with the owner:** [Generate a material](#generate-a-material) from words or a photo, [game materials on a new mesh](#game-materials-on-a-new-mesh), and a new phase **M4 Make** ahead of the preview, so EDGEfab's clothes and objects get materials sooner. Phases are now M0 to M7.
 
 ## Mission
 
@@ -13,7 +13,7 @@ EDGE brings modding to everyone, especially non-coders: easy, fun and fast. For 
 | The first result in seconds | Open an item, click a layer, pick a color, see it on the model. No file formats to learn first |
 | Plain words first, details one click away | "Leather, dark red, 41% of the jacket" before `colorScale`, `mltemplate` and level ranges. Every raw value stays reachable for experienced modders |
 | Everything the UI does, an assistant can do | Each feature ships in the UI and in the MCP server in the same phase |
-| The best editor even with AI switched off | The MCP server does nothing until an assistant connects. No network calls, no telemetry |
+| The best editor even with AI switched off | The MCP server does nothing until an assistant connects. No telemetry, and no network calls except to an AI service the modder chose, only when they ask: Generate, with their own key (revised 2026-10-19, as EDGEfab's rule says) |
 
 ## What EDGEmat edits
 
@@ -30,7 +30,7 @@ The file roles are from community knowledge (WolvenKit, the modding wiki, Mlsetu
 
 Two facts that matter most, both **unverified**:
 
-- **A layer's color is a preset name from its template, not a free RGB value.** So "make it red" means the nearest red among that template's presets, or a different template with a better red. Free colors would need a custom `.mltemplate`, which is an M5 question.
+- **A layer's color is a preset name from its template, not a free RGB value.** So "make it red" means the nearest red among that template's presets, or a different template with a better red. Free colors would need a custom `.mltemplate`, which is an M6 question.
 - **An item reaches its materials through a chain:** item, then appearance (`.app`, `.ent`), then mesh, then material, then `.mlsetup` and `.mlmask`. "This jacket" has to be resolved down that chain, so finding is a feature in its own right.
 
 ## Shape
@@ -59,7 +59,7 @@ EDGEmat has its own place in the activity bar, as REDcode and REDdeck do. It wor
 | Library view | Templates and microblends from the modder's game, with thumbnails, searched by plain words | M1 |
 | Find view | Items, meshes and setups, from the game and the open project. **Built 2026-10-17:** clothing items by in-game name or record id (1,997 items, read from TweakDB once per game version, 8.5 s, then cached), meshes by path. An item opens into its looks per body, each into its meshes and their materials; a multilayered material opens its setup with the mask set the material names, and the editor says so. Setups are found through Open Setup. Not yet: items from mods (ArchiveXL), and the open project | M2 |
 | Container title bar | Open File, Find, Rebuild Library. **Built 2026-10-17:** Open Setup (from the game by name, a file on disk, or a mod archive), Search, Rebuild Library | M2 |
-| Surface page | An editor tab for one surface (`.mltemplate`) or microblend, opened by clicking it in the Library. One preview tab, reused as the modder clicks around, as Explorer does. It shows the large image; every color preset as a named swatch; the roughness, metalness and normal presets in plain words; the defaults; tiling; the textures with their game paths, raw values one click away. Read-only: a game surface is shared by every item that uses it, so it is never edited in place. With a setup editor open, "Use on this layer" applies it there (M3). "Make a custom copy" starts a custom surface with free colors (M5). The MCP twin is `mat_colors`. **Built 2026-10-17:** one tab reused until "Keep open"; the image tinted with the picked color (an approximation, said so on the page); a filter by words and "closest to" a typed or picked color (OKLab distance); plain color names generated by EDGEmat (139 distinct across the game's 155,099 presets); roughness and metal described as fixed values when the surface uses a flat default map | M2 |
+| Surface page | An editor tab for one surface (`.mltemplate`) or microblend, opened by clicking it in the Library. One preview tab, reused as the modder clicks around, as Explorer does. It shows the large image; every color preset as a named swatch; the roughness, metalness and normal presets in plain words; the defaults; tiling; the textures with their game paths, raw values one click away. Read-only: a game surface is shared by every item that uses it, so it is never edited in place. With a setup editor open, "Use on this layer" applies it there (M3). "Make a custom copy" starts a custom surface with free colors (M6). The MCP twin is `mat_colors`. **Built 2026-10-17:** one tab reused until "Keep open"; the image tinted with the picked color (an approximation, said so on the page); a filter by words and "closest to" a typed or picked color (OKLab distance); plain color names generated by EDGEmat (139 distinct across the game's 155,099 presets); roughness and metal described as fixed values when the surface uses a flat default map | M2 |
 | Setup editor | A custom editor tab for `.mlsetup`. Opens from EDGEmat's views, from REDcode's Project and Game Assets trees, from the Explorer, and from Open File | M2 |
 | | **Built 2026-10-17, read-only:** a custom editor for `*.mlsetup` and `*.mlsetup.json` on any URI: files on disk and in projects, REDcode's `redcode-game:` files, EDGEmat's own read-only `edgemat-game:` file system for game setups it opens, and files taken out of mod archives. Each layer in plain words (surface, color, finish, metal, bumps, microblend, share of the texture), why a layer does not show, and warnings (a color the surface lacks shows white). A **color map**: each layer's swatch laid over the ones below through its mask, in texture space, with each layer's share; click a spot to select its layer; the selected layer's mask lit in the accent color. The mask set is the best name match beside the setup (on disk, in the mod, then in the game folder), or one the modder chooses: a setup does not name its mask, the mesh's material does. REDcode's CR2W editor also claims `*.mlsetup`; VS Code lets the modder pick, and Reopen Editor With switches | M2 |
 
@@ -105,7 +105,7 @@ The goal for a modder: preview meshes with their appearances and materials in RE
 | **Authoring a mesh's appearances**: its looks, which material each submesh uses, new looks and variants. "Save as new look" in a recolor is one case | **EDGEmat** | Revised with the owner on 2026-10-16: an appearance is a set of materials, so its editor belongs beside the material editor. EDGEmat's **Looks** editor ([Custom assets](#custom-assets-from-a-model-to-the-game)) |
 | An item's or entity's appearances (`.app`, `.ent`), and generic editing of any file | REDcode, then EDGEfab | REDcode's CR2W editor edits any file raw. Guided item appearances for new assets belong to [EDGEfab](https://github.com/Edgemodders/EDGEfab) ([Custom assets](#custom-assets-from-a-model-to-the-game)) |
 
-**How they connect.** EDGEmat exports an API (`apiVersion` 1) with `renderMaterials(mesh, appearance)`: per material name, baked PBR maps (color, normal, roughness, metalness) as PNG bytes, marked approximate until M4 checks them against the game, and an event when a material changes. REDcode's viewer asks for them when EDGEmat is active and keeps flat colors otherwise, the way REDcode reads REDdeck's API. Baking to plain maps keeps the contract small and serves three more uses: `mat_render`, glTF exports with real textures, and library thumbnails. Requested as [REDcode #6](https://github.com/Edgemodders/REDcode/issues/6) on 2026-10-15, with appearance switching, and with REDcode's planned layered material preview (C6) handed to EDGEmat.
+**How they connect.** EDGEmat exports an API (`apiVersion` 1) with `renderMaterials(mesh, appearance)`: per material name, baked PBR maps (color, normal, roughness, metalness) as PNG bytes, marked approximate until M5 checks them against the game, and an event when a material changes. REDcode's viewer asks for them when EDGEmat is active and keeps flat colors otherwise, the way REDcode reads REDdeck's API. Baking to plain maps keeps the contract small and serves three more uses: `mat_render`, glTF exports with real textures, and library thumbnails. Requested as [REDcode #6](https://github.com/Edgemodders/REDcode/issues/6) on 2026-10-15, with appearance switching, and with REDcode's planned layered material preview (C6) handed to EDGEmat.
 
 **EDGEmat's own editor** embeds the same viewer for live preview while editing. **Later:** factor the viewer out of REDcode into a shared component (an npm package) that REDcode, EDGEmat and other EDGE tools embed; until then EDGEmat uses REDcode's bundled viewer or a copy (both MIT).
 
@@ -126,9 +126,61 @@ The goal for a modder: preview meshes with their appearances and materials in RE
 
 | Feature | What it does | Phase |
 |---|---|---|
-| **Materials from a textured model** | Turns a model's PBR textures (base color, normal, metallic-roughness, emissive) into the game's material for plain textured assets: a `.mi` on `engine\materials\metal_base.remt` (the usual choice for custom assets, unverified for all cases), with the images imported as `.xbm`. Handles the format gaps: glTF packs roughness and metalness in one image; normal-map conventions may differ (unverified) | M5 |
-| **Looks editor** | A mesh's appearances: list them, see each on the model, pick the material for each submesh, add a look, duplicate a look as a variant. Writes the mesh's `appearances` and `materialEntries` | M5 (recolor's "save as new look" in M3) |
-| **Layered materials for new assets** | A multilayered material for a custom model needs masks painted for its UVs: mask painting (a later feature in the behavior spec) becomes how a modder makes one | Later |
+| **Materials from a textured model** | Turns a model's PBR textures (base color, normal, metallic-roughness, emissive) into the game's material for plain textured assets: a `.mi` on `engine\materials\metal_base.remt` (the usual choice for custom assets, unverified for all cases), with the images imported as `.xbm`. Handles the format gaps: glTF packs roughness and metalness in one image; normal-map conventions may differ (unverified) | M4 |
+| **Generate a material** | A new material from words ("brown leather") through an AI image service the modder chose, or from a photo. [Below](#generate-a-material) | M4 |
+| **Game materials on a new mesh** | A surface and color, or a game `.mi`, picked from the game and put on a new mesh. [Below](#game-materials-on-a-new-mesh) | M4 |
+| **Looks editor** | A mesh's appearances: list them, see each on the model, pick the material for each submesh, add a look, duplicate a look as a variant. Writes the mesh's `appearances` and `materialEntries` | M4 (recolor's "save as new look" in M3) |
+| **Layered materials for new assets** | A multilayered material with several layers on a custom model needs masks painted for its UVs: mask painting (a later feature in the behavior spec) becomes how a modder makes one | M6 |
+
+**For EDGEfab** (owner, 2026-10-19): EDGEfab makes clothes and objects, and gets their materials from EDGEmat in one of two ways: a new material made by Generate (EDGEmat calls the image service), or an existing game material picked and applied. It calls EDGEmat's API from its extension, and an assistant calls EDGEmat's MCP tools (`mat_generate`, `mat_find`, `mat_colors`, `mat_apply`). Fitting clothes to the body is EDGEfab's and Blender's ([EDGEfab design, "Clothing"](https://edgemodders.github.io/EDGEfab/design.html#clothing-fitting-to-the-body)).
+
+### Generate a material
+
+The goal (owner, 2026-10-19): a modder who is not an artist makes a new material from words, such as "brown leather" or "red concrete", or from a photo, and puts it on an object.
+
+**A textured `.mi`, not a layer.** A layer of a multilayered material has no color texture: it is a surface's grey detail maps plus one color preset. An image's colors and patterns cannot go into a layer. So recoloring a game garment stays a surface plus a color, which the Library and `mat_colors` already find with no AI. A generated image becomes a textured `.mi` on `engine\materials\metal_base.remt`, the same output as Materials from a textured model.
+
+| Step | What | Where |
+|---|---|---|
+| 1. An image | From the modder's words, through an AI image service they chose; or their own photo or image, with no service and no key | The service, or a file |
+| 2. Seamless | Made to tile. Image services do not reliably tile, even when asked | EDGEmat, on the PC |
+| 3. The other maps | Bumps (normal) and shine (roughness) derived from the image; metal as a choice. Plain-words sliders: "bumpier", "shinier" | EDGEmat, on the PC |
+| 4. Into the game | Resized to a game size (1024 or 2048), imported as `.xbm`, the `.mi` written into the project | REDbridge |
+| 5. Recorded | How it was made, beside the material: service, model, prompt, date. Mod sites may ask for AI content to be labelled (Nexus Mods, unverified) | EDGEmat |
+
+**The prompt.** One general prefix, then the modder's words. The prefix asks for a seamless tiling texture seen straight on; flat, even light with no shadows, highlights or reflections, since the game lights it; the material filling the frame, with no objects, text, borders or vignette; and a real-world scale. It should work for every surface (unverified). A detail size (fine, medium, coarse) sets the scale. Kinds of output are added only if tests show the need; the likely one is a decal or emblem: one design on a plain background, not tiled. The whole prompt stays editable, one click away.
+
+**Services.** Opt-in, with the modder's own key and credits.
+
+| Service | Models |
+|---|---|
+| Google Gemini | Nano Banana and Nano Banana Pro |
+| OpenAI | GPT Image, current version checked when built |
+
+Model names come from the service's own model list where it has one, as EDGEwave does, not hard-coded. Exact model IDs are unverified until built.
+
+**The UI** follows EDGEwave's voice tools (owner, 2026-10-19), with one change for images:
+
+| EDGEwave | EDGEmat |
+|---|---|
+| A dialog over the page: prompt, options, Generate | The same, on a **New Material** page, opened from the Library's title bar and later from the Looks editor |
+| Each press adds a take, newest first, each with **Add** | The same, as image tiles. A selected take shows tiled 3 × 3, so seams show before Add |
+| The key in VS Code's secret storage, asked for the first time it is needed; Set and Clear key commands | The same, one key per service (`edgemat.gemini.apiKey`, `edgemat.openai.apiKey`) |
+| "Spends your credits" in the dialog | The same |
+
+**MCP.** `mat_from_image` makes a material from an image file. `mat_generate` asks a service. The MCP server cannot read VS Code's secret storage, so it reads the services' usual environment variables (`GEMINI_API_KEY`, `OPENAI_API_KEY`), which a plugin such as EDGEchat can set from its own settings.
+
+### Game materials on a new mesh
+
+EDGEfab's other route: pick a material from the game and put it on a new mesh.
+
+| Kind | On a new mesh |
+|---|---|
+| A textured game `.mi` that tiles (many world materials) | Used as the mesh's external material. Textures painted for one mesh's UVs, as most garments' are, do not fit another mesh |
+| A layered surface (leather, denim, chrome) | A one-layer setup: one surface, a color preset and tiling over a full white mask. Fits any UVs. Unverified in the game |
+| Several surfaces on one garment | One submesh per part (body, collar, buttons), made in Blender, each with its own one-layer material. Several layers in one material need masks for the new UVs (M6) |
+
+The Library, Find, `mat_templates` and `mat_colors` choose the material; `mat_apply` puts it on the mesh in a look.
 
 ### The workflow, step by step
 
@@ -136,10 +188,10 @@ Two kinds of asset, with different hard parts: an **object** (a prop placed in t
 
 | Step | What happens | Tool |
 |---|---|---|
-| Make or get a model | Blender, or an AI model service. EDGE does not build a 3D modeler | Blender; an AI service, opt-in, as EDGEwave does for voice |
+| Make or get a model | Blender, or an AI model service. EDGE does not build a 3D modeler. An assistant can drive Blender through a Blender MCP server ([EDGEfab design](https://edgemodders.github.io/EDGEfab/design.html#blender-and-blender-mcp)) | Blender; an AI service, opt-in, as EDGEwave does for voice |
 | Import | Geometry to `.mesh`, images to `.xbm` | REDbridge through REDcode (exists) |
-| Rig and fit (clothing only) | Weights for the player's rig, fitted to the body types; garment layering parameters | Blender with the community WolvenKit Blender add-on today. An "Edit in Blender" round trip is a candidate for REDcode |
-| Materials and looks | Materials from the model's textures, recolors, variants | **EDGEmat** |
+| Rig and fit (clothing only) | Weights for the player's rig, fitted to the body types; garment layering parameters | Blender with the community WolvenKit Blender add-on, which carries the body dummies and refitters; guided by EDGEfab ([EDGEfab design, "Clothing"](https://edgemodders.github.io/EDGEfab/design.html#clothing-fitting-to-the-body)). An "Edit in Blender" round trip is in REDcode |
+| Materials and looks | Materials from the model's textures, generated or picked from the game; recolors, variants | **EDGEmat** |
 | Make it a game thing | Object: an entity with the mesh. Clothing: entity and `.app` appearances, an ArchiveXL factory and `.xl`, a TweakXL item record (entity name, appearance name, display name, icon), localized text, an inventory icon | **[EDGEfab](https://github.com/Edgemodders/EDGEfab)** |
 | Place it (objects) | Drop it in the world and bake it into a sector | EDGEbuilder, once its index reads mod archives as well as the game's |
 | Pack, deploy, try | Pack the project, deploy it, hot-load it, spawn it or put it on V | REDcode, REDdeck, REDnode (and REDagent: "give V the new jacket") |
@@ -201,6 +253,9 @@ The tools are about intent ("find this jacket's materials", "the nearest red"), 
 | `mat_colors` | A template's color presets with RGB, and the nearest preset to a color given as a word or a value |
 | `mat_edit` | Changes layers (template, color, tiling, levels, microblend) and writes the result into the project, copying the setup first from wherever it came from (the game, a file on disk, a mod archive) when needed. Returns what changed, so it can be undone |
 | `mat_render` | Renders the preview to a PNG, so the assistant can look at its own work before saying it is done |
+| `mat_from_image` | Makes a textured material from an image file: seamless, bump and shine maps, written into the project (M4) |
+| `mat_generate` | The same from words, through an AI image service, with the key from the environment (M4, [Generate a material](#generate-a-material)) |
+| `mat_apply` | Puts a material on a mesh's submeshes in a look, adding the look if asked (M4) |
 
 "Make this jacket red" is then: `mat_find`, `mat_describe` to pick the layers that make up the fabric, `mat_colors` for the nearest red in each, `mat_edit`, `mat_render`, and the user sees it. Packing and installing stay with REDcode's and REDdeck's tools.
 
@@ -211,6 +266,7 @@ The tools are about intent ("find this jacket's materials", "the nearest red"), 
 | [MlsetupBuilder](https://github.com/Neurolinked/MlsetupBuilder) by Neurolinked | GPL-3.0 | The behaviors a multilayered material editor needs, learned by studying it. No code, no data |
 | [WolvenKit](https://github.com/WolvenKit/WolvenKit) | GPL-3.0 | The file formats and their JSON form, through REDbridge only |
 | The [Cyberpunk 2077 modding wiki](https://wiki.redmodding.org/) | | How the material system works. Findings that are new go back to it |
+| [EDGEwave](https://github.com/Edgemodders/EDGEwave) | MIT | Its AI generation idiom (a dialog of takes, the key in secret storage), followed by Generate a material |
 
 **Spec, then build.** EDGEmat is not a port of MlsetupBuilder and must not read like one.
 
@@ -225,7 +281,9 @@ Neurolinked is contacted before EDGEmat is announced: credited, told what it is,
 
 ## Phases
 
-Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends with a test on the dev PC.
+Phases are M0 to M7. **Unverified:** that no other EDGE repo uses M. Each ends with a test on the dev PC.
+
+**Revised 2026-10-19 with the owner:** M4 Make (materials for new meshes) moved ahead of the preview, so EDGEfab's objects (its F1) and clothing (its F3) get materials sooner. A textured `.mi` needs no layered bake to be seen: REDcode's viewer shows a GLB's own textures already (unverified for an imported `.mi`). The preview became M5, Beyond mlsetup M6, Ship M7.
 
 | Phase | Builds | The test proves |
 |---|---|---|
@@ -233,9 +291,10 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | **M1 Library** | The extension and MCP skeletons, the EDGEmat activity bar container, the bridge client, the material library built from the game and cached, the library view with thumbnails | A full library builds from the game; its counts match the game's |
 | **M2 Read** | The surface page. The `.mlsetup` editor, read-only: layers in plain words, swatches, each layer's mask. Finding an item's materials. Open File for a setup anywhere on disk, as JSON or inside a mod archive. MCP `mat_find`, `mat_describe`, `mat_templates`, `mat_colors` | A game jacket shows the same layers WolvenKit shows, and Claude describes it correctly. A setup from a mod archive outside any project opens and reads the same |
 | **M3 Edit** | Change template, color, tiling, levels, microblend; undo and redo; save into a WolvenKit project, including Save to Project for a file opened from anywhere; "save as new look" (a new setup, appearance and material, the no-MTO route). MCP `mat_edit` | A jacket recolored in EDGEmat, and another recolored by asking Claude, both show correctly in the game. A setup opened from outside the project, saved into it and packed, loads in the game |
-| **M4 Preview** | The bake: a layered material to PBR maps, with layers blended through their masks, templates and microblends, updated live. EDGEmat's API `renderMaterials` for REDcode's viewer ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); the same viewer in EDGEmat's editor. MCP `mat_render` | Side by side with an in-game screenshot, the preview reads the same, in REDcode's viewer and in EDGEmat's |
-| **M5 Beyond mlsetup** | `.mi` parameters; **materials from a textured model** (glTF PBR textures to `.xbm` and a `.mi`); the **Looks** editor for a mesh's appearances; custom colors (a custom `.mltemplate`). See [Custom assets](#custom-assets-from-a-model-to-the-game) | A non-multilayered item retextured, a free color used, and a GLB model from Blender or an AI service imported with its textures and two looks, all shown in the game |
-| **M6 Ship** | Open VSX and Marketplace, the MCP package, docs, a Nexus page, the EDGEkit bundle entry | A non-coder recolors an item from the docs alone, in the UI and by asking an assistant. The packaged VSIX, installed with `code --install-extension` into a normal VS Code (not the F5 development host), works the same |
+| **M4 Make** | Materials for new meshes, what EDGEfab needs ([Custom assets](#custom-assets-from-a-model-to-the-game)): **materials from a textured model** (glTF PBR textures to `.xbm` and a `.mi`); **[Generate a material](#generate-a-material)** from words (AI image services, opt-in) or a photo; **[game materials on a new mesh](#game-materials-on-a-new-mesh)**; the **Looks** editor for a mesh's appearances. EDGEmat's API for EDGEfab. MCP `mat_from_image`, `mat_generate`, `mat_apply`. First, an in-game test of a tiled texture on a garment ([open questions](#open-questions)) | A GLB model from Blender gets a generated material and a game material, in two looks, and shows in the game, once through the UI and once by asking Claude. A non-artist makes "brown leather" from words alone |
+| **M5 Preview** | The bake: a layered material to PBR maps, with layers blended through their masks, templates and microblends, updated live. EDGEmat's API `renderMaterials` for REDcode's viewer ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); the same viewer in EDGEmat's editor. MCP `mat_render` | Side by side with an in-game screenshot, the preview reads the same, in REDcode's viewer and in EDGEmat's |
+| **M6 Beyond mlsetup** | `.mi` parameters on game items; custom colors (a custom `.mltemplate`); layered materials with several layers on a new mesh (masks for its UVs). See [Custom assets](#custom-assets-from-a-model-to-the-game) | A non-multilayered game item retextured, a free color used, and a new mesh with a two-layer material, all shown in the game |
+| **M7 Ship** | Open VSX and Marketplace, the MCP package, docs, a Nexus page, the EDGEkit bundle entry | A non-coder recolors an item from the docs alone, in the UI and by asking an assistant. The packaged VSIX, installed with `code --install-extension` into a normal VS Code (not the F5 development host), works the same |
 
 ## Open questions
 
@@ -244,8 +303,11 @@ Phases are M0 to M6. **Unverified:** that no other EDGE repo uses M. Each ends w
 | The bridge client | **M1: copied.** `bridgeClient.ts`, `types.ts` and `gameFinder.ts` are copied from REDcode at commit `9f54c80` into `extensions/edgemat/src/core`, each with a header naming the source. A shared npm package for the EDGE tools stays the goal, together with the shared viewer |
 | Saving a recolor: in place or at a new path | A replaced game `.mlsetup` only shows in game with the Material Texture Override mod (spec section 6, found 2026-10-15). In place is the simplest file change but makes every player install MTO; a new setup at a new path, with the mesh's material pointed at it (a mesh copy or an ArchiveXL patch), needs nothing extra and is how most recolor mods ship. Leaning: new path by default, in place as an option that checks for MTO. Settled in M3 |
 | Sharing REDcode's bridge | **M1:** EDGEmat uses REDcode's running bridge when REDcode is active and reads the same game folder; otherwise it starts its own, and the MCP server always does. Whether one bridge copes under load with both tools busy, and what to do when REDcode's bridge is older than EDGEmat needs, is watched in M2 |
-| Preset colors: sRGB or linear | The surface page and `mat_colors` treat preset RGB as screen (sRGB) values, clipped above 1. Many presets then look very dark (about a quarter of all presets are named black or dark grey). If the game reads them as linear, swatches and names should brighten. Checked in M4 against in-game screenshots; one function (`core/colors.ts`) changes |
-| Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M4 |
+| Preset colors: sRGB or linear | The surface page and `mat_colors` treat preset RGB as screen (sRGB) values, clipped above 1. Many presets then look very dark (about a quarter of all presets are named black or dark grey). If the game reads them as linear, swatches and names should brighten. Checked in M5 against in-game screenshots; one function (`core/colors.ts`) changes |
+| Preview fidelity | The game's shaders are not public. How close the layered blend gets, and on which templates, is found in M5 |
+| A tiled texture on a game garment | A game garment's UVs are mostly one sheet that does not repeat. Whether a tiled texture looks right there, and whether `metal_base` can repeat a texture at all, is unverified. Tested in the game with a hand-made texture at the start of M4, before Generate's UI is built. A new mesh made in Blender sets its UVs to suit |
+| Maps derived from a color image | How good bumps and shine made from a color image look in the game. M4 |
+| Image services and models | Which Gemini and OpenAI image models, their sizes and prices, and whether a general prompt prefix is enough. Checked when M4 starts |
 | Which items first | The garments modders recolor most, to list in M0, become the test set |
 | A shared mesh viewer | Factor REDcode's viewer out into a shared component (an npm package) that REDcode, EDGEmat and other EDGE tools embed. Later, once the material hook works; noted in REDcode #6 |
 | The sibling repos' notes | REDcode's roadmap lists the layered material preview under C6 (README, `docs/design.html`); it should point at EDGEmat, requested in REDcode #6. EDGEkit's design says new EDGE editor extensions go into REDcode, and its `extensions.json` should gain EDGEmat. Each repo's own session makes the change |
@@ -273,6 +335,6 @@ Not planned into a phase. Kept so they are not lost.
 | Switch to an existing appearance | The quick route, and certainly part of it: mods already change an object's appearance at runtime. Instant, needs no file change, but only offers the looks the mesh already has |
 | Recolor a shared setup | One edited `.mlsetup` changes every object that uses it, everywhere: every crate of that mesh and look turns blue. Right for "all crates", wrong for "this crate" |
 | Recolor one object | A new setup and a new mesh appearance (or material) for that object, and the placed object pointed at them in its streaming sector. EDGEbuilder's territory |
-| A color no template has | Needs a custom `.mltemplate` (M5) |
+| A color no template has | Needs a custom `.mltemplate` (M6) |
 
 Open for then: what a player (not only a modder) may change and how it is undone; whether runtime changes are saved as a mod in a project or only last for the session, as REDnode's TweakDB changes do.

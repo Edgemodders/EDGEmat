@@ -15,7 +15,7 @@ Last updated 2026-10-17.
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Find view](#find-view) | By hand, F5 | M2 | Not run | Walks checked outside VS Code on 2026-10-17 |
-| [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M6 at the latest | Not run | |
+| [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | M7 at the latest | Not run | |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
 | [In-game round 2](#in-game-round-2-ratio) | In the game | M0 | 2026-10-15 | Done |
@@ -146,7 +146,7 @@ Built 2026-10-17; **not yet run in VS Code.** The walks behind it were run outsi
 
 ### CLI install of the VSIX
 
-Not run yet. Asked for by the owner on 2026-10-16; part of M6's test at the latest. F5 runs the source; this tests what a user installs.
+Not run yet. Asked for by the owner on 2026-10-16; part of M7's test at the latest. Your laptop install of the test build (2026-10-18) counts if it uses the command line. F5 runs the source; this tests what a user installs.
 
 ```powershell
 npm run edgemat:package
