@@ -12,7 +12,7 @@ Last updated 2026-10-19.
 | Extension | 0.1.0 plus M2: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor; Find; View in 3D |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Two checks before building on them: a new `.xbm` from a PNG through REDbridge (mine), and a hand-made textured material on a garment part in the game (yours, with files I prepare). Then Edit and Save to Project |
+| Next up | Edit and Save to Project, then the round-trip test through a REDcode project. The two early checks are done or folded into it (log, 2026-10-19) |
 | Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
@@ -33,6 +33,7 @@ Last updated 2026-10-19.
 | [REDcode #6](https://github.com/Edgemodders/REDcode/issues/6) | REDcode's mesh viewer asks EDGEmat for rendered materials; appearance switching; a GLB's own textures | **Shipped** in REDcode 0.10.0, 2026-10-16. Appearance switching and GLB textures hand-tested. The `renderMaterials` hook waits for EDGEmat to provide it (M5) |
 | [REDcode #7](https://github.com/Edgemodders/REDcode/issues/7) | "Pack and try" (hot load) and "Edit in Blender" | **Shipped** in REDcode 0.10.0, 2026-10-16, hand-tested. Without Red Hot Tools, Pack and Try falls back to Pack and Install; the hot path is untested |
 | [REDbridge #5](https://github.com/Edgemodders/REDbridge/issues/5) | Mesh import for a new asset, from a GLB | **Shipped** in REDbridge 0.9.0, 2026-10-16. A GLB is imported over a template mesh (WolvenKit cannot make one from a GLB alone). The result names the GLB's materials per submesh but does not apply them: assigning materials is EDGEmat's Looks editor (M4). Not yet loaded in the game |
+| [REDbridge #8](https://github.com/Edgemodders/REDbridge/issues/8) | `project.import` takes a texture setup (color, normal, grayscale) for a new `.xbm` | Open, filed 2026-10-19. Not blocking: EDGEmat copies a game texture of the right kind to the target first |
 | [EDGEbuilder #1](https://github.com/Edgemodders/EDGEbuilder/issues/1) | Index the user's mod archives, so custom objects can be placed | Open. EDGEbuilder's session is on it |
 | [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open. After REDnode's current task |
 
@@ -42,6 +43,7 @@ Last updated 2026-10-19.
 
 | What | Detail |
 |---|---|
+| Two early checks for Generate | **A new texture from a PNG works**: REDbridge makes it, but with the wrong settings for anything but plain color, so EDGEmat copies a game texture of the right kind in first; asked REDbridge for a cleaner way ([#8](https://github.com/Edgemodders/REDbridge/issues/8)). **A textured material on a garment**: the game does it already, on Dawn's pants' stitching, with `metal_base`, which has a tiling setting. How a tiled texture looks across a garment's unwrapped parts is checked in the game with EDGEmat's first written mesh, so no hand-made test is needed from you |
 | **The first preview becomes 0.3.0** | Your call: no 0.2 release. The first preview waits for M3, so it edits with a full round trip (recolor in EDGEmat, save into a REDcode project, pack and deploy with REDcode, see it in game), and it takes Generate's first slice from M4, so it has AI generation. A generated material replaces a whole material, so the preview shows it on objects and simple parts ([design, "Phases"](design.html#phases)) |
 | A long-term goal recorded | Asking an AI agent to redesign a garment. It needs every material and how each maps onto the item; it starts small with `mat_find`, `mat_describe` and M3's `mat_edit` ([design, "Later ideas"](design.html#redesign-a-garment-by-asking-an-ai)) |
 | **M2 done** | The phase test passed: the Arasaka jacket's 20 layers match WolvenKit's own reading of the file in all 360 fields, and you judged Claude's description from `mat_describe` accurate. The white stitching you saw is a separate decal material on the mesh, not part of the setup ([Tests](testing.html#m2-phase-test)) |
