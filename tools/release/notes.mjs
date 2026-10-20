@@ -73,7 +73,7 @@ if (nexus) {
 
 **Install:** download \`edgemat-${version}.vsix\` below, then run \`code --install-extension edgemat-${version}.vsix\`, or in VS Code: Extensions view › **...** › **Install from VSIX...**. Windows only. Needs Cyberpunk 2077 and REDbridge 0.8.0 or later; with [REDcode](https://github.com/Edgemodders/REDcode) set up, EDGEmat needs no configuration.
 
-**For AI assistants:** \`edgemat-mcp-${version}.cjs\` is EDGEmat's MCP server, one file for Node.js 20 or later. For Claude Code: \`claude mcp add edgemat -- node "<folder>\\edgemat-mcp-${version}.cjs"\`.
+**For AI assistants:** \`edgemat-mcp-${version}.cjs\` is EDGEmat's MCP server, one file for Node.js 20 or later. For Claude Code: \`claude mcp add --scope user edgemat -- node "<folder>\\edgemat-mcp-${version}.cjs"\`.
 
 Docs: ${Docs} (changelog: ${Docs}changelog.html)`);
 }

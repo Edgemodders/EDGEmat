@@ -52,7 +52,7 @@ fs.writeFileSync(
     "",
     `For AI assistants: edgemat-mcp-${version}.cjs is EDGEmat's MCP server (Node.js 20 or later).`,
     "Keep it somewhere stable, then for Claude Code run once:",
-    `  claude mcp add edgemat -- node "<that folder>\\edgemat-mcp-${version}.cjs"`,
+    `  claude mcp add --scope user edgemat -- node "<that folder>\\edgemat-mcp-${version}.cjs"`,
     "",
     "Manual: https://edgemodders.ai/wiki/edgemat/",
     "Docs: https://edgemodders.github.io/EDGEmat/",

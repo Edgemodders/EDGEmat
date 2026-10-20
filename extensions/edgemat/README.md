@@ -19,7 +19,7 @@ Next: recoloring (M3), then making new materials, from a model's textures or fro
 The same features are in EDGEmat's MCP server, so Claude or another assistant can find a garment's materials, describe its layers and pick colors. Each GitHub release carries the server as one file, `edgemat-mcp-<version>.cjs`. It needs Node.js 20 or later, and finds the game and REDbridge as the extension does. For Claude Code, with the file's full path:
 
 ```
-claude mcp add edgemat -- node "<folder>\edgemat-mcp-<version>.cjs"
+claude mcp add --scope user edgemat -- node "<folder>\edgemat-mcp-<version>.cjs"
 ```
 
 ## Setup

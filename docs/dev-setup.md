@@ -73,10 +73,10 @@ code --install-extension dist\edgemat-0.1.0.vsix
 
 The smoke test finds the game and REDbridge from the VS Code settings (`edgemat.*`, then `redcode.*`), as the extension does, and writes the library to `%LOCALAPPDATA%\EDGEmat`. F5 in VS Code, with the repository open, runs the extension in a development host (`.vscode/launch.json`, "Run EDGEmat"); build first.
 
-Register the MCP server with Claude Code (no options needed on a PC with REDcode set up):
+Register the MCP server with Claude Code (no options needed on a PC with REDcode set up). `--scope user` makes it available in every folder, the development host's too; without it, only in the folder where the command ran:
 
 ```powershell
-claude mcp add edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
+claude mcp add --scope user edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
 ```
 
 ### Releasing
