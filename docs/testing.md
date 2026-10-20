@@ -17,7 +17,7 @@ Last updated 2026-10-20.
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
 | [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | 2026-10-19 | Pass |
 | [Setup editor: editing and Save to Project](#setup-editor-editing-and-save-to-project) | By hand, F5, with REDcode | M3 | | Not run yet |
-| [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | | Not run yet |
+| [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | In progress: B saved and checked in VS Code |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | Each release | 2026-10-19 | Pass |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
@@ -155,14 +155,14 @@ Built 2026-10-20 (M3). **Not run by the owner yet.** Before that: the smoke test
 
 ### M3 in-game round trip
 
-The phase test (design, "Phases"): recolors made in EDGEmat, by asking Claude, and from a setup opened outside the project, each saved into a REDcode project, packed and deployed by REDcode, and seen in the game. **Not run yet.** Saving as a new setup needs no other mod; Material Texture Override can stay installed or not.
+The phase test (design, "Phases"): recolors made in EDGEmat, by asking Claude, and from a setup opened outside the project, each saved into a REDcode project, packed and deployed by REDcode, and seen in the game. **In progress:** B's saving part passed on 2026-10-20 (the owner, on the laptop): Claude saved both jeans, and the saved setups and meshes show dark green in EDGEmat and in REDcode's 3D view, after fix `3336eb7` (the feminine jeans' mask set sits in another folder). Saving as a new setup needs no other mod; Material Texture Override can stay installed or not.
 
 All three go into the `EDGEmat_M3` project from the test above, on three garments V can wear, so they do not clash.
 
 | # | Do | Expected |
 |---|---|---|
 | A | The jacket from the setup editor test above (the Rocker's Heart crystaljock bomber, saved in step 11) | Saved already |
-| B | Register EDGEmat's MCP server for Claude Code if it is not ([dev setup](dev-setup.html), section 4; build it first with `npm run mcp:build`). Start a new Claude Code session and ask: "Using EDGEmat, make the Sturdy-stitched punk jeans dark green on both bodies, and save it into my project E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M3." | Claude finds the item (`mat_find`), sees that the two bodies wear different meshes with their own setups (`l1_066` feminine, `l1_062` masculine), looks at the layers (`mat_describe`) and recolors both (`mat_edit`), and says which files it saved: a new setup and a mesh for each body |
+| B | Register EDGEmat's MCP server for Claude Code if it is not ([dev setup](dev-setup.html), section 4; build it first with `npm run mcp:build`; register with `--scope user`, or only the folder it was run in sees it). Start a new Claude Code session and ask: "Using EDGEmat, make the Sturdy-stitched punk jeans dark green on both bodies, and save it into my project E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M3." | Claude finds the item (`mat_find`), sees that the two bodies wear different meshes with their own setups (`l1_066` feminine, `l1_062` masculine), looks at the layers (`mat_describe`) and recolors both (`mat_edit`), and says which files it saved: a new setup and a mesh for each body. To look at them: right-click a saved `.mlsetup` › **Open With...** › **EDGEmat Setup Editor** (REDcode's tree also opens `.mlsetup`), and open a saved `.mesh` from the project in REDcode's 3D view with the **black_punk** appearance chosen (it opens on the first one) |
 | C | In the development host: Open Setup (the Library's title bar) › **A file on disk...** › `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M0\source\archive\base\characters\garment\player_equipment\feet\s1_055_shoe__converse\textures\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup`. It is the M0 round 1 setup: the sole red, the collar lining white, the toe cap layer hidden. **Save to Project** › EDGEmat_M3 › As a new setup › Enter › both sneaker meshes ticked › OK | "Setup · project file" (of the M0 project); saved into EDGEmat_M3 as `..._edgemat_m3.mlsetup`, with `s1_055_pma_shoe__converse.mesh` and `s1_055_pwa_shoe__converse.mesh` |
 | D | In REDcode with EDGEmat_M3 open: **Pack and Try** (or Pack and Install). Start the game (or reload, if Pack and Try went hot) | The project packs with no errors and is installed |
 | E | In the game, with Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Jacket_01_old_01", 1)`, `Game.AddToInventory("Items.Pants_03_basic_01", 1)`, `Game.AddToInventory("Items.CasualShoes_01_basic_01", 1)`. Equip all three; look in third person (photo mode or a mirror) and at your arms in first person | The jacket shows your blue and leather layer; the jeans are dark green; the sneakers have a red sole, a white collar lining and no black toe cap |
