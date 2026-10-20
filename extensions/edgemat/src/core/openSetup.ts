@@ -85,6 +85,15 @@ export async function openSetup(bridge: BridgeClient | undefined, lib: Library |
     maskError = "No mask set found beside this setup. Choose one to see where each layer shows.";
   }
 
+  return withSetup({ source, setup, info: describeSetup(setup, lib), masks, maskFrom: masks ? (mask ? "given" : "beside") : undefined, maskChoices, maskError }, setup, lib, dir);
+}
+
+/**
+ * An opened setup with `setup` in place of what it held: described again and its color map redrawn,
+ * with the same masks. The setup editor calls it after each edit; openSetup after reading.
+ */
+export function withSetup(o: OpenedSetup, setup: Setup, lib: Library | undefined, dir: string): OpenedSetup {
+  const { masks, source } = o;
   // First without shares, to know which layers show and their colors; then with them.
   let info = describeSetup(setup, lib, masks?.count);
   let composite: OpenedSetup["composite"];
@@ -98,5 +107,5 @@ export async function openSetup(bridge: BridgeClient | undefined, lib: Library |
     composite = { file, pick: c.pick };
     info = describeSetup(setup, lib, masks.count, c.shares);
   }
-  return { source, setup, info, masks, maskFrom: masks ? (mask ? "given" : "beside") : undefined, maskChoices, maskError, composite };
+  return { ...o, setup, info, composite };
 }

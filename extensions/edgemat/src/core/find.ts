@@ -246,11 +246,21 @@ export async function itemMaterials(bridge: BridgeClient, item: ItemEntry): Prom
   if (!row) throw new Error(`${item.entityName} is not in clothing.csv: the item may come from a mod (ArchiveXL), which M2 does not follow yet.`);
   const root = row[1];
   const ent = (await read.json(root)).Data.RootChunk;
-  const rows = (ent.appearances as Json[]).filter((a) => [`${item.appearanceName}&Male`, `${item.appearanceName}&Female`, item.appearanceName].includes(v(a.name)));
-  if (!rows.length) warnings.push(`No appearance named ${item.appearanceName} in ${root}.`);
+  // A row is the item's appearance name with tags: &Male or &Female for the body, and on jackets and
+  // other outer wear &TPP or &FPP (third and first person). One row per body: third person when both exist.
+  const base = item.appearanceName;
+  const tagsOf = (n: string) => (n === base ? [] : n.startsWith(`${base}&`) ? n.slice(base.length + 1).split("&") : undefined);
+  const bodyOf = (tags: string[]): ItemLook["body"] => (tags.includes("Male") ? "masculine" : tags.includes("Female") ? "feminine" : "any");
+  const perBody = new Map<ItemLook["body"], { row: Json; tags: string[] }>();
+  for (const row of ent.appearances as Json[]) {
+    const tags = tagsOf(v(row.name));
+    if (!tags) continue;
+    const had = perBody.get(bodyOf(tags));
+    if (!had || (had.tags.includes("FPP") && !tags.includes("FPP"))) perBody.set(bodyOf(tags), { row, tags });
+  }
+  if (!perBody.size) warnings.push(`No appearance named ${item.appearanceName} in ${root}.`);
   const looks: ItemLook[] = [];
-  for (const r of rows) {
-    const name = v(r.name) as string;
+  for (const [body, { row: r }] of perBody) {
     const appPath = v(r.appearanceResource) as string;
     const appName = v(r.appearanceName) as string;
     const app = (await read.json(appPath)).Data.RootChunk;
@@ -267,7 +277,7 @@ export async function itemMaterials(bridge: BridgeClient, item: ItemEntry): Prom
         warnings.push(`${m.mesh}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
-    looks.push({ body: name.endsWith("&Male") ? "masculine" : name.endsWith("&Female") ? "feminine" : "any", app: appPath, appAppearance: appName, meshes });
+    looks.push({ body, app: appPath, appAppearance: appName, meshes });
   }
   looks.sort((a, b) => a.body.localeCompare(b.body));
   return { item, root, looks, warnings };

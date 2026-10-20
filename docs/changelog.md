@@ -11,7 +11,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
-The first preview (M2 Read): EDGEmat reads a garment's materials and shows them, in plain words and in 3D. It does not edit them yet; recoloring comes next (M3).
+The first preview: EDGEmat reads a garment's materials, shows them in plain words and in 3D, and recolors them into your mod project, in the editor or by asking an assistant.
 
 **New**
 
@@ -20,6 +20,13 @@ The first preview (M2 Read): EDGEmat reads a garment's materials and shows them,
 - The Find view: a garment by its in-game name ("punk jeans") or a mesh by part of its path, down to its looks per body, meshes and materials. A layered material opens its setup with the exact mask set it names.
 - **View in 3D**: the eye on a mesh in Find opens it in [REDcode](https://github.com/Edgemodders/REDcode)'s 3D view, with its colors from EDGEmat: a layered material's color map, or a textured material's own color texture. Colors only for now, marked approximate. Needs REDcode.
 - MCP tools for assistants: `mat_colors` (a surface's colors, and the closest to a color you name), `mat_describe` (a setup's layers in plain words) and `mat_find` (a garment's or mesh's materials).
+- Editing in the setup editor: click a layer and change its surface, its color (from the surface's own, filtered by words such as "blue"), roughness, metal, bumps, tiling, offset, opacity and microblend. Each change shows at once; Ctrl+Z and Ctrl+Y undo and redo. A new surface resets the layer's color and finish to that surface's defaults, and says so.
+- **Save to Project**: saves a setup into your WolvenKit project (REDcode's open project, or one you pick). **As a new setup** writes it beside the original under a new name and copies the meshes that use it into the project, pointed at it: it shows in the game with no other mod. Or in place of the game's setup (needs the Material Texture Override mod), or at a path you choose. Then REDcode's Pack and Try is one click away. Ctrl+S on a game file, or on a file outside a project, opens Save to Project; a project's own file saves in place.
+- MCP `mat_edit`: an assistant recolors a setup in words ("dark red", "glossy", "leather standard clean") and saves it into a project the same way, or only previews the result.
+
+**Fixed**
+
+- Find showed no looks for jackets and other outer wear, whose appearances also name first and third person. It now walks them (third person when both exist).
 
 **Changed**
 

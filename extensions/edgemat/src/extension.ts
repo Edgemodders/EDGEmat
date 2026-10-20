@@ -4,17 +4,22 @@
 
 import * as vscode from "vscode";
 import type { EdgematApi } from "./api";
-import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library } from "./core";
+import * as path from "node:path";
+import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library, type Project } from "./core";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
 import { GameFiles, GameScheme, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
 import { SurfacePages } from "./surfacePage";
 
-/** The parts of REDcode's API (version 1, REDcode 0.9.0, docs/api.md) EDGEmat uses. */
+/** The parts of REDcode's API (version 1, docs/api.md) EDGEmat uses. project and packAndTry came after 0.9.0. */
 interface REDcodeApi {
   readonly apiVersion: 1;
   bridge(): BridgeClient | undefined;
   gamePath(): string | undefined;
+  /** The open WolvenKit project. */
+  project?(): { name: string; dir: string; archive: string } | undefined;
+  /** Packs the open project and gets it into the game: hot when Red Hot Tools runs, else installed. */
+  packAndTry?(): Promise<"hot" | "installed" | undefined>;
 }
 
 /** The part of REDdeck's API (version 1) EDGEmat uses. */
@@ -176,6 +181,50 @@ async function setGameFolder(): Promise<void> {
   await vscode.workspace.getConfiguration("edgemat").update("gamePath", dir, vscode.ConfigurationTarget.Global);
 }
 
+const LastProject = "edgemat.lastProject";
+
+/**
+ * The project to save into: the one REDcode has open, else one the modder picks (the last one used is
+ * offered first). Remembered for next time.
+ */
+async function chooseProject(context: vscode.ExtensionContext): Promise<Project | undefined> {
+  const open = redcode()?.project?.();
+  const fromRedcode = open ? projectAt(open.dir) : undefined;
+  if (fromRedcode) return fromRedcode;
+  const last = context.globalState.get<string>(LastProject);
+  const lastProject = last ? projectAt(last) : undefined;
+  const items: (vscode.QuickPickItem & { project?: Project })[] = [
+    ...(lastProject ? [{ label: lastProject.name, description: "used last", detail: lastProject.dir, project: lastProject }] : []),
+    { label: "$(folder-opened) A project folder or .cpmodproj...", detail: "A WolvenKit project, such as one made with REDcode: New Project" },
+  ];
+  const pick = await vscode.window.showQuickPick(items, { title: "Save to Project: which project?", placeHolder: redcode() ? "REDcode has no project open. Pick one, or open it in REDcode first." : "Pick a WolvenKit project" });
+  if (!pick) return undefined;
+  let project = pick.project;
+  if (!project) {
+    const chosen = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: true, canSelectMany: false, filters: { "WolvenKit project": ["cpmodproj"] }, title: "A WolvenKit project", openLabel: "Use This Project" });
+    const p = chosen?.[0]?.fsPath;
+    if (!p) return undefined;
+    project = projectAt(p);
+    if (!project) {
+      void vscode.window.showErrorMessage(`${p} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`);
+      return undefined;
+    }
+  }
+  await context.globalState.update(LastProject, project.dir);
+  return project;
+}
+
+/** REDcode's Pack and Try, when REDcode has this project open. */
+function packAndTryFor(project: Project): (() => Promise<unknown>) | undefined {
+  const rc = redcode();
+  const open = rc?.project?.();
+  if (!rc?.packAndTry || !open || path.resolve(open.dir).toLowerCase() !== path.resolve(project.dir).toLowerCase()) return undefined;
+  return async () => {
+    const r = await rc.packAndTry!();
+    log(`REDcode Pack and Try: ${r ?? "cancelled or failed"}`);
+  };
+}
+
 /**
  * Opens a mesh in REDcode's 3D view, which asks EDGEmat for its materials (renderMaterials below).
  * REDcode opens it at the mesh's first look; the look to pick is shown in the status bar.
@@ -226,7 +275,10 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       const found = library()?.microblends.find((m) => m.path.toLowerCase() === p.toLowerCase());
       void pages.show({ kind: "microblend", microblend: found ?? { path: p, name: (p.split("\\").pop() ?? p).replace(/\.xbm$/i, "") } });
     },
+    project: () => chooseProject(context),
+    packAndTry: packAndTryFor,
   };
+  const setupEditor = new SetupEditor(host);
 
   context.subscriptions.push(
     output,
@@ -244,8 +296,9 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       view.setFilter("");
       tree.message = view.summary() || undefined;
     }),
-    vscode.workspace.registerFileSystemProvider(GameScheme, new GameFiles(bridgeNow, () => cacheDir), { isCaseSensitive: false, isReadonly: true }),
-    vscode.window.registerCustomEditorProvider(SetupEditor.viewType, new SetupEditor(host), { supportsMultipleEditorsPerDocument: true }),
+    vscode.workspace.registerFileSystemProvider(GameScheme, new GameFiles(bridgeNow, () => cacheDir), { isCaseSensitive: false }),
+    vscode.window.registerCustomEditorProvider(SetupEditor.viewType, setupEditor, { supportsMultipleEditorsPerDocument: true }),
+    vscode.commands.registerCommand("edgemat.saveToProject", () => setupEditor.saveActiveToProject()),
     vscode.commands.registerCommand("edgemat.openSetup", () => openSetupCommand(host)),
     vscode.commands.registerCommand("edgemat.openItem", (node) => {
       const subject = LibraryView.subjectOf(node);

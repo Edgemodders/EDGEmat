@@ -63,6 +63,7 @@ export async function loadMaskSet(bridge: BridgeClient, dir: string, source: Mas
   }
 
   // WolvenKit exports a file that sits in an archive folder; give it one, then export into a raw folder.
+  fs.mkdirSync(dir, { recursive: true });
   const tmp = fs.mkdtempSync(path.join(dir, "tmp-mask-"));
   try {
     const archive = path.join(tmp, "archive"), raw = path.join(tmp, "raw");

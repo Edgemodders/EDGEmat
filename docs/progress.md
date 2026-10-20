@@ -2,23 +2,25 @@
 
 What has been done on EDGEmat, what was decided and why, and what is open. Newest first within each section. Read this to catch up without asking. The [design](design.html) and the [behavior spec](design/behavior.html) hold the full detail.
 
-Last updated 2026-10-19.
+Last updated 2026-10-20.
 
 ## At a glance
 
 | | |
 |---|---|
-| Phase | **M2 Read done** 2026-10-19: every test passed, the phase test too. **M3 Edit next**, with Generate's first slice; it ends with the first preview, 0.3.0 |
+| Phase | **M3 Edit in progress**: editing and Save to Project built 2026-10-20, your tests next. Then Generate's first slice; M3 ends with the first preview, 0.3.0 |
 | Extension | 0.1.0 plus M2: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor; Find; View in 3D |
-| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find` |
+| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Edit and Save to Project, then the round-trip test through a REDcode project. The two early checks are done or folded into it (log, 2026-10-19) |
+| Next up | Your hand test of editing and Save to Project, then the in-game round trip ([Tests](testing.html#setup-editor-editing-and-save-to-project)). Meanwhile: the tiling check files, then Generate |
 | Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
+| Hand test: editing and Save to Project, 14 checks through F5 ([Tests](testing.html#setup-editor-editing-and-save-to-project)) | M3's editor; it needs a REDcode project named EDGEmat_M3 first | 2026-10-20 |
+| In-game round trip A to F ([Tests](testing.html#m3-in-game-round-trip)): the jacket from the hand test, the punk jeans by asking Claude, the M0 sneakers setup from outside the project; pack with REDcode and look in the game | M3's phase test | 2026-10-20 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
@@ -38,6 +40,16 @@ Last updated 2026-10-19.
 | [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open. After REDnode's current task |
 
 ## Log
+
+### 2026-10-20
+
+| What | Detail |
+|---|---|
+| **Editing built** | Click a layer in the setup editor and change its surface, color (the surface's own swatches, filtered by words such as "blue"), finish, tiling, opacity and microblend. Each change shows at once; Ctrl+Z undoes. A new surface resets the layer's color and finish to that surface's defaults, and says so |
+| **Save to Project built** | Saves the setup into your project (REDcode's open one, or one you pick). By default as a new setup beside the original, with every mesh that uses it copied into the project and pointed at it, so it shows in the game with no other mod: on the Arasaka jacket that is three meshes, found in half a second. REDcode's Pack and Try is offered right after. Ctrl+S on a game file opens it; a project's own file saves in place |
+| **`mat_edit`** | Claude recolors in words ("dark red", "glossy", "leather standard clean"): EDGEmat picks the surface's closest preset, says how close it is, and saves the same way, or only previews |
+| Find fixed | Jackets and other outer wear showed no looks: their appearances also name first and third person (`&Male&TPP`). Find now walks them |
+| Test garments | The Arasaka jacket is an NPC garment, so V cannot wear it. The in-game test uses the Rocker's Heart crystaljock bomber, the punk jeans and the Sunny Ammo sneakers |
 
 ### 2026-10-19
 
@@ -131,10 +143,11 @@ Last updated 2026-10-19.
 | AI generation follows EDGEwave's idiom; keys in VS Code's secret storage, environment variables for MCP | One look across the EDGE tools; the MCP server cannot read VS Code's secrets | 2026-10-19 |
 | The Nexus page is prepared now, posted when the owner decides | The owner reviews the roadmap to M7 first | 2026-10-19 |
 | Every EDGE repo commits as `CyberbuildsAI`, EDGEweb too | Edgemodders is the organization; the CyberbuildsAI account owns it (the owner, 2026-10-19). EDGEweb's CLAUDE.md fixed | 2026-10-19 |
+| A recolor saves as a new setup with mesh copies pointed at it, by default | Shows in the game with no other mod; how most recolor mods ship. In place stays an option, with an MTO warning | 2026-10-20 |
 | The first preview is 0.3.0 at the end of M3, with Generate's first slice from M4 | The owner wants the preview to edit with an in-game round trip, and to have AI generation | 2026-10-19 |
 | ~~A 0.2.0 preview on GitHub only, at the end of M2~~ Replaced by 0.3.0 | Something real to show; the stores wait for editing (M7). Still GitHub only, no stores until M7 | 2026-10-18 |
 
-Still open: how a recolor is saved, in place (needs MTO for every player) or at a new path (needs nothing extra; how most recolor mods ship). Leaning new path by default; settled in M3. Other open questions are in the [design](design.html#open-questions).
+Settled 2026-10-20: a recolor is saved as a new setup with its meshes pointed at it by default; in place stays an option that warns about MTO. Other open questions are in the [design](design.html#open-questions).
 
 ## What we learned about the game
 

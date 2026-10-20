@@ -1,4 +1,4 @@
-// The test outside VS Code (M1, M2): builds the material library from the game with the bundled core
+// The test outside VS Code (M1 to M3): builds the material library from the game with the bundled core
 // (dist/core.js, so run `npm run build` first) and checks its counts against the game's own listing, then the surface page's data and images.
 //
 //   node scripts/smoke.mjs [--cache <dir>]
@@ -133,6 +133,55 @@ try {
   const jacketMaps = await core.renderMaterials(bridge, lib, cache, { mesh: jacketPath, appearance: "default" });
   check(Object.keys(jacketMaps).length === 5 && isPng(jacketMaps.bags?.baseColor) && isPng(jacketMaps.decals?.baseColor),
     `jacket in ${Date.now() - t2} ms: ${Object.keys(jacketMaps).length} materials, the two layered ones and three textured decals`);
+
+  // M3: editing a setup and saving it into a project (design, "Phases"; behavior spec, sections 6, 9 and 10).
+  console.log("\nedit and save");
+  const jacketSetup = "base\\characters\\garment\\corp_arasaka\\torso\\t2_078_jacket__samurai\\textures\\ml_t2_078_ma_jacket__samurai.mlsetup";
+  const js = await core.openSetup(bridge, lib, cache, { gamePath: jacketSetup });
+  const tmp = path.join(cache, "smoke");
+  fs.rmSync(tmp, { recursive: true, force: true });
+  fs.mkdirSync(tmp, { recursive: true });
+  const origFile = path.join(tmp, "orig.mlsetup"), sameFile = path.join(tmp, "same.mlsetup"), freshFile = path.join(tmp, "fresh.mlsetup");
+  await bridge.extract(jacketSetup, origFile);
+  await bridge.fromJson(sameFile, { json: JSON.stringify(core.setupToJson(js.setup)) });
+  await bridge.fromJson(freshFile, { json: JSON.stringify(core.setupToJson({ ...js.setup, json: undefined })) });
+  const fresh = core.parseSetup(JSON.parse((await bridge.fileToJson(freshFile)).json));
+  check(fs.readFileSync(origFile).equals(fs.readFileSync(sameFile)) && core.sameSetup(fresh, js.setup),
+    "an unedited setup writes back byte for byte; one written fresh (from an older JSON shape) reads back the same");
+  const biggest = js.info.layers.filter((l) => l.shown).sort((a, b) => (b.share ?? 0) - (a.share ?? 0));
+  const [bodyLayer, otherLayer] = [biggest[0].index, biggest[1].index];
+  const toRed = core.patchFromWords(js.setup, bodyLayer, { color: "dark red" }, lib);
+  let ed = core.applyLayerEdit(js.setup, bodyLayer, toRed.patch, lib);
+  const leatherWords = core.patchFromWords(ed.setup, otherLayer, { surface: "leather standard clean", roughness: "glossy" }, lib);
+  ed = core.applyLayerEdit(ed.setup, otherLayer, leatherWords.patch, lib);
+  const shownAfter = core.withSetup(js, ed.setup, lib, cache).info.layers;
+  check(shownAfter[bodyLayer].color?.plain.includes("red") && shownAfter[otherLayer].surface.title.startsWith("leather standard clean") && shownAfter[otherLayer].warnings.length === 0,
+    `words to presets: layer ${bodyLayer} ${shownAfter[bodyLayer].color?.plain}; layer ${otherLayer} ${shownAfter[otherLayer].surface.title}, ${shownAfter[otherLayer].roughness?.plain}`);
+  const refused = (patch) => { try { core.applyLayerEdit(ed.setup, bodyLayer, patch, lib); return false; } catch { return true; } };
+  check(refused({ colorScale: "None" }) && refused({ colorScale: "abcdef_nope" }) && refused({ opacity: 9 }) && !refused({ opacity: 0.5 }),
+    "refused: None as a preset, a color the surface lacks, opacity outside the game's range");
+  const projDir = path.join(tmp, "smoke_project");
+  fs.mkdirSync(path.join(projDir, "source", "archive"), { recursive: true });
+  fs.writeFileSync(path.join(projDir, "smoke_project.cpmodproj"), "<WolvenKitProject />");
+  const project = core.projectAt(projDir);
+  let t3 = Date.now();
+  const uses = await core.meshesUsing(bridge, jacketSetup, project.archive);
+  check(uses.length === 3 && uses.every((u) => u.materials.includes("ml_t2_078_ma_jacket__samurai_masksset")),
+    `meshes that use the jacket's setup, found in ${Date.now() - t3} ms: ${uses.map((u) => `${u.mesh.split("\\").pop()} (${u.materials.join(", ")})`).join("; ")}`);
+  const target = core.newPathFor(jacketSetup, core.suffixFor(project.name));
+  t3 = Date.now();
+  const saved = await core.saveToProject(bridge, { setup: ed.setup, archive: project.archive, target, from: jacketSetup, meshes: uses.map((u) => u.mesh), suffix: core.suffixFor(project.name) });
+  const back = core.parseSetup(JSON.parse((await bridge.fileToJson(path.join(project.archive, target))).json));
+  let repointed = 0;
+  for (const u of saved.meshes) {
+    const looks = await core.meshMaterials(bridge, path.join(project.archive, u.mesh));
+    const named = new Set(looks.flatMap((l) => l.materials.map((m) => m.setup?.toLowerCase())).filter(Boolean));
+    if (named.has(target.toLowerCase()) && !named.has(jacketSetup.toLowerCase())) repointed++;
+  }
+  check(core.sameSetup(back, ed.setup) && saved.written.length === 4 && repointed === 3,
+    `saved in ${Date.now() - t3} ms as ${target.split("\\").pop()}: the setup reads back with the edits; ${repointed} of 3 meshes name it and no longer the game's`);
+  const again = await core.meshesUsing(bridge, target, project.archive);
+  check(again.length === 3, "saving again finds the project's own copies of the meshes");
 } finally {
   bridge.stop();
 }

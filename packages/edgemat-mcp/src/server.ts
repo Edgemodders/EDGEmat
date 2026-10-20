@@ -13,8 +13,9 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
-  BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, itemMaterials, loadItems, meshMaterials, openSetup, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame,
-  searchMicroblends, searchTemplates, vscodeUserSettings, type ColorInfo, type Library, type MaterialUse, type MeshLook, type SettingsReader, type Template,
+  applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
+  saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
+  type ColorInfo, type LayerInfo, type Library, type MaterialUse, type MeshLook, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
 declare const __VERSION__: string;
@@ -182,6 +183,25 @@ server.registerTool(
 );
 
 const isFilePath = (p: string) => /^[a-z]:[\\/]|^\\\\|^\//i.test(p);
+const r3 = (v: number) => Math.round(v * 1000) / 1000;
+const preset = (p?: { plain: string; name: string }) => (p ? `${p.plain} (${p.name})` : undefined);
+
+/** One layer in plain words, as mat_describe and mat_edit give it. */
+const layerOut = (l: LayerInfo) => ({
+  index: l.index,
+  ...(l.shown ? {} : { hidden: l.hidden }),
+  surface: l.surface.title,
+  surfacePath: l.surface.path,
+  color: l.color ? { name: l.color.name, plain: l.color.plain, rgb: l.color.rgb.map(r3) } : undefined,
+  roughness: preset(l.roughness),
+  metal: preset(l.metal),
+  bumps: preset(l.bumps),
+  tiling: l.tiling,
+  opacity: l.opacity,
+  microblend: l.microblend.plain ? "plain (default)" : { name: l.microblend.name, path: l.microblend.path, tile: r3(l.microblend.tile), contrast: r3(l.microblend.contrast) },
+  share: l.share !== undefined ? `${(l.share * 100).toFixed(1)}%` : undefined,
+  warnings: l.warnings.length ? l.warnings : undefined,
+});
 
 server.registerTool(
   "mat_describe",
@@ -199,8 +219,6 @@ server.registerTool(
     try {
       const b = await getBridge();
       const o = await openSetup(b, await library(), cacheDir, isFilePath(setup) ? { file: setup } : { gamePath: setup }, mask);
-      const r3 = (v: number) => Math.round(v * 1000) / 1000;
-      const preset = (p?: { plain: string; name: string }) => (p ? `${p.plain} (${p.name})` : undefined);
       return text({
         setup,
         layers: o.info.layers.length,
@@ -210,23 +228,96 @@ server.registerTool(
         mask: o.masks ? { name: o.masks.name, from: o.maskFrom, count: o.masks.count } : { error: o.maskError },
         otherMasks: o.maskChoices.length > 1 ? o.maskChoices.slice(1) : undefined,
         colorMap: o.composite?.file,
-        layerList: o.info.layers
-          .filter((l) => !(hideUnused && (l.surface.unused || !l.surface.path)))
-          .map((l) => ({
-            index: l.index,
-            ...(l.shown ? {} : { hidden: l.hidden }),
-            surface: l.surface.title,
-            surfacePath: l.surface.path,
-            color: l.color ? { name: l.color.name, plain: l.color.plain, rgb: l.color.rgb.map(r3) } : undefined,
-            roughness: preset(l.roughness),
-            metal: preset(l.metal),
-            bumps: preset(l.bumps),
-            tiling: l.tiling,
-            opacity: l.opacity,
-            microblend: l.microblend.plain ? "plain (default)" : { name: l.microblend.name, path: l.microblend.path, tile: r3(l.microblend.tile), contrast: r3(l.microblend.contrast) },
-            share: l.share !== undefined ? `${(l.share * 100).toFixed(1)}%` : undefined,
-            warnings: l.warnings.length ? l.warnings : undefined,
-          })),
+        layerList: o.info.layers.filter((l) => !(hideUnused && (l.surface.unused || !l.surface.path))).map(layerOut),
+      });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+const LayerEditSchema = z.object({
+  layer: z.number().int().min(0).describe("The layer's index, as mat_describe lists it (0 is the base)"),
+  surface: z.string().optional().describe("A new surface: a game path, a template name, or words that fit one surface. Its presets reset to the new surface's defaults unless given too"),
+  color: z.string().optional().describe("A color preset name, or a color as words ('dark red'), #rrggbb or 'r g b': the surface's closest preset is used, and how close it is comes back in notes"),
+  roughness: z.string().optional().describe("A roughness preset name, or words from its plain description ('glossy', 'matte')"),
+  roughnessContrast: z.string().optional(),
+  metal: z.string().optional().describe("A metal preset name, or words ('not metal', 'fully metal')"),
+  metalContrast: z.string().optional(),
+  bumps: z.string().optional().describe("A bumps preset name, or words ('faint bumps', 'flat')"),
+  tile: z.number().optional().describe("The layer's own tiling (matTile, 0 to 1000); the surface multiplies it by its own factor"),
+  offsetU: z.number().optional(),
+  offsetV: z.number().optional(),
+  opacity: z.number().optional().describe("0 hides the layer, 1 is full; the game uses up to 4"),
+  microblend: z.string().optional().describe("A microblend's game path, name or words; 'plain' for the default"),
+  microblendTile: z.number().optional(),
+  microblendContrast: z.number().optional(),
+  microblendNormalStrength: z.number().optional(),
+});
+
+server.registerTool(
+  "mat_edit",
+  {
+    description:
+      "Edits a multilayered setup (.mlsetup) and saves it into a WolvenKit project, as EDGEmat's setup editor does. A recolor: change layers' surfaces, colors (words such as 'dark red' pick the surface's closest preset), finish, tiling, opacity and microblend. " +
+      "Use mat_find to find a garment's setup and mat_describe to see its layers first. Edits are checked: a layer can only use its surface's own presets. " +
+      "save 'new' (the default) writes the setup beside the original under a new name and copies every mesh that uses it into the project, pointed at the new setup: it shows in the game with no other mod, once the project is packed and installed (REDcode: Pack and Try). " +
+      "save 'inPlace' writes it at its own game path, which replaces the game's setup and shows in the game only with the Material Texture Override mod. " +
+      "preview true describes the result without writing anything. project: the project folder, its .cpmodproj, or its source\\archive folder.",
+    inputSchema: {
+      setup: z.string().describe("A game path (base\\...\\x.mlsetup), or a file on disk"),
+      edits: z.array(LayerEditSchema).min(1),
+      project: z.string().optional(),
+      save: z.enum(["new", "inPlace"]).default("new"),
+      target: z.string().optional().describe("The game path for the new setup; default: beside the original, named with the project's name"),
+      mask: z.string().optional(),
+      preview: z.boolean().default(false),
+    },
+  },
+  async ({ setup, edits, project, save, target, mask, preview }) => {
+    try {
+      const b = await getBridge();
+      const lib = await library();
+      const source = isFilePath(setup) ? { file: setup, gamePath: gamePathInProject(setup) } : { gamePath: setup };
+      const o = await openSetup(b, lib, cacheDir, source, mask);
+      let edited = o.setup;
+      const notes: string[] = [];
+      for (const e of edits) {
+        const { layer, ...words } = e;
+        const w = patchFromWords(edited, layer, words, lib);
+        const r = applyLayerEdit(edited, layer, w.patch, lib);
+        edited = r.setup;
+        notes.push(...w.notes, ...r.notes.map((n) => `Layer ${layer}: ${n}`));
+      }
+      const after = withSetup(o, edited, lib, cacheDir);
+      const changed = [...new Set(edits.map((e) => e.layer))].map((i) => layerOut(after.info.layers[i]));
+      const result = { layers: changed, colorMap: after.composite?.file, warnings: after.info.warnings.length ? after.info.warnings : undefined };
+      if (preview) return text({ preview: true, ...result, notes: notes.length ? notes : undefined });
+
+      if (!project) return failure(new Error("Pass project: the WolvenKit project folder to save into (or preview: true to only see the result)."));
+      const p = projectAt(project);
+      if (!p) return failure(new Error(`${project} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`));
+      const from = source.gamePath;
+      const suffix = suffixFor(p.name);
+      let saved;
+      if (save === "inPlace") {
+        const to = target ?? from;
+        if (!to) return failure(new Error("This file has no game path to save in place: pass target, the game path to save it at."));
+        saved = await saveToProject(b, { setup: edited, archive: p.archive, target: to });
+        if (await isGameFile(b, to)) notes.push("Saved in place of the game's own setup: it shows in the game only with the Material Texture Override mod installed.");
+      } else {
+        const to = target ?? (from ? newPathFor(from, suffix) : undefined);
+        if (!to) return failure(new Error("This file has no game path: pass target, the game path to save it at."));
+        const meshes = from ? await meshesUsing(b, from, p.archive) : [];
+        if (from && !meshes.length) notes.push(`No mesh beside ${from} uses it, so nothing points at the new setup yet.`);
+        saved = await saveToProject(b, { setup: edited, archive: p.archive, target: to, from, meshes: meshes.map((m) => m.mesh), suffix });
+      }
+      notes.push(...saved.notes);
+      return text({
+        saved: { project: p.dir, setup: saved.written[0], meshes: saved.meshes, written: saved.written },
+        next: "Pack the project and install it (REDcode: Pack and Try), then look at the garment in the game.",
+        ...result,
+        notes: notes.length ? notes : undefined,
       });
     } catch (e) {
       return failure(e);

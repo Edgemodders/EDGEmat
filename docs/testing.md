@@ -2,20 +2,22 @@
 
 Every test run on EDGEmat so far: how to run it again, what to expect, and what it showed. Each phase ends with a test on the dev PC ([design, "Phases"](design.html#phases)); new tests are added here when they are first run.
 
-Last updated 2026-10-17.
+Last updated 2026-10-20.
 
 ## At a glance
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
-| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1, M2 | 2026-10-19 | Pass |
-| [MCP server](#mcp-server) | By hand, over stdio | M1, M2 | 2026-10-17 | Pass |
+| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-20 | Pass |
+| [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass |
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
 | [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | 2026-10-19 | Pass |
+| [Setup editor: editing and Save to Project](#setup-editor-editing-and-save-to-project) | By hand, F5, with REDcode | M3 | | Not run yet |
+| [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | | Not run yet |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | Each release | 2026-10-19 | Pass |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
@@ -55,6 +57,7 @@ Needs the game and REDbridge, found from the VS Code settings as the extension f
 | Setup editor data (M2) | On `ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup`: 20 layers, 19 shown, layer 11 hidden (opacity 0); mask set `ml_s1_055_pma_shoe__converse_masksset` (20 masks) found beside it, of 2 in the folder; layer 7 (the sole, in-game test R1-B) is rubber bumper damaged, 11.3% of the texture; every surface found, no warnings; the 0.0.1 and oldest JSON shapes (made from the current one) read the same layers. Read in about 0.3 s with the masks cached |
 | Find (M2) | 1,997 clothing items with in-game names (8.5 s the first time, then cached); "sunny ammo high-tops" finds `Items.CasualShoes_01_basic_01` and "Pants_03_basic_01" finds `Items.Pants_03_basic_01`; the sneakers walk to two bodies (`_pwa_` and `_pma_` meshes), each with red_yellow_graphic's setup and the converse mask set; the jeans' feminine body wears `l1_066` pants; the jacket mesh's body and bags share one setup and `no_bags` hides them with `mesh_decal.mt`; a found setup opens with the mask set its material names. Each item walk takes about 0.15 to 0.35 s |
 | 3D view colors (M2) | The sneakers' `red_yellow_graphic` as a 512 px color map, in about 0.5 s; `dec_lights` left out (no color texture). The jacket's `default` look: 5 materials, the two layered ones as color maps and three decals as their own textures (`decals_arasaka_d01.xbm`, `garment_decals_d01.xbm`), in about 1 s |
+| Edit and save (M3) | On the Arasaka jacket's setup (`ml_t2_078_ma_jacket__samurai.mlsetup`): unedited, it writes back byte for byte; written fresh (as from an older JSON shape) it reads back the same. "dark red" on its biggest layer picks `c2162c_69039f`; "leather standard clean" and "glossy" on the next one pick that surface and a glossy preset, with no warnings. Refused: `None` as a preset, a color the surface lacks, opacity 9. The meshes using the setup are found in about 0.5 s: `t2_078_ma`, `_mb` and `_mm` (the body and bags materials). Saved into a scratch project at a new path in about 2 s: the setup reads back with the edits, and all 3 mesh copies name it and no longer the game's; saving again finds the project's copies |
 | Page images (M2) | 3 of 3 for `leather_bull_01_30`: the first in about 1.6 s while the bridge warms up, the rest in well under half a second, then instant from the cache |
 
 The counts change after a game patch. A patch that adds surfaces is fine as long as "read" matches "listing".
@@ -126,6 +129,44 @@ Run 2026-10-17 by the owner: **all pass**, including opening from REDcode's Game
 | 11 | In REDcode's activity bar view, open Game Assets and go to a garment's `textures` folder (for example `base\characters\garment\player_equipment\feet\s1_055_shoe__converse\textures`). Open any `.mlsetup` there | VS Code asks which editor to use, or opens REDcode's. To switch: right-click the editor tab (or press Ctrl+Shift+P) › **Reopen Editor With...** › **EDGEmat Setup Editor**. The setup shows as in step 1 |
 | 12 | Open a setup with unused slots: Open Setup › From the game › type `t2_078 samurai`, pick any. Then untick and tick **Hide unused slots** (top right, beside Raw values) | The header counts the unused slots. Unticked, they appear in the list as dimmed "unused" layers; ticked, they disappear |
 | 13 | Another theme | Readable; the lit mask uses the theme's link color |
+
+### Setup editor: editing and Save to Project
+
+Built 2026-10-20 (M3). **Not run by the owner yet.** Before that: the smoke test's "edit and save" checks pass (the jacket's setup edited, saved at a new path, three meshes repointed, all read back), and `mat_edit` was run over stdio.
+
+**Before you start**, in your normal VS Code with REDcode: **REDcode: New Project** (Ctrl+Shift+P), named `EDGEmat_M3`, in `E:\Modding\Cyberpunk 2077\Projects`. Leave it open in REDcode: Save to Project uses REDcode's open project, and offers REDcode's Pack and Try after saving. Then in this repo: `npm run build` and **F5** (**Run EDGEmat**). In the development host, open the same project folder (File › Open Folder) so REDcode has it open there too.
+
+| # | Do | Expected |
+|---|---|---|
+| 1 | EDGEmat's activity bar icon › the **Find** header (below the Library) › its magnifier › type `rocker's heart` › open the item › your V's body (Feminine or Masculine) › `t2_084_pw?__short_sleeves.mesh` › click the material **black_red_glossy** | The setup editor opens `ml_t2_084_pma_jacket__short_sleeves_black_red_glossy`. Under the title: "Select a layer to change it." and a line saying Ctrl+S saves it into a project. Top right: Hide unused slots, Raw values, and a filled **Save to Project** button. The editor's title bar (top right of the tab) has a Save to Project icon |
+| 2 | Click the layer with the biggest share (the top of the bars on the right) | Its details open with controls: **Change...** in the Surface row; a filter box and a grid of swatches under Color, the current one outlined; drop-downs for Roughness, Roughness contrast, Metal, Metal contrast, Bumps; number boxes for Tiling, Offset U and V, Opacity; **Change...** and three number boxes in the Microblend row |
+| 3 | In the Color row's filter box type `blue`, then click a strong blue swatch | The grid narrows to blues. The layer turns blue in the list and on the map. The tab shows the unsaved dot, and the header says "Edited, not saved yet." |
+| 4 | Click an empty part of the page (not a box), then Ctrl+Z, then Ctrl+Y | Ctrl+Z puts the old color back; Ctrl+Y makes it blue again. Keep it blue: it is what you look for in the game |
+| 5 | Roughness drop-down: pick a different finish, such as one with "glossy" | The layer's line in the list changes its finish words |
+| 6 | Pick a second visible layer. Surface row › **Change...** › type `leather standard` › pick **leather standard clean 01 30** | A list at the top of the window, searchable. After picking: a line under the header, "New surface, leather standard clean 01 30: its ... were set to the surface's defaults", and the layer's thumbnail and color change |
+| 7 | Opacity box of that layer: type `0`, press Enter. Then Ctrl+Z | At 0 the layer dims ("not shown: opacity 0") and leaves the map; Ctrl+Z brings it back |
+| 8 | Tick **Raw values** | The drop-downs also show the presets' game names |
+| 9 | **Save to Project** (the button top right) | A list titled "Save to Project: EDGEmat_M3" with **As a new setup** (recommended), **In place of the game's setup** (it says that needs Material Texture Override), and **At a game path you choose...**. Pick **As a new setup** |
+| 10 | The path box shows `...\ml_t2_084_pma_jacket__short_sleeves_black_red_glossy_edgemat_m3.mlsetup`. Press Enter | "Finding the meshes that use this setup", then a list with `t2_084_pma__short_sleeves.mesh` and `t2_084_pwa__short_sleeves.mesh`, both ticked, each naming black_red_glossy. Press OK (or Enter) |
+| 11 | Wait for the save | A message "Saved into EDGEmat_M3: the setup and 2 meshes pointed at it." with **Pack and Try** and **Open the Saved Setup**. The unsaved dot goes; a line under the header says where it was saved. In the project: `source\archive\base\characters\garment\player_equipment\torso\t2_084_jacket__short_sleeves\` has the two meshes, and its `textures` folder the new setup. Do not pack yet |
+| 12 | **Open the Saved Setup** (in that message; or open the new `.mlsetup` from the project with EDGEmat). Change one more thing, then press Ctrl+S | "Setup · project file", with your edits. Ctrl+S saves straight into that file: no list, no question, and the unsaved dot goes |
+| 13 | Open any game setup (Open Setup › From the game › `s1_055 red yellow`), change a color, press Ctrl+S, then Esc in the list | Ctrl+S on a game file opens the Save to Project list (game files are never written). After Esc the tab stays unsaved, with no error message. Close it with Don't Save |
+| 14 | Another theme | Swatches, boxes and drop-downs readable |
+
+### M3 in-game round trip
+
+The phase test (design, "Phases"): recolors made in EDGEmat, by asking Claude, and from a setup opened outside the project, each saved into a REDcode project, packed and deployed by REDcode, and seen in the game. **Not run yet.** Saving as a new setup needs no other mod; Material Texture Override can stay installed or not.
+
+All three go into the `EDGEmat_M3` project from the test above, on three garments V can wear, so they do not clash.
+
+| # | Do | Expected |
+|---|---|---|
+| A | The jacket from the setup editor test above (the Rocker's Heart crystaljock bomber, saved in step 11) | Saved already |
+| B | Register EDGEmat's MCP server for Claude Code if it is not ([dev setup](dev-setup.html), section 4; build it first with `npm run mcp:build`). Start a new Claude Code session and ask: "Using EDGEmat, make the Sturdy-stitched punk jeans dark green on both bodies, and save it into my project E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M3." | Claude finds the item (`mat_find`), sees that the two bodies wear different meshes with their own setups (`l1_066` feminine, `l1_062` masculine), looks at the layers (`mat_describe`) and recolors both (`mat_edit`), and says which files it saved: a new setup and a mesh for each body |
+| C | In the development host: Open Setup (the Library's title bar) › **A file on disk...** › `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M0\source\archive\base\characters\garment\player_equipment\feet\s1_055_shoe__converse\textures\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup`. It is the M0 round 1 setup: the sole red, the collar lining white, the toe cap layer hidden. **Save to Project** › EDGEmat_M3 › As a new setup › Enter › both sneaker meshes ticked › OK | "Setup · project file" (of the M0 project); saved into EDGEmat_M3 as `..._edgemat_m3.mlsetup`, with `s1_055_pma_shoe__converse.mesh` and `s1_055_pwa_shoe__converse.mesh` |
+| D | In REDcode with EDGEmat_M3 open: **Pack and Try** (or Pack and Install). Start the game (or reload, if Pack and Try went hot) | The project packs with no errors and is installed |
+| E | In the game, with Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Jacket_01_old_01", 1)`, `Game.AddToInventory("Items.Pants_03_basic_01", 1)`, `Game.AddToInventory("Items.CasualShoes_01_basic_01", 1)`. Equip all three; look in third person (photo mode or a mirror) and at your arms in first person | The jacket shows your blue and leather layer; the jeans are dark green; the sneakers have a red sole, a white collar lining and no black toe cap |
+| F | Screenshots before and after | Kept outside the repo |
 
 ### Find view
 
@@ -200,6 +241,8 @@ Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`, `mat_describe`, `mat_fin
 | "Which materials do the punk jeans use?" | `mat_find` item `punk jeans` | The item `Items.Pants_03_basic_01` (its crafting copy shares the look, so it is not asked about); feminine: `l1_066_pwa_pants__rogue.mesh` with `ml_l1_066_black_punk.mlsetup` and its mask set; masculine: `l1_062_pma_pants__jeans.mesh` with `ml_l1_062_black_punk.mlsetup`. Run 2026-10-17 over stdio |
 | "Find s1_055" | `mat_find` query `s1_055` | The two sneaker meshes, `_pma_` and `_pwa_` |
 | Started as a Claude Code plugin with its options left empty (`EDGEMAT_GAME_PATH`, `REDBRIDGE_EXE` and `EDGEMAT_CACHE` set to "") | `mat_find` item `sunny ammo` | Empty counts as unset: it falls back to the VS Code settings and walks the item (2 looks). Run 2026-10-17 over stdio |
+| "Make the jacket's biggest layer dark red and its next one glossy standard leather; just show me" | `mat_edit` with preview | Run 2026-10-20 over stdio on the Arasaka jacket's setup: layer 0 dark red (`c2162c_69039f`, distance 0.032), layer 2 leather standard clean, glossy to shiny, its color and bumps reset to the surface's defaults (said in notes); nothing written. "leather" alone is refused with the 7 surfaces it fits |
+| "... and save it into this project" | `mat_edit` with project | Run 2026-10-20 over stdio into a scratch project: the new setup `..._mcp_project.mlsetup` and the three meshes that use it (`t2_078_ma`, `_mb`, `_mm`), with the materials pointed at it |
 | "Describe the sneakers' red_yellow_graphic setup" | `mat_describe` with the game path | 20 layers, 19 shown, the converse mask set and the songbird one as another choice, a color map file, each layer in plain words with its share. Run 2026-10-17 over stdio: layer 7 rubber bumper damaged, black, 11.3% |
 
 ## M0: the spec against the game

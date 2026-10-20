@@ -39,7 +39,8 @@
     "onCommand:edgemat.find",
     "onView:edgemat.find",
     "onCustomEditor:edgemat.setup",
-    "onFileSystem:edgemat-game"
+    "onFileSystem:edgemat-game",
+    "onCommand:edgemat.saveToProject"
   ],
   "contributes": {
     "viewsContainers": {
@@ -179,6 +180,12 @@
         "title": "View in 3D",
         "category": "EDGEmat",
         "icon": "$(eye)"
+      },
+      {
+        "command": "edgemat.saveToProject",
+        "title": "Save to Project...",
+        "category": "EDGEmat",
+        "icon": "$(save-as)"
       }
     ],
     "menus": {
@@ -270,6 +277,17 @@
         {
           "command": "edgemat.viewIn3D",
           "when": "false"
+        },
+        {
+          "command": "edgemat.saveToProject",
+          "when": "activeCustomEditorId == edgemat.setup"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "edgemat.saveToProject",
+          "when": "activeCustomEditorId == edgemat.setup",
+          "group": "navigation@1"
         }
       ]
     },

@@ -32,6 +32,8 @@ export interface Setup {
   ratio: number;
   useNormal: boolean;
   layers: SetupLayer[];
+  /** The WolvenKit JSON it was read from, in the current shape only: saving keeps every field it does not edit (edit.ts). */
+  json?: Json;
 }
 
 type Json = Record<string, any>;
@@ -42,6 +44,13 @@ const LayerDefaults: SetupLayer = {
   roughLevelsOut: "None", metalLevelsIn: "None", metalLevelsOut: "None", microblend: "", mbTile: 1, microblendContrast: 0.5,
   microblendNormalStrength: 1, microblendOffsetU: 0, microblendOffsetV: 0, overrides: "None",
 };
+
+/** The layer fields that hold a game path; the others are numbers or preset names. */
+export const PathFields = ["material", "microblend"] as const;
+
+/** Every layer field, with its engine default. */
+export const LayerFields = Object.keys(LayerDefaults) as (keyof SetupLayer)[];
+export const layerDefault = <K extends keyof SetupLayer>(k: K): SetupLayer[K] => LayerDefaults[k];
 
 /** A setup from WolvenKit JSON in any of its three shapes: current (0.0.2 and later), 0.0.1, and the oldest. */
 export function parseSetup(json: Json): Setup {
@@ -67,9 +76,17 @@ export function parseSetup(json: Json): Setup {
       const v = jsonValue(l[k]);
       if (v !== undefined && v !== null) (out as any)[k] = typeof LayerDefaults[k] === "number" ? Number(v) : String(v);
     }
+    // An empty path is written as the hash 0.
+    for (const k of PathFields) if (out[k] === "0") out[k] = "";
     return out;
   };
-  return { jsonVersion: version, ratio: Number(jsonValue(root!.ratio) ?? 1), useNormal: jsonValue(root!.useNormal) !== false, layers: layers!.map(read) };
+  return {
+    jsonVersion: version,
+    ratio: Number(jsonValue(root!.ratio) ?? 1),
+    useNormal: ![false, 0, "0", "false"].includes(jsonValue(root!.useNormal)),
+    layers: layers!.map(read),
+    json: json.Data?.RootChunk?.layers ? json : undefined,
+  };
 }
 
 // ---- in plain words ------------------------------------------------------------------------------
