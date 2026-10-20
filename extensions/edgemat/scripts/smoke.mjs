@@ -182,6 +182,11 @@ try {
     `saved in ${Date.now() - t3} ms as ${target.split("\\").pop()}: the setup reads back with the edits; ${repointed} of 3 meshes name it and no longer the game's`);
   const again = await core.meshesUsing(bridge, target, project.archive);
   check(again.length === 3, "saving again finds the project's own copies of the meshes");
+  const notFound = await core.meshesUsing(bridge, jacketSetup, project.archive);
+  const second = await core.meshesUsing(bridge, jacketSetup, project.archive, 60, true, undefined, [target]);
+  const resaved = await core.saveToProject(bridge, { setup: ed.setup, archive: project.archive, target, from: jacketSetup, meshes: second.map((u) => u.mesh), suffix: core.suffixFor(project.name) });
+  check(notFound.length === 0 && second.length === 3 && resaved.written.length === 1 && resaved.meshes.length === 3,
+    "the game's setup saved a second time: the project's meshes, already pointed at the saved copy, count; only the setup is written again");
   const fromProject = await core.openSetup(bridge, lib, cache, { file: path.join(project.archive, target) });
   const rogue = await core.openSetup(bridge, lib, cache, { gamePath: jf.meshes[0].materials.find((x) => x.multilayered).setup });
   check(fromProject.maskFrom === "material" && !!fromProject.composite && rogue.masks?.name === "ml_l1_066_wa_pants__rogue_masksset" && !!rogue.composite,

@@ -400,7 +400,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     if (pick.route === "new") {
       const search: MeshSearch = { folder: "", read: 0, skipped: [] };
       const uses = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Finding the meshes that use this setup" }, () =>
-        meshesUsing(bridge, gamePath!, project.archive, 60, true, search),
+        meshesUsing(bridge, gamePath!, project.archive, 60, true, search, [target]),
       );
       this.host.log(`Meshes that use ${gamePath}: ${uses.length} of ${search.read} read in ${search.folder}`);
       for (const s of search.skipped) this.host.log(`  could not read ${s.mesh}: ${s.reason}`);

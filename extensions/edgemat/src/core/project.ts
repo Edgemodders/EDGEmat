@@ -88,12 +88,12 @@ export interface MeshUse {
   masks?: string[];
 }
 
-/** Which materials of a mesh name `setup` (directly, or through the .mi an entry points at), and their mask sets. */
-async function usesIn(bridge: BridgeClient, archive: string | undefined, root: Json, setup: string): Promise<{ materials: string[]; masks: string[] }> {
+/** Which materials of a mesh name one of `setups` (directly, or through the .mi an entry points at), and their mask sets. */
+async function usesIn(bridge: BridgeClient, archive: string | undefined, root: Json, setups: string[]): Promise<{ materials: string[]; masks: string[] }> {
   const materials: string[] = [];
   const masks = new Set<string>();
   const check = (name: string, material: Json | undefined) => {
-    if (!setupValues(material).some((v) => same(jsonValue(v.MultilayerSetup), setup))) return;
+    if (!setupValues(material).some((v) => setups.some((s) => same(jsonValue(v.MultilayerSetup), s)))) return;
     materials.push(name);
     const mask = maskOf(material);
     if (mask) masks.add(mask);
@@ -121,9 +121,10 @@ async function usesIn(bridge: BridgeClient, archive: string | undefined, root: J
  * The meshes that use a setup, looked for in the garment's folder: the setup's folder, or the one above
  * a textures folder. Game meshes (unless `gameMeshes` is false) and the project's own. Shadow meshes are
  * left out. At most `limit` meshes are read. `report`, when given, gets the folder, how many meshes were
- * read, and the ones that could not be read, with why.
+ * read, and the ones that could not be read, with why. `alsoNamed`: other setups that count as this one,
+ * such as the copy saved before, which the project's meshes already point at.
  */
-export async function meshesUsing(bridge: BridgeClient, setup: string, archive?: string, limit = 60, gameMeshes = true, report?: MeshSearch): Promise<MeshUse[]> {
+export async function meshesUsing(bridge: BridgeClient, setup: string, archive?: string, limit = 60, gameMeshes = true, report?: MeshSearch, alsoNamed: string[] = []): Promise<MeshUse[]> {
   let folder = path.win32.dirname(setup);
   if (/\\textures$/i.test(folder)) folder = path.win32.dirname(folder);
   const meshes = new Set<string>();
@@ -148,7 +149,7 @@ export async function meshesUsing(bridge: BridgeClient, setup: string, archive?:
   for (const mesh of read) {
     try {
       const { json } = await readJson(bridge, archive, mesh);
-      const use = await usesIn(bridge, archive, json.Data.RootChunk, setup);
+      const use = await usesIn(bridge, archive, json.Data.RootChunk, [setup, ...alsoNamed]);
       if (use.materials.length) out.push({ mesh, ...use });
     } catch (e) {
       // A mesh that cannot be read is skipped, and reported.
@@ -209,13 +210,18 @@ export async function saveToProject(bridge: BridgeClient, req: SaveRequest): Pro
     const { json } = await readJson(bridge, req.archive, mesh);
     const root = json.Data.RootChunk;
     const pointed: string[] = [];
+    let changed = false;
+    // A material that names the target already (the project's copy from an earlier save) counts as pointed.
+    const namesTarget = (material: Json | undefined) => setupValues(material).some((v) => same(jsonValue(v.MultilayerSetup), target));
     for (const e of root.materialEntries ?? []) {
       const name = String(jsonValue(e.name));
       const local = Number(e.isLocalInstance) === 1 || e.isLocalInstance === true;
       if (local) {
-        const values = setupValues(localMaterial(root, e.index)).filter((v) => same(jsonValue(v.MultilayerSetup), from));
+        const material = localMaterial(root, e.index);
+        const values = setupValues(material).filter((v) => same(jsonValue(v.MultilayerSetup), from));
         for (const v of values) v.MultilayerSetup = { DepotPath: { $type: "ResourcePath", $storage: "string", $value: target }, Flags: v.MultilayerSetup.Flags ?? "Default" };
-        if (values.length) pointed.push(name);
+        if (values.length) changed = true;
+        if (values.length || namesTarget(material)) pointed.push(name);
         continue;
       }
       // An entry that points at an .mi naming the setup: a copy of the .mi beside the new setup, and the entry pointed at the copy.
@@ -223,8 +229,13 @@ export async function saveToProject(bridge: BridgeClient, req: SaveRequest): Pro
       const mi = jsonValue(ref);
       if (typeof mi !== "string" || !/\.mi$/i.test(mi)) continue;
       const { json: miJson } = await readJson(bridge, req.archive, mi).catch(() => ({ json: undefined as Json | undefined }));
+      if (namesTarget(miJson?.Data?.RootChunk)) {
+        pointed.push(name);
+        continue;
+      }
       const values = setupValues(miJson?.Data?.RootChunk).filter((v) => same(jsonValue(v.MultilayerSetup), from));
       if (!miJson || !values.length) continue;
+      changed = true;
       for (const v of values) v.MultilayerSetup = { DepotPath: { $type: "ResourcePath", $storage: "string", $value: target }, Flags: v.MultilayerSetup.Flags ?? "Default" };
       const copy = path.win32.join(path.win32.dirname(target), `${path.win32.basename(mi, ".mi")}_${suffix}.mi`);
       await writeJson(bridge, req.archive, copy, miJson);
@@ -236,8 +247,10 @@ export async function saveToProject(bridge: BridgeClient, req: SaveRequest): Pro
       result.notes.push(`${mesh} has no material that names ${from}, so it was not copied.`);
       continue;
     }
-    await writeJson(bridge, req.archive, mesh, json);
-    result.written.push(mesh);
+    if (changed) {
+      await writeJson(bridge, req.archive, mesh, json);
+      result.written.push(mesh);
+    }
     result.meshes.push({ mesh, materials: pointed });
   }
   return result;

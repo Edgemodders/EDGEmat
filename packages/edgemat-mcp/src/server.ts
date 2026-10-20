@@ -309,7 +309,7 @@ server.registerTool(
         const to = target ?? (from ? newPathFor(from, suffix) : undefined);
         if (!to) return failure(new Error("This file has no game path: pass target, the game path to save it at."));
         const search: MeshSearch = { folder: "", read: 0, skipped: [] };
-        const meshes = from ? await meshesUsing(b, from, p.archive, 60, true, search) : [];
+        const meshes = from ? await meshesUsing(b, from, p.archive, 60, true, search, [to]) : [];
         if (from && !meshes.length) notes.push(`No mesh in ${search.folder} uses ${from} (${search.read} read), so nothing points at the new setup yet.`);
         for (const s of search.skipped) notes.push(`Could not read ${s.mesh}: ${s.reason}`);
         saved = await saveToProject(b, { setup: edited, archive: p.archive, target: to, from, meshes: meshes.map((m) => m.mesh), suffix });
