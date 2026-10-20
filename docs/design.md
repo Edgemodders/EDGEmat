@@ -150,7 +150,7 @@ The goal (owner, 2026-10-19): a modder who is not an artist makes a new material
 | 4. Into the game | Resized to a game size (1024 or 2048), imported as `.xbm`, the `.mi` written into the project | REDbridge |
 | 5. Recorded | How it was made, beside the material: service, model, prompt, date. Mod sites may ask for AI content to be labelled (Nexus Mods, unverified) | EDGEmat |
 
-**On a garment** (proposed 2026-10-20, from the [tiling check](testing.html#tiling-check)). A garment's material carries its own normal map, which draws its folds and seams at the scale of the whole garment. `LayerTile` repeats every map, so a repeat above 1 would shrink and repeat the folds too. So on a garment EDGEmat bakes the repeat into the color texture (the seamless image laid out N × N in one 2048 px texture), keeps `LayerTile` at 1, and keeps the garment's normal map. On an object or a new mesh, whose material has no such map, `LayerTile` is the repeat. Either way the UI calls it **Repeat**, and the prompt asks for no text or logos, since some islands are mirrored.
+**On a garment** (agreed with the owner 2026-10-20, from the [tiling check](testing.html#tiling-check)). A garment's material carries its own normal map, which draws its folds and seams at the scale of the whole garment. `LayerTile` repeats every map, so a repeat above 1 would shrink and repeat the folds too. So on a garment EDGEmat bakes the repeat into the color texture (the seamless image laid out N × N in one 2048 px texture), keeps `LayerTile` at 1, and keeps the garment's normal map. On an object or a new mesh, whose material has no such map, `LayerTile` is the repeat. Either way the UI calls it **Repeat**, and the prompt asks for no text or logos, since some islands are mirrored.
 
 **The prompt.** One general prefix, then the modder's words. The prefix asks for a seamless tiling texture seen straight on; flat, even light with no shadows, highlights or reflections, since the game lights it; the material filling the frame, with no objects, text, borders or vignette; and a real-world scale. It should work for every surface (unverified). A detail size (fine, medium, coarse) sets the scale. Kinds of output are added only if tests show the need; the likely one is a decal or emblem: one design on a plain background, not tiled. The whole prompt stays editable, one click away.
 
@@ -162,6 +162,15 @@ The goal (owner, 2026-10-19): a modder who is not an artist makes a new material
 | OpenAI | GPT Image, current version checked when built |
 
 Model names come from the service's own model list where it has one, as EDGEwave does, not hard-coded. Exact model IDs are unverified until built.
+
+**Checked 2026-10-20** (the services' docs, and price pages that cite them; prices unverified against the official pages):
+
+| Service | Models named in the docs | Call EDGEmat makes | About per image |
+|---|---|---|---|
+| Google Gemini | `gemini-nano-banana-2.1` (recommended), `gemini-3.1-flash-image` (Nano Banana 2), `gemini-3.1-flash-lite-image`, `gemini-3-pro-image` (Nano Banana Pro), `gemini-2.5-flash-image` (legacy) | `models/{model}:generateContent` with image output, 1:1, 2K where the model takes a size. The docs now show a newer Interactions endpoint; generateContent is still current | $0.04 (Nano Banana) to $0.13 (Pro, 2K) |
+| OpenAI | `gpt-image-2.5-flare` (everyday), `gpt-image-2.5-sunburst` (edits); `gpt-image-1.5` and `gpt-image-1-mini` retire 2026-12-01 | `v1/images/generations`, 1024 × 1024 PNG. GPT Image may need the organization verified first | $0.005 (low) to $0.21 (high) |
+
+The list of models comes from the key's own account (Gemini's `models` list, the image models; OpenAI's `models` list, `gpt-image-*`), so new models show without an update. Google marks every image with SynthID; the record beside the material says which service and model made it. Gaps in EDGEwave's version, fixed here: a time limit and Cancel on every call, the chosen model remembered, a failed model list said in words, and no call before the modder asks for one (Generate, or a press on the model list's refresh).
 
 **The UI** follows EDGEwave's voice tools (owner, 2026-10-19), with one change for images:
 

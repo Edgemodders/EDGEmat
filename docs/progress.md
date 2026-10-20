@@ -148,6 +148,8 @@ Last updated 2026-10-20.
 | AI generation follows EDGEwave's idiom; keys in VS Code's secret storage, environment variables for MCP | One look across the EDGE tools; the MCP server cannot read VS Code's secrets | 2026-10-19 |
 | The Nexus page is prepared now, posted when the owner decides | The owner reviews the roadmap to M7 first | 2026-10-19 |
 | Every EDGE repo commits as `CyberbuildsAI`, EDGEweb too | Edgemodders is the organization; the CyberbuildsAI account owns it (the owner, 2026-10-19). EDGEweb's CLAUDE.md fixed | 2026-10-19 |
+| On a garment, Generate bakes the repeat into the texture and keeps LayerTile 1 and the garment's normal map; on objects LayerTile is the repeat | The tiling check: LayerTile repeats every map, folds included | 2026-10-20 |
+| Image models are listed from the key's own account, not hard-coded | Both services renamed and retired models within months (GPT Image 1.5 retires 2026-12-01) | 2026-10-20 |
 | A recolor saves as a new setup with mesh copies pointed at it, by default | Shows in the game with no other mod; how most recolor mods ship. In place stays an option, with an MTO warning | 2026-10-20 |
 | The first preview is 0.3.0 at the end of M3, with Generate's first slice from M4 | The owner wants the preview to edit with an in-game round trip, and to have AI generation | 2026-10-19 |
 | ~~A 0.2.0 preview on GitHub only, at the end of M2~~ Replaced by 0.3.0 | Something real to show; the stores wait for editing (M7). Still GitHub only, no stores until M7 | 2026-10-18 |
