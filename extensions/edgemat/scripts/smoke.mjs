@@ -191,6 +191,19 @@ try {
   const rogue = await core.openSetup(bridge, lib, cache, { gamePath: jf.meshes[0].materials.find((x) => x.multilayered).setup });
   check(fromProject.maskFrom === "material" && !!fromProject.composite && rogue.masks?.name === "ml_l1_066_wa_pants__rogue_masksset" && !!rogue.composite,
     `mask sets named by meshes: the saved setup opened from the project uses ${fromProject.masks?.name}; the rogue pants' setup, whose masks sit in another folder, uses ${rogue.masks?.name}`);
+
+  // Generate's first slice: a texture from a PNG, a textured .mi on metal_base, and one material of a mesh pointed at it.
+  const genTex = "edgemat\\smoke\\uv_test_pattern_d01.xbm", mi = "edgemat\\smoke\\uv_test.mi";
+  const slim = "base\\characters\\garment\\player_equipment\\legs\\l1_012_pants__jeans_tight\\l1_012_pma_pants__jeans_tight.mesh";
+  t3 = Date.now();
+  await core.writeTexture(bridge, project.archive, genTex, core.uvTestPattern(256, 4), "color");
+  await core.writeTexturedMaterial(bridge, project.archive, mi, { baseColor: genTex, layerTile: 4 });
+  await core.applyMaterial(bridge, project.archive, slim, "leather", mi);
+  const xbm = JSON.parse((await bridge.fileToJson(path.join(project.archive, genTex))).json).Data.RootChunk;
+  const slimLeather = (await core.meshMaterials(bridge, slim, "leather", project.archive))[0]?.materials[0];
+  const unknown = await core.applyMaterial(bridge, project.archive, slim, "no_such_material", mi).then(() => "", (e) => e.message);
+  check(xbm.setup.compression === "TCM_QualityColor" && Number(xbm.setup.isGamma) === 1 && xbm.width === 256 && slimLeather?.base === core.MetalBase && slimLeather.baseColor === genTex && unknown.includes("leather"),
+    `a textured material in ${Date.now() - t3} ms: the texture imported as ${xbm.setup.compression}, ${xbm.width} px; the slim-fits' leather now reads ${slimLeather?.base} with ${slimLeather?.baseColor?.split("\\").pop()}; an unknown material name is refused with the mesh's names`);
 } finally {
   bridge.stop();
 }

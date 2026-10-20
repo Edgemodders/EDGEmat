@@ -12,13 +12,14 @@ Last updated 2026-10-20.
 | Extension | 0.1.0 plus M2: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor; Find; View in 3D |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | The tiling check files, then Generate |
+| Next up | Your tiling check in the game; meanwhile Generate's first slice |
 | Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
+| The tiling check in the game, 5 steps ([Tests](testing.html#tiling-check)): the slim-fits pants with a numbered test pattern, at LayerTile 1 and 4 | Answers how a texture lies on a garment and what LayerTile does, which shapes how Generate puts a material on a garment | 2026-10-20 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
@@ -43,6 +44,7 @@ Last updated 2026-10-20.
 
 | What | Detail |
 |---|---|
+| Tiling check ready | Generate's groundwork in the core: a texture written into a project from a PNG (a game texture of the kind copied first, so it takes the right settings), a textured `.mi` on `metal_base.remt`, and one material of a mesh pointed at it. `npm run tiling-check` uses them to put a numbered UV test pattern on the slim-fits pants, at LayerTile 1 on one look and 4 on another, for your in-game test |
 | **Seen in the game** | Your hand test of editing and Save to Project passed, all 14 checks. Then the round trip: the jacket from the editor, the jeans Claude recolored and the sneakers showed their new materials in the game, on your V. The sneakers were saved both as a new setup and in place (with Material Texture Override); the game showed the new setup, which the project's mesh copies name |
 | Deploying | Two things kept the mod out of the game, neither in EDGEmat. Red Hot Tools is installed on the laptop, so Pack and Try sent the archive to `archive\pc\hot`, which Red Hot Tools reads only while the game runs; the game was not running, so the archive stayed there. A Deploy from REDcode put it in the game. You are asking the REDcode session to make that path clearer. And the project packs as a REDmod (`redcode.pack.redmod` on), into `mods\`, which needs `redMod.exe deploy` (EDGEdeck's deploy runs it) and a game started with `-modded`. A material mod needs neither: unticking the setting packs to `archive\pc\mod` |
 | **Editing built** | Click a layer in the setup editor and change its surface, color (the surface's own swatches, filtered by words such as "blue"), finish, tiling, opacity and microblend. Each change shows at once; Ctrl+Z undoes. A new surface resets the layer's color and finish to that surface's defaults, and says so |

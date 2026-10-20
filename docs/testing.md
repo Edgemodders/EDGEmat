@@ -17,6 +17,7 @@ Last updated 2026-10-20.
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
 | [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | 2026-10-19 | Pass |
 | [Setup editor: editing and Save to Project](#setup-editor-editing-and-save-to-project) | By hand, F5, with REDcode | M3 | 2026-10-20 | Pass |
+| [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | | Not run in the game yet |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | Each release | 2026-10-19 | Pass |
@@ -58,6 +59,7 @@ Needs the game and REDbridge, found from the VS Code settings as the extension f
 | Find (M2) | 1,997 clothing items with in-game names (8.5 s the first time, then cached); "sunny ammo high-tops" finds `Items.CasualShoes_01_basic_01` and "Pants_03_basic_01" finds `Items.Pants_03_basic_01`; the sneakers walk to two bodies (`_pwa_` and `_pma_` meshes), each with red_yellow_graphic's setup and the converse mask set; the jeans' feminine body wears `l1_066` pants; the jacket mesh's body and bags share one setup and `no_bags` hides them with `mesh_decal.mt`; a found setup opens with the mask set its material names. Each item walk takes about 0.15 to 0.35 s |
 | 3D view colors (M2) | The sneakers' `red_yellow_graphic` as a 512 px color map, in about 0.5 s; `dec_lights` left out (no color texture). The jacket's `default` look: 5 materials, the two layered ones as color maps and three decals as their own textures (`decals_arasaka_d01.xbm`, `garment_decals_d01.xbm`), in about 1 s |
 | Edit and save (M3) | On the Arasaka jacket's setup (`ml_t2_078_ma_jacket__samurai.mlsetup`): unedited, it writes back byte for byte; written fresh (as from an older JSON shape) it reads back the same. "dark red" on its biggest layer picks `c2162c_69039f`; "leather standard clean" and "glossy" on the next one pick that surface and a glossy preset, with no warnings. Refused: `None` as a preset, a color the surface lacks, opacity 9. The meshes using the setup are found in about 0.5 s: `t2_078_ma`, `_mb` and `_mm` (the body and bags materials). Saved into a scratch project at a new path in about 2 s: the setup reads back with the edits, and all 3 mesh copies name it and no longer the game's; saving again finds the project's copies |
+| A textured material (M3, Generate's first slice) | A 256 px test pattern imported as a texture takes the color settings of the game texture copied first (`TCM_QualityColor`, gamma 1); a `metal_base` .mi at LayerTile 4 names it; the slim-fits' `leather` material, pointed at the .mi, reads `metal_base.remt` with that texture; an unknown material name is refused with the mesh's names. Under 1 s |
 | Page images (M2) | 3 of 3 for `leather_bull_01_30`: the first in about 1.6 s while the bridge warms up, the rest in well under half a second, then instant from the cache |
 
 The counts change after a game patch. A patch that adds surfaces is fine as long as "read" matches "listing".
@@ -167,6 +169,25 @@ All three go into the `EDGEmat_M3` project from the test above, on three garment
 | D | In REDcode with EDGEmat_M3 open: **Pack and Try** (or Pack and Install). Answer **Deploy all** if REDcode asks. Start the game. With Red Hot Tools installed, Pack and Try only sends the archive to `archive\pc\hot` for a running game: with the game closed, use **Pack and Install** (or Deploy) instead | The project packs with no errors and is installed: `<game>\archive\pc\mod\EDGEmat_M3.archive` exists (folder `mod`, singular). If it went to `mods\EDGEmat_M3\` instead, `redcode.pack.redmod` is on, and the game must start with `-modded` (REDcode's Run Game does) |
 | E | In the game, with Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Jacket_01_old_01", 1)`, `Game.AddToInventory("Items.Pants_03_basic_01", 1)`, `Game.AddToInventory("Items.CasualShoes_01_basic_01", 1)`. Equip all three; look in third person (photo mode or a mirror) and at your arms in first person | The jacket shows your blue and leather layer; the jeans are dark green; the sneakers have a red sole, a white collar lining and no black toe cap |
 | F | Screenshots before and after | Kept outside the repo |
+
+### Tiling check
+
+The open question "A tiled texture on a game garment" (design, "Open questions"): how a texture lies across a garment's UVs, and what `metal_base`'s `LayerTile` does. Its answer shapes how Generate puts a material on a garment. **Not run in the game yet.** Built 2026-10-20; the project builds, reads back and packs on the dev PC.
+
+`npm run tiling-check` writes a project from your own game: a UV test pattern (8 × 8 colored squares, each labelled with its column and row: 11 top left, 81 top right, 18 bottom left), two `metal_base` materials using it with the slim-fits' own normal map, at LayerTile 1 and 4, and the slim-fits pants' meshes for both bodies with one look on each.
+
+| Item | Look | Material |
+|---|---|---|
+| `Items.Pants_01_basic_01`, Comfy rocker aramid-weave slim-fits | leather | The pattern, LayerTile 1 |
+| `Items.Pants_01_basic_02`, Light Azure composite-lined slim-fits | flames_blue_pink | The pattern, LayerTile 4 |
+
+| # | Do | Expected |
+|---|---|---|
+| 1 | In the repo: `git pull`, `npm run build`, then `npm run tiling-check -- "<your Projects folder>\EDGEmat_Tiling"` | Four `ok` lines (two looks on each body's mesh), then "packed 5 files into ...\EDGEmat_Tiling.archive" |
+| 2 | With the game closed, install it: in REDcode, open the `EDGEmat_Tiling` folder and run **Pack and Install** (Pack and Try goes to Red Hot Tools' hot folder, which only a running game reads). Or copy `packed\archive\pc\mod\EDGEmat_Tiling.archive` into `<game>\archive\pc\mod` | The archive is in the game |
+| 3 | In the game, Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Pants_01_basic_01", 1)` and `Game.AddToInventory("Items.Pants_01_basic_02", 1)`. Equip the first; look in photo mode from the front, the back and each side | The colored squares on the pants. Note which numbers show on the front of the thighs, the back, the waist; whether the numbers read normally, mirrored or upside down; whether squares stay square or stretch; where the seams cut squares |
+| 4 | Equip the second | Unknown, which is what the test finds out: the squares four times smaller and repeated (LayerTile tiles the texture), the same as the first (it does nothing here), or something else. Also whether the folds from the normal map repeat too |
+| 5 | Screenshots of both pants, front and back | Shared with the session; kept outside the repo |
 
 ### Find view
 

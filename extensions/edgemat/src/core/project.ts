@@ -57,7 +57,7 @@ const isShadow = (p: string) => /\\shadow_meshes\\|_shadow\.mesh$/i.test(p);
 const same = (a: unknown, b: string) => typeof a === "string" && a.toLowerCase() === b.toLowerCase();
 
 /** A mesh, or an .mi, as JSON: the project's copy first, else the game's. */
-async function readJson(bridge: BridgeClient, archive: string | undefined, gamePath: string): Promise<{ json: Json; fromProject: boolean }> {
+export async function readJson(bridge: BridgeClient, archive: string | undefined, gamePath: string): Promise<{ json: Json; fromProject: boolean }> {
   const local = archive ? path.join(archive, gamePath) : undefined;
   const fromProject = !!local && fs.existsSync(local);
   const r = fromProject ? await bridge.fileToJson(local!) : await bridge.toJson(gamePath);
@@ -66,7 +66,7 @@ async function readJson(bridge: BridgeClient, archive: string | undefined, gameP
 }
 
 /** A local material of a mesh by its entry index: the parsed buffer, or the older preload list. */
-function localMaterial(root: Json, index: number): Json | undefined {
+export function localMaterial(root: Json, index: number): Json | undefined {
   return root.localMaterialBuffer?.materials?.[index] ?? root.preloadLocalMaterialInstances?.[index]?.Data;
 }
 
@@ -188,7 +188,7 @@ export interface SaveResult {
   notes: string[];
 }
 
-async function writeJson(bridge: BridgeClient, archive: string, gamePath: string, json: Json): Promise<void> {
+export async function writeJson(bridge: BridgeClient, archive: string, gamePath: string, json: Json): Promise<void> {
   const out = path.join(archive, gamePath);
   fs.mkdirSync(path.dirname(out), { recursive: true });
   await bridge.fromJson(out, { json: JSON.stringify(json) });
