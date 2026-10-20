@@ -8,19 +8,18 @@ Last updated 2026-10-20.
 
 | | |
 |---|---|
-| Phase | **M3 Edit in progress**: editing and Save to Project built 2026-10-20, your tests next. Then Generate's first slice; M3 ends with the first preview, 0.3.0 |
+| Phase | **M3 Edit in progress**: editing and Save to Project built and tested 2026-10-20, and seen in the game. Next Generate's first slice; M3 ends with the first preview, 0.3.0 |
 | Extension | 0.1.0 plus M2: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor; Find; View in 3D |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your hand test of editing and Save to Project, then the in-game round trip ([Tests](testing.html#setup-editor-editing-and-save-to-project)). Meanwhile: the tiling check files, then Generate |
+| Next up | The tiling check files, then Generate |
 | Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
-| Hand test: editing and Save to Project, 14 checks through F5 ([Tests](testing.html#setup-editor-editing-and-save-to-project)) | M3's editor; it needs a REDcode project named EDGEmat_M3 first | 2026-10-20 |
-| In-game round trip A to F ([Tests](testing.html#m3-in-game-round-trip)): the jacket from the hand test, the punk jeans by asking Claude, the M0 sneakers setup from outside the project; pack with REDcode and look in the game | M3's phase test | 2026-10-20 |
+| Send the REDcode log of a Pack and Try (Output panel › REDcode, the lines from `Install:` or `EDGEdeck deployed:`) | Pack and Try did not put EDGEmat_M3 in the game; a separate Deploy did. The log says why, for a REDcode or EDGEdeck request | 2026-10-20 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
@@ -45,6 +44,8 @@ Last updated 2026-10-20.
 
 | What | Detail |
 |---|---|
+| **Seen in the game** | Your hand test of editing and Save to Project passed, all 14 checks. Then the round trip: the jacket from the editor, the jeans Claude recolored and the sneakers showed their new materials in the game, on your V. The sneakers were saved both as a new setup and in place (with Material Texture Override); the game showed the new setup, which the project's mesh copies name |
+| Deploying | Two things kept the mod out of the game, neither in EDGEmat. Pack and Try did not deploy it; a separate Deploy from REDcode did (your log will say why). And the project packs as a REDmod (`redcode.pack.redmod` on), into `mods\`, which needs `redMod.exe deploy` (EDGEdeck's deploy runs it) and a game started with `-modded`. A material mod needs neither: unticking the setting packs to `archive\pc\mod` |
 | **Editing built** | Click a layer in the setup editor and change its surface, color (the surface's own swatches, filtered by words such as "blue"), finish, tiling, opacity and microblend. Each change shows at once; Ctrl+Z undoes. A new surface resets the layer's color and finish to that surface's defaults, and says so |
 | **Save to Project built** | Saves the setup into your project (REDcode's open one, or one you pick). By default as a new setup beside the original, with every mesh that uses it copied into the project and pointed at it, so it shows in the game with no other mod: on the Arasaka jacket that is three meshes, found in half a second. REDcode's Pack and Try is offered right after. Ctrl+S on a game file opens it; a project's own file saves in place |
 | **`mat_edit`** | Claude recolors in words ("dark red", "glossy", "leather standard clean"): EDGEmat picks the surface's closest preset, says how close it is, and saves the same way, or only previews |
