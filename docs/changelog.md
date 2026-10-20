@@ -33,6 +33,7 @@ The first preview: EDGEmat reads a garment's materials, shows them in plain word
 
 **Changed**
 
+- Open Setup › From the game finds setups as you type, in place of a box that searched only after Enter.
 - The MCP server treats an empty option or environment variable as unset, as a Claude Code plugin passes an unset setting, so the VS Code settings behind it still apply.
 
 **Other**

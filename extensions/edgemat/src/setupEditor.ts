@@ -563,6 +563,62 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   }
 }
 
+/**
+ * A game setup found by words, as you type: each word is part of its name or folder ("s1_055 red").
+ * Searches the game for the longest word, then keeps the setups holding every word. The game path, or
+ * undefined when closed.
+ */
+function findGameSetup(bridge: BridgeClient): Promise<string | undefined> {
+  const qp = vscode.window.createQuickPick<vscode.QuickPickItem & { path?: string }>();
+  qp.title = "Open a game setup";
+  qp.placeholder = "Part of its name or folder, such as s1_055 red, or jacket samurai";
+  qp.matchOnDetail = true;
+  let timer: NodeJS.Timeout | undefined;
+  let asked = 0;
+  const search = async (value: string) => {
+    const ws = value.toLowerCase().split(/\s+/).filter(Boolean);
+    const id = ++asked;
+    if (!ws.some((w) => w.length >= 2)) {
+      qp.items = [];
+      qp.busy = false;
+      return;
+    }
+    qp.busy = true;
+    try {
+      const r = await bridge.search([...ws].sort((a, b) => b.length - a.length)[0], 5000);
+      if (id !== asked) return;
+      const found = r.items.map((i) => i.name).filter((n) => n.toLowerCase().endsWith(".mlsetup") && ws.every((w) => n.toLowerCase().includes(w)));
+      // alwaysShow: the words were matched here; the quick pick's own filter would hide multi-word matches.
+      qp.items = found.length
+        ? found.slice(0, 500).map((n) => ({ label: n.split("\\").pop()!.replace(/\.mlsetup$/i, ""), detail: n, path: n, alwaysShow: true }))
+        : [{ label: `No game setup matches "${value.trim()}"`, alwaysShow: true }];
+      qp.title = found.length > 500 ? `Open a game setup: the first 500 of ${found.length}, add a word to narrow` : `Open a game setup: ${found.length} found`;
+    } catch (e) {
+      if (id === asked) qp.items = [{ label: `Search failed: ${e instanceof Error ? e.message : String(e)}`, alwaysShow: true }];
+    } finally {
+      if (id === asked) qp.busy = false;
+    }
+  };
+  qp.onDidChangeValue((v) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => void search(v), 250);
+  });
+  return new Promise((resolve) => {
+    qp.onDidAccept(() => {
+      const path = qp.selectedItems[0]?.path;
+      if (!path) return;
+      resolve(path);
+      qp.hide();
+    });
+    qp.onDidHide(() => {
+      clearTimeout(timer);
+      resolve(undefined);
+      qp.dispose();
+    });
+    qp.show();
+  });
+}
+
 /** Open Setup: a setup on disk (or a mod archive holding setups), or one from the game by name. */
 export async function openSetupCommand(host: SetupEditorHost): Promise<void> {
   const pick = await vscode.window.showQuickPick(
@@ -579,20 +635,8 @@ export async function openSetupCommand(host: SetupEditorHost): Promise<void> {
       void vscode.window.showErrorMessage("Opening a game setup needs REDbridge. Set the game folder and REDbridge first.");
       return;
     }
-    const words = await vscode.window.showInputBox({ title: "Find a game setup", prompt: "Part of its name or folder, such as s1_055 red, or jacket samurai" });
-    if (!words) return;
-    const ws = words.toLowerCase().split(/\s+/).filter(Boolean);
-    const r = await bridge.search(ws.sort((a, b) => b.length - a.length)[0], 20000);
-    const found = r.items.map((i) => i.name).filter((n) => n.toLowerCase().endsWith(".mlsetup") && ws.every((x) => n.toLowerCase().includes(x)));
-    if (!found.length) {
-      void vscode.window.showInformationMessage(`No game setup matches "${words}".`);
-      return;
-    }
-    const chosen = await vscode.window.showQuickPick(found.slice(0, 1000).map((n) => ({ label: n.split("\\").pop()!.replace(/\.mlsetup$/i, ""), detail: n })), {
-      title: `${found.length} setups`,
-      matchOnDetail: true,
-    });
-    if (chosen?.detail) await vscode.commands.executeCommand("vscode.openWith", gameUri(chosen.detail), SetupEditor.viewType);
+    const chosen = await findGameSetup(bridge);
+    if (chosen) await vscode.commands.executeCommand("vscode.openWith", gameUri(chosen), SetupEditor.viewType);
     return;
   }
   const files = await vscode.window.showOpenDialog({ filters: { "Setups and mod archives": ["mlsetup", "json", "archive"] }, canSelectMany: false, title: "Open Setup" });
