@@ -151,7 +151,7 @@ Built 2026-10-20 (M3). **Not run by the owner yet.** Before that: the smoke test
 | 11 | Wait for the save | A message "Saved into EDGEmat_M3: the setup and 2 meshes pointed at it." with **Pack and Try** and **Open the Saved Setup**. The unsaved dot goes; a line under the header says where it was saved. In the project: `source\archive\base\characters\garment\player_equipment\torso\t2_084_jacket__short_sleeves\` has the two meshes, and its `textures` folder the new setup. Do not pack yet |
 | 12 | **Open the Saved Setup** (in that message; or open the new `.mlsetup` from the project with EDGEmat). Change one more thing, then press Ctrl+S | "Setup · project file", with your edits. Ctrl+S saves straight into that file: no list, no question, and the unsaved dot goes |
 | 13 | Open any game setup: **Open Setup** (the Library's title bar) › **From the game...** › type `s1_055 red yellow` (results appear as you type) › pick `ml_s1_055_pma_shoe__red_yellow_graphic`. Change a color, press Ctrl+S, then Esc in the list | Ctrl+S on a game file opens the Save to Project list (game files are never written). After Esc the tab stays unsaved, with no error message. Close it with Don't Save |
-| 14 | Another theme | Swatches, boxes and drop-downs readable |
+| 14 | Another color theme: with a layer's details open, press Ctrl+K then Ctrl+T, and arrow through the list (VS Code previews each). Try at least **Light Modern** and **Dark Modern**; Esc goes back to yours | In each: the swatches show and the current one is outlined; the filter box, drop-downs and number boxes are readable; Save to Project stands out; the share bars and map show |
 
 ### M3 in-game round trip
 
