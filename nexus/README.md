@@ -20,7 +20,7 @@ The source of EDGEmat's Nexus Mods page lives here, so updates are edits in the 
 | Brief overview | A material editor for Cyberpunk 2077 clothing, in VS Code: find a garment by its name and see each layer in plain words and in 3D, or ask Claude. Preview: reads materials; recoloring is next. A VS Code extension, not a game mod. (255 characters at most; this is 228) |
 | Author | Edgemodders |
 | Language | English |
-| Primary image | `docs/assets/brand/social.png` (1280 x 640). The banner (`docs/assets/brand/banner.png`) is already at the top of the description |
+| Primary image | `docs/assets/brand/nexus.png` (1280 x 640, made by the owner). The banner (`docs/assets/brand/banner.png`) is already at the top of the description |
 | Requirements | None on Nexus. Off-site: VS Code 1.70 or later (or VSCodium, or EDGEkit); REDbridge 0.8.0 or later and the .NET 10 runtime, easiest through REDcode (linked to GitHub until REDcode has its new Nexus page). Optional: REDcode, for View in 3D |
 | Permissions | MIT: open source, free to modify and redistribute with the license notice. Bundled packages keep their licenses (`THIRD-PARTY-NOTICES.txt`). REDbridge, a separate download, is GPL-3.0 |
 | Tags | Modders resource, utility, tools |
