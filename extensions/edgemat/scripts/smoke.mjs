@@ -182,6 +182,10 @@ try {
     `saved in ${Date.now() - t3} ms as ${target.split("\\").pop()}: the setup reads back with the edits; ${repointed} of 3 meshes name it and no longer the game's`);
   const again = await core.meshesUsing(bridge, target, project.archive);
   check(again.length === 3, "saving again finds the project's own copies of the meshes");
+  const fromProject = await core.openSetup(bridge, lib, cache, { file: path.join(project.archive, target) });
+  const rogue = await core.openSetup(bridge, lib, cache, { gamePath: jf.meshes[0].materials.find((x) => x.multilayered).setup });
+  check(fromProject.maskFrom === "material" && !!fromProject.composite && rogue.masks?.name === "ml_l1_066_wa_pants__rogue_masksset" && !!rogue.composite,
+    `mask sets named by meshes: the saved setup opened from the project uses ${fromProject.masks?.name}; the rogue pants' setup, whose masks sit in another folder, uses ${rogue.masks?.name}`);
 } finally {
   bridge.stop();
 }

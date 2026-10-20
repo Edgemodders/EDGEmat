@@ -8,6 +8,7 @@ import * as path from "node:path";
 import type { BridgeClient } from "./bridgeClient";
 import type { Library } from "./library";
 import { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, type MaskSet, type MaskSource } from "./masks";
+import { meshesUsing, projectArchive } from "./project";
 import { describeSetup, parseSetup, type Setup, type SetupInfo } from "./setup";
 
 /** A setup's source. A file may carry the game path it stands for (a project copy, or one taken from a mod archive). */
@@ -19,7 +20,7 @@ export interface OpenedSetup {
   info: SetupInfo;
   masks?: MaskSet;
   /** How the mask set was chosen. */
-  maskFrom?: "given" | "beside";
+  maskFrom?: "given" | "beside" | "material";
   /** Other mask sets that could belong to it: game paths or files, best match first. */
   maskChoices: string[];
   maskError?: string;
@@ -47,20 +48,31 @@ export async function readSetup(bridge: BridgeClient | undefined, source: SetupS
   return parseSetup(JSON.parse(r.json));
 }
 
-/** Mask sets that could go with a setup: .mlmask files beside it on disk, then in its game folder. */
-async function maskChoicesFor(bridge: BridgeClient | undefined, source: SetupSource): Promise<string[]> {
-  const out: string[] = [];
+/**
+ * Mask sets that could go with a setup, best first: the ones named by the materials of meshes that use it
+ * (the project's meshes for a project file; the game's when nothing is beside it), then .mlmask files
+ * beside it on disk, then in its game folder. A garment's masks can sit in another folder than its setup.
+ */
+async function maskChoicesFor(bridge: BridgeClient | undefined, source: SetupSource): Promise<{ choices: string[]; named: number }> {
+  const beside: string[] = [];
   if ("file" in source) {
     const dir = path.dirname(source.file);
     try {
-      out.push(...rankMaskSets(source.file, fs.readdirSync(dir).filter((f) => /\.mlmask$/i.test(f)).map((f) => path.join(dir, f))));
+      beside.push(...rankMaskSets(source.file, fs.readdirSync(dir).filter((f) => /\.mlmask$/i.test(f)).map((f) => path.join(dir, f))));
     } catch {
       // A folder we cannot list has no masks to offer.
     }
   }
-  const gamePath = "gamePath" in source ? source.gamePath : gamePathInProject(source.file);
-  if (bridge && gamePath) out.push(...(await maskSetsBeside(bridge, gamePath)));
-  return out;
+  const archive = "file" in source ? projectArchive(source.file) : undefined;
+  const gamePath = "gamePath" in source && source.gamePath ? source.gamePath : "file" in source ? gamePathInProject(source.file) : undefined;
+  if (bridge && gamePath) beside.push(...(await maskSetsBeside(bridge, gamePath)));
+  const named: string[] = [];
+  if (bridge && gamePath && (archive || !beside.length)) {
+    const uses = await meshesUsing(bridge, gamePath, archive, 20, !archive).catch(() => []);
+    for (const m of uses.flatMap((u) => u.masks ?? [])) named.push(archive && fs.existsSync(path.join(archive, m)) ? path.join(archive, m) : m);
+  }
+  const choices = [...new Set([...named, ...beside])];
+  return { choices, named: new Set(named).size };
 }
 
 const asMaskSource = (choice: string): MaskSource => (/^[a-z]:\\|^\\\\|^\//i.test(choice) ? { file: choice } : { gamePath: choice });
@@ -71,7 +83,7 @@ const asMaskSource = (choice: string): MaskSource => (/^[a-z]:\\|^\\\\|^\//i.tes
  */
 export async function openSetup(bridge: BridgeClient | undefined, lib: Library | undefined, dir: string, source: SetupSource, mask?: string): Promise<OpenedSetup> {
   const setup = await readSetup(bridge, source);
-  const maskChoices = await maskChoicesFor(bridge, source).catch(() => [] as string[]);
+  const { choices: maskChoices, named } = await maskChoicesFor(bridge, source).catch(() => ({ choices: [] as string[], named: 0 }));
   const chosen = mask ?? maskChoices[0];
   let masks: MaskSet | undefined;
   let maskError: string | undefined;
@@ -82,10 +94,11 @@ export async function openSetup(bridge: BridgeClient | undefined, lib: Library |
       maskError = e instanceof Error ? e.message : String(e);
     }
   } else if (!chosen) {
-    maskError = "No mask set found beside this setup. Choose one to see where each layer shows.";
+    maskError = "No mask set found beside this setup or named by a mesh that uses it. Choose one to see where each layer shows.";
   }
 
-  return withSetup({ source, setup, info: describeSetup(setup, lib), masks, maskFrom: masks ? (mask ? "given" : "beside") : undefined, maskChoices, maskError }, setup, lib, dir);
+  const maskFrom = masks ? (mask ? "given" : named ? "material" : "beside") : undefined;
+  return withSetup({ source, setup, info: describeSetup(setup, lib), masks, maskFrom, maskChoices, maskError }, setup, lib, dir);
 }
 
 /**

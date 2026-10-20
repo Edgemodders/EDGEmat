@@ -10,6 +10,7 @@ import { isFilePath, namedMaterials, meshMaterials, type MaterialUse } from "./f
 import { wholeTexture } from "./images";
 import type { Library } from "./library";
 import { openSetup, type SetupSource } from "./openSetup";
+import { projectArchive } from "./project";
 
 /** The shape REDcode's viewer takes (REDcode `src/edgemat.ts`): PBR maps in the mesh's UV space, as PNG bytes. */
 export interface RenderedMaterial {
@@ -27,12 +28,6 @@ export interface RenderRequest {
   appearance?: string;
   /** The material names to render. */
   materials?: string[];
-}
-
-/** The source\archive folder of the project a file sits in, whose copies win over the game's. */
-export function projectArchive(file: string): string | undefined {
-  const m = file.replace(/\//g, "\\").match(/^(.*\\source\\archive)\\/i);
-  return m ? m[1] : undefined;
 }
 
 /**

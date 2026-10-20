@@ -35,6 +35,12 @@ export function projectAt(p: string): Project | undefined {
   return { dir, archive, name: proj ? proj.replace(/\.cpmodproj$/i, "") : path.basename(dir), file: proj ? path.join(dir, proj) : undefined };
 }
 
+/** The source\archive folder of the project a file sits in, whose copies win over the game's. */
+export function projectArchive(file: string): string | undefined {
+  const m = file.replace(/\//g, "\\").match(/^(.*\\source\\archive)\\/i);
+  return m ? m[1] : undefined;
+}
+
 /** A short word from a project's name for new file names: lower case, letters, digits and underscores. */
 export function suffixFor(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 32) || "edit";
@@ -67,44 +73,63 @@ function localMaterial(root: Json, index: number): Json | undefined {
 /** The values of a material that name a setup, as WolvenKit JSON objects that can be changed in place. */
 const setupValues = (material: Json | undefined): Json[] => (material?.values ?? []).filter((v: Json) => v.MultilayerSetup);
 
+/** The mask set a material names, as a game path. */
+function maskOf(material: Json | undefined): string | undefined {
+  const v = (material?.values ?? []).find((x: Json) => x.MultilayerMask);
+  const p = v ? jsonValue(v.MultilayerMask) : undefined;
+  return typeof p === "string" && p && p !== "0" ? p : undefined;
+}
+
 export interface MeshUse {
   mesh: string;
   /** The mesh's materials that use the setup, by entry name. */
   materials: string[];
+  /** The mask sets those materials name, as game paths. */
+  masks?: string[];
 }
 
-/** Which materials of a mesh name `setup`: directly, or through the .mi an entry points at. */
-async function usesIn(bridge: BridgeClient, archive: string | undefined, root: Json, setup: string): Promise<string[]> {
-  const out: string[] = [];
+/** Which materials of a mesh name `setup` (directly, or through the .mi an entry points at), and their mask sets. */
+async function usesIn(bridge: BridgeClient, archive: string | undefined, root: Json, setup: string): Promise<{ materials: string[]; masks: string[] }> {
+  const materials: string[] = [];
+  const masks = new Set<string>();
+  const check = (name: string, material: Json | undefined) => {
+    if (!setupValues(material).some((v) => same(jsonValue(v.MultilayerSetup), setup))) return;
+    materials.push(name);
+    const mask = maskOf(material);
+    if (mask) masks.add(mask);
+  };
   for (const e of root.materialEntries ?? []) {
     const name = String(jsonValue(e.name));
     const local = Number(e.isLocalInstance) === 1 || e.isLocalInstance === true;
     if (local) {
-      if (setupValues(localMaterial(root, e.index)).some((v) => same(jsonValue(v.MultilayerSetup), setup))) out.push(name);
+      check(name, localMaterial(root, e.index));
     } else {
       const mi = jsonValue(root.externalMaterials?.[e.index]);
       if (typeof mi !== "string" || !/\.mi$/i.test(mi)) continue;
       try {
         const { json } = await readJson(bridge, archive, mi);
-        if (setupValues(json.Data?.RootChunk).some((v) => same(jsonValue(v.MultilayerSetup), setup))) out.push(name);
+        check(name, json.Data?.RootChunk);
       } catch {
         // An .mi that cannot be read does not use it, as far as we can tell.
       }
     }
   }
-  return out;
+  return { materials, masks: [...masks] };
 }
 
 /**
  * The meshes that use a setup, looked for in the garment's folder: the setup's folder, or the one above
- * a textures folder. Game meshes and the project's own. Shadow meshes are left out. At most `limit` meshes are read.
+ * a textures folder. Game meshes (unless `gameMeshes` is false) and the project's own. Shadow meshes are
+ * left out. At most `limit` meshes are read.
  */
-export async function meshesUsing(bridge: BridgeClient, setup: string, archive?: string, limit = 60): Promise<MeshUse[]> {
+export async function meshesUsing(bridge: BridgeClient, setup: string, archive?: string, limit = 60, gameMeshes = true): Promise<MeshUse[]> {
   let folder = path.win32.dirname(setup);
   if (/\\textures$/i.test(folder)) folder = path.win32.dirname(folder);
   const meshes = new Set<string>();
-  const r = await bridge.list({ prefix: folder + "\\", limit: 20000 });
-  for (const i of r.items) if (/\.mesh$/i.test(i.name) && !isShadow(i.name)) meshes.add(i.name);
+  if (gameMeshes) {
+    const r = await bridge.list({ prefix: folder + "\\", limit: 20000 });
+    for (const i of r.items) if (/\.mesh$/i.test(i.name) && !isShadow(i.name)) meshes.add(i.name);
+  }
   const local = archive ? path.join(archive, folder) : undefined;
   if (local && fs.existsSync(local)) {
     const walk = (d: string) => {
@@ -120,8 +145,8 @@ export async function meshesUsing(bridge: BridgeClient, setup: string, archive?:
   for (const mesh of [...meshes].filter((m) => !isShadow(m)).slice(0, limit)) {
     try {
       const { json } = await readJson(bridge, archive, mesh);
-      const materials = await usesIn(bridge, archive, json.Data.RootChunk, setup);
-      if (materials.length) out.push({ mesh, materials });
+      const use = await usesIn(bridge, archive, json.Data.RootChunk, setup);
+      if (use.materials.length) out.push({ mesh, ...use });
     } catch {
       // A mesh that cannot be read is skipped.
     }

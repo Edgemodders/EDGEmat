@@ -18,8 +18,8 @@ export { describeSetup, layerDefault, parseSetup, LayerFields, PathFields, type 
 export {
   applyLayerEdit, patchFromWords, presetNames, sameSetup, setupToJson, templateOf, DefaultMicroblend, PresetWhat, type EditResult, type LayerPatch, type LayerWords,
 } from "./edit";
-export { isGameFile, meshesUsing, newPathFor, projectAt, saveToProject, suffixFor, type MeshUse, type Project, type SaveRequest, type SaveResult } from "./project";
+export { isGameFile, meshesUsing, newPathFor, projectArchive, projectAt, saveToProject, suffixFor, type MeshUse, type Project, type SaveRequest, type SaveResult } from "./project";
 export { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, MaskSize, PickSize, type Composite, type MaskSet, type MaskSource } from "./masks";
 export { gamePathInProject, openSetup, readSetup, withSetup, type OpenedSetup, type SetupSource } from "./openSetup";
 export { isFilePath, itemMaterials, loadItems, meshMaterials, namedMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook } from "./find";
-export { projectArchive, renderMaterials, type RenderedMaterial, type RenderRequest } from "./render";
+export { renderMaterials, type RenderedMaterial, type RenderRequest } from "./render";

@@ -27,6 +27,7 @@ The first preview: EDGEmat reads a garment's materials, shows them in plain word
 **Fixed**
 
 - Find showed no looks for jackets and other outer wear, whose appearances also name first and third person. It now walks them (third person when both exist).
+- A setup opened from a project, or one whose masks sit in another folder (such as the feminine punk jeans), showed no color map: "The color map needs the mask set". EDGEmat now takes the mask set the meshes' materials name, and only then looks beside the setup.
 - The game folder: EDGEmat looked for REDdeck, EDGEdeck's old name, so it never used EDGEdeck's folder. It now asks EDGEdeck, and the `edgemat.gamePath` setting says so.
 
 **Changed**
