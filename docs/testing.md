@@ -134,7 +134,7 @@ Run 2026-10-17 by the owner: **all pass**, including opening from REDcode's Game
 
 Built 2026-10-20 (M3). **Not run by the owner yet.** Before that: the smoke test's "edit and save" checks pass (the jacket's setup edited, saved at a new path, three meshes repointed, all read back), and `mat_edit` was run over stdio.
 
-**Before you start**, in your normal VS Code with REDcode: **REDcode: New Project** (Ctrl+Shift+P), named `EDGEmat_M3`, in `E:\Modding\Cyberpunk 2077\Projects`. Leave it open in REDcode: Save to Project uses REDcode's open project, and offers REDcode's Pack and Try after saving. Then in this repo: `npm run build` and **F5** (**Run EDGEmat**). In the development host, open the same project folder (File › Open Folder) so REDcode has it open there too.
+**Before you start**, in your normal VS Code with REDcode: **REDcode: New Project** (Ctrl+Shift+P), named `EDGEmat_M3`, in `E:\Modding\Cyberpunk 2077\Projects`. Leave it open in REDcode: Save to Project uses REDcode's open project, and offers REDcode's Pack and Try after saving. Then in this repo: `npm run build` and **F5** (**Run EDGEmat**). In the development host, open the same project folder (File › Open Folder) so REDcode has it open there too. **Every step below happens in the development host** (the window F5 opened, titled "[Extension Development Host]"), not the window you pressed F5 in. After `git pull` and `npm run build`, restart it (Shift+F5, then F5): it keeps the code it started with.
 
 | # | Do | Expected |
 |---|---|---|
