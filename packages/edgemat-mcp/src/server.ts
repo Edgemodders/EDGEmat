@@ -15,7 +15,7 @@ import { z } from "zod";
 import {
   applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
-  type ColorInfo, type LayerInfo, type Library, type MaterialUse, type MeshLook, type SettingsReader, type Template,
+  type ColorInfo, type LayerInfo, type Library, type MaterialUse, type MeshLook, type MeshSearch, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
 declare const __VERSION__: string;
@@ -308,8 +308,10 @@ server.registerTool(
       } else {
         const to = target ?? (from ? newPathFor(from, suffix) : undefined);
         if (!to) return failure(new Error("This file has no game path: pass target, the game path to save it at."));
-        const meshes = from ? await meshesUsing(b, from, p.archive) : [];
-        if (from && !meshes.length) notes.push(`No mesh beside ${from} uses it, so nothing points at the new setup yet.`);
+        const search: MeshSearch = { folder: "", read: 0, skipped: [] };
+        const meshes = from ? await meshesUsing(b, from, p.archive, 60, true, search) : [];
+        if (from && !meshes.length) notes.push(`No mesh in ${search.folder} uses ${from} (${search.read} read), so nothing points at the new setup yet.`);
+        for (const s of search.skipped) notes.push(`Could not read ${s.mesh}: ${s.reason}`);
         saved = await saveToProject(b, { setup: edited, archive: p.archive, target: to, from, meshes: meshes.map((m) => m.mesh), suffix });
       }
       notes.push(...saved.notes);

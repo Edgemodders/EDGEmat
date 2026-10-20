@@ -120,9 +120,10 @@ async function usesIn(bridge: BridgeClient, archive: string | undefined, root: J
 /**
  * The meshes that use a setup, looked for in the garment's folder: the setup's folder, or the one above
  * a textures folder. Game meshes (unless `gameMeshes` is false) and the project's own. Shadow meshes are
- * left out. At most `limit` meshes are read.
+ * left out. At most `limit` meshes are read. `report`, when given, gets the folder, how many meshes were
+ * read, and the ones that could not be read, with why.
  */
-export async function meshesUsing(bridge: BridgeClient, setup: string, archive?: string, limit = 60, gameMeshes = true): Promise<MeshUse[]> {
+export async function meshesUsing(bridge: BridgeClient, setup: string, archive?: string, limit = 60, gameMeshes = true, report?: MeshSearch): Promise<MeshUse[]> {
   let folder = path.win32.dirname(setup);
   if (/\\textures$/i.test(folder)) folder = path.win32.dirname(folder);
   const meshes = new Set<string>();
@@ -142,16 +143,26 @@ export async function meshesUsing(bridge: BridgeClient, setup: string, archive?:
     walk(local);
   }
   const out: MeshUse[] = [];
-  for (const mesh of [...meshes].filter((m) => !isShadow(m)).slice(0, limit)) {
+  const read = [...meshes].filter((m) => !isShadow(m)).slice(0, limit);
+  if (report) Object.assign(report, { folder, read: read.length, skipped: [] });
+  for (const mesh of read) {
     try {
       const { json } = await readJson(bridge, archive, mesh);
       const use = await usesIn(bridge, archive, json.Data.RootChunk, setup);
       if (use.materials.length) out.push({ mesh, ...use });
-    } catch {
-      // A mesh that cannot be read is skipped.
+    } catch (e) {
+      // A mesh that cannot be read is skipped, and reported.
+      report?.skipped.push({ mesh, reason: e instanceof Error ? e.message : String(e) });
     }
   }
   return out;
+}
+
+/** What a meshesUsing search looked at: the garment folder, the meshes read, and the ones it could not read. */
+export interface MeshSearch {
+  folder: string;
+  read: number;
+  skipped: { mesh: string; reason: string }[];
 }
 
 export interface SaveRequest {

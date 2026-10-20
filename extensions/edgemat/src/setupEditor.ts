@@ -10,7 +10,7 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import {
   applyLayerEdit, describeSurface, gamePathInProject, isGameFile, meshesUsing, newPathFor, openSetup, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
-  type BridgeClient, type LayerPatch, type Library, type OpenedSetup, type Project, type Setup, type SetupSource,
+  type BridgeClient, type LayerPatch, type Library, type MeshSearch, type OpenedSetup, type Project, type Setup, type SetupSource,
 } from "./core";
 import type { SetupPageData, SurfaceChoices } from "./webview/setup";
 
@@ -398,9 +398,20 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
       target = typed.trim().replace(/\//g, "\\");
     }
     if (pick.route === "new") {
-      const uses = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Finding the meshes that use this setup" }, () => meshesUsing(bridge, gamePath!, project.archive));
+      const search: MeshSearch = { folder: "", read: 0, skipped: [] };
+      const uses = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Finding the meshes that use this setup" }, () =>
+        meshesUsing(bridge, gamePath!, project.archive, 60, true, search),
+      );
+      this.host.log(`Meshes that use ${gamePath}: ${uses.length} of ${search.read} read in ${search.folder}`);
+      for (const s of search.skipped) this.host.log(`  could not read ${s.mesh}: ${s.reason}`);
       if (!uses.length) {
-        const go = await vscode.window.showWarningMessage(`No mesh beside ${path.win32.basename(gamePath!)} uses it, so nothing would point at the new setup. Save the setup alone?`, { modal: true }, "Save the Setup Alone");
+        const name = path.win32.basename(gamePath!);
+        const why = search.skipped.length
+          ? `EDGEmat could not read ${search.skipped.length} of the ${search.read} meshes in ${search.folder} (${search.skipped[0].reason}; the rest is in the EDGEmat log).`
+          : search.read
+            ? `None of the ${search.read} meshes in ${search.folder} uses ${name}.`
+            : `No mesh found in ${search.folder}.`;
+        const go = await vscode.window.showWarningMessage(`${why} So nothing would point at the new setup. Save the setup alone?`, { modal: true }, "Save the Setup Alone");
         if (!go) return false;
       } else {
         const chosen = await vscode.window.showQuickPick(
