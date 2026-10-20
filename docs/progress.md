@@ -8,18 +8,18 @@ Last updated 2026-10-19.
 
 | | |
 |---|---|
-| Phase | **M2 Read done** 2026-10-19: every test passed, the phase test too. Next: the 0.2.0 preview release, then M3 Edit |
+| Phase | **M2 Read done** 2026-10-19: every test passed, the phase test too. **M3 Edit next**, with Generate's first slice; it ends with the first preview, 0.3.0 |
 | Extension | 0.1.0 plus M2: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor; Find; View in 3D |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Cut the 0.2.0 preview on GitHub (wiki and Nexus files are ready), then M3 Edit |
-| Roadmap | M3 Edit, **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
+| Next up | Two checks before building on them: a new `.xbm` from a PNG through REDbridge (mine), and a hand-made textured material on a garment part in the game (yours, with files I prepare). Then Edit and Save to Project |
+| Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
-| Decide whether the 0.2 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
+| Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
@@ -42,6 +42,8 @@ Last updated 2026-10-19.
 
 | What | Detail |
 |---|---|
+| **The first preview becomes 0.3.0** | Your call: no 0.2 release. The first preview waits for M3, so it edits with a full round trip (recolor in EDGEmat, save into a REDcode project, pack and deploy with REDcode, see it in game), and it takes Generate's first slice from M4, so it has AI generation. A generated material replaces a whole material, so the preview shows it on objects and simple parts ([design, "Phases"](design.html#phases)) |
+| A long-term goal recorded | Asking an AI agent to redesign a garment. It needs every material and how each maps onto the item; it starts small with `mat_find`, `mat_describe` and M3's `mat_edit` ([design, "Later ideas"](design.html#redesign-a-garment-by-asking-an-ai)) |
 | **M2 done** | The phase test passed: the Arasaka jacket's 20 layers match WolvenKit's own reading of the file in all 360 fields, and you judged Claude's description from `mat_describe` accurate. The white stitching you saw is a separate decal material on the mesh, not part of the setup ([Tests](testing.html#m2-phase-test)) |
 | Wiki | EDGEmat's user manual on [edgemodders.ai](https://edgemodders.ai/wiki/edgemat/), ten pages on EDGEdeck's template with screenshot placeholders; EDGEmat's cards and the wiki home now say preview |
 | Nexus page ready | `nexus/description.bbcode` in REDnode's style, with six screenshot placeholders, and `nexus/README.md` with the form fields. Each release now also makes `EDGEmat-<version>-nexus.zip` (the VSIX, the MCP server, an install README, the licenses). Not posted: your call |
@@ -127,7 +129,8 @@ Last updated 2026-10-19.
 | AI generation follows EDGEwave's idiom; keys in VS Code's secret storage, environment variables for MCP | One look across the EDGE tools; the MCP server cannot read VS Code's secrets | 2026-10-19 |
 | The Nexus page is prepared now, posted when the owner decides | The owner reviews the roadmap to M7 first | 2026-10-19 |
 | Every EDGE repo commits as `CyberbuildsAI`, EDGEweb too | Edgemodders is the organization; the CyberbuildsAI account owns it (the owner, 2026-10-19). EDGEweb's CLAUDE.md fixed | 2026-10-19 |
-| A 0.2.0 preview on GitHub only, at the end of M2 | Something real to show; the stores wait for editing (M7) | 2026-10-18 |
+| The first preview is 0.3.0 at the end of M3, with Generate's first slice from M4 | The owner wants the preview to edit with an in-game round trip, and to have AI generation | 2026-10-19 |
+| ~~A 0.2.0 preview on GitHub only, at the end of M2~~ Replaced by 0.3.0 | Something real to show; the stores wait for editing (M7). Still GitHub only, no stores until M7 | 2026-10-18 |
 
 Still open: how a recolor is saved, in place (needs MTO for every player) or at a new path (needs nothing extra; how most recolor mods ship). Leaning new path by default; settled in M3. Other open questions are in the [design](design.html#open-questions).
 

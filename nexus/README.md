@@ -2,7 +2,7 @@
 
 The source of EDGEmat's Nexus Mods page lives here, so updates are edits in the repo, not in Nexus's text box. The same way as REDnode's and REDcode's.
 
-**Not posted yet.** Prepared on 2026-10-19 for the 0.2 preview. The design plans the Nexus page for M7 (Ship); the owner decides whether the preview goes up before that.
+**Not posted yet.** Prepared on 2026-10-19 for a 0.2 preview, which became 0.3.0 at the end of M3: the description still says 0.2 and read-only, and gets M3's editing and Generate before then. The design plans the Nexus page for M7 (Ship); the owner decides whether the preview goes up before that.
 
 | File | What it is |
 |---|---|
@@ -15,7 +15,7 @@ The source of EDGEmat's Nexus Mods page lives here, so updates are edits in the 
 | Field | Value |
 |---|---|
 | Mod name | EDGEmat |
-| Version | EDGEmat's version, from `extensions/edgemat/package.json` (for example 0.2.0) |
+| Version | EDGEmat's version, from `extensions/edgemat/package.json` (for example 0.3.0) |
 | Category | Modders Resources and Tutorials (check the list for Cyberpunk 2077 when creating the page) |
 | Brief overview | A material editor for Cyberpunk 2077 clothing, in VS Code: find a garment by its name and see each layer in plain words and in 3D, or ask Claude. Preview: reads materials; recoloring is next. A VS Code extension, not a game mod. (255 characters at most; this is 228) |
 | Author | Edgemodders |
