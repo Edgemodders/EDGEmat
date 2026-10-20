@@ -21,7 +21,6 @@ Last updated 2026-10-19.
 |---|---|---|
 | Decide whether the 0.2 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
-| Say which git identity EDGEweb uses | Its CLAUDE.md says `Edgemodders`, but its git config is now `CyberbuildsAI`, which the last commits used, the wiki update included | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
 | Try RED Hot Tools on the dev PC | Tells us whether hot-loading archives works today (design, "Hot-loading archives"), and tests REDcode's Pack and Try hot path. Planned for your next session at the PC | 2026-10-16 |
@@ -127,6 +126,7 @@ Last updated 2026-10-19.
 | Generated images become textured `.mi` materials, not layers | A layer has no color texture | 2026-10-19 |
 | AI generation follows EDGEwave's idiom; keys in VS Code's secret storage, environment variables for MCP | One look across the EDGE tools; the MCP server cannot read VS Code's secrets | 2026-10-19 |
 | The Nexus page is prepared now, posted when the owner decides | The owner reviews the roadmap to M7 first | 2026-10-19 |
+| Every EDGE repo commits as `CyberbuildsAI`, EDGEweb too | Edgemodders is the organization; the CyberbuildsAI account owns it (the owner, 2026-10-19). EDGEweb's CLAUDE.md fixed | 2026-10-19 |
 | A 0.2.0 preview on GitHub only, at the end of M2 | Something real to show; the stores wait for editing (M7) | 2026-10-18 |
 
 Still open: how a recolor is saved, in place (needs MTO for every player) or at a new path (needs nothing extra; how most recolor mods ship). Leaning new path by default; settled in M3. Other open questions are in the [design](design.html#open-questions).
