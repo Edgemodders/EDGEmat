@@ -22,8 +22,8 @@ interface REDcodeApi {
   packAndTry?(): Promise<"hot" | "installed" | undefined>;
 }
 
-/** The part of REDdeck's API (version 1) EDGEmat uses. */
-interface REDdeckApi {
+/** The part of EDGEdeck's API (version 1) EDGEmat uses. */
+interface EDGEdeckApi {
   readonly apiVersion: 1;
   gamePath(): string;
 }
@@ -60,10 +60,10 @@ function activeApi<T extends { apiVersion: number }>(id: string): T | undefined 
 
 const REDcodeId = "edgemodders.redcode-cyberpunk";
 const redcode = () => activeApi<REDcodeApi>(REDcodeId);
-const reddeck = () => activeApi<REDdeckApi>("edgemodders.reddeck");
+const edgedeck = () => activeApi<EDGEdeckApi>("edgemodders.edgedeck");
 
 async function findGame(search: boolean): Promise<GameChoice | undefined> {
-  return resolveGame(settings, { redcodeGamePath: () => redcode()?.gamePath(), reddeckGamePath: () => reddeck()?.gamePath() }, search);
+  return resolveGame(settings, { redcodeGamePath: () => redcode()?.gamePath(), edgedeckGamePath: () => edgedeck()?.gamePath() }, search);
 }
 
 /** REDcode's running bridge when it reads the same game; otherwise EDGEmat's own, started once. */

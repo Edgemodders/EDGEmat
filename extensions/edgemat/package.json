@@ -297,7 +297,7 @@
         "edgemat.gamePath": {
           "type": "string",
           "default": "",
-          "markdownDescription": "The Cyberpunk 2077 folder (the one holding `bin`, `archive` and `r6`). Empty: use REDcode's game folder, then REDdeck's, then search the machine."
+          "markdownDescription": "The Cyberpunk 2077 folder (the one holding `bin`, `archive` and `r6`). Empty: use REDcode's game folder, then EDGEdeck's, then search the machine."
         },
         "edgemat.bridgePath": {
           "type": "string",

@@ -1,5 +1,5 @@
 // Where the game and REDbridge are, in the order the design sets ("The game folder and the bridge"):
-// EDGEmat's own settings, then REDcode's API and settings, then REDdeck's API, then a search of the
+// EDGEmat's own settings, then REDcode's API and settings, then EDGEdeck's API, then a search of the
 // machine. No VS Code imports: the extension passes its settings and the APIs it found, and the MCP
 // server passes the VS Code settings file it read.
 
@@ -14,8 +14,8 @@ export type SettingsReader = (key: string) => string | undefined;
 export interface OtherTools {
   /** REDcode's API gamePath(), when REDcode is active. */
   redcodeGamePath?: () => string | undefined;
-  /** REDdeck's API gamePath(), when REDdeck is active. */
-  reddeckGamePath?: () => string | undefined;
+  /** EDGEdeck's API gamePath(), when EDGEdeck is active. */
+  edgedeckGamePath?: () => string | undefined;
 }
 
 export interface GameChoice {
@@ -32,7 +32,7 @@ export async function resolveGame(settings: SettingsReader, tools: OtherTools = 
     [nonEmpty(settings("edgemat.gamePath")), "EDGEmat setting"],
     [nonEmpty(tools.redcodeGamePath?.()), "REDcode"],
     [nonEmpty(settings("redcode.gamePath")), "REDcode setting"],
-    [nonEmpty(tools.reddeckGamePath?.()), "REDdeck"],
+    [nonEmpty(tools.edgedeckGamePath?.()), "EDGEdeck"],
   ];
   for (const [dir, from] of candidates) {
     if (isGameFolder(dir)) return { path: dir, from };

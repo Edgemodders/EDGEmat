@@ -49,6 +49,7 @@ Last updated 2026-10-20.
 | **Save to Project built** | Saves the setup into your project (REDcode's open one, or one you pick). By default as a new setup beside the original, with every mesh that uses it copied into the project and pointed at it, so it shows in the game with no other mod: on the Arasaka jacket that is three meshes, found in half a second. REDcode's Pack and Try is offered right after. Ctrl+S on a game file opens it; a project's own file saves in place |
 | **`mat_edit`** | Claude recolors in words ("dark red", "glossy", "leather standard clean"): EDGEmat picks the surface's closest preset, says how close it is, and saves the same way, or only previews |
 | Find fixed | Jackets and other outer wear showed no looks: their appearances also name first and third person (`&Male&TPP`). Find now walks them |
+| EDGEdeck's name | EDGEmat still looked for REDdeck (`edgemodders.reddeck`), EDGEdeck's old name, so it never used EDGEdeck's game folder. The code, the `edgemat.gamePath` setting and the design now say EDGEdeck (`edgemodders.edgedeck`, same API) |
 | Test garments | The Arasaka jacket is an NPC garment, so V cannot wear it. The in-game test uses the Rocker's Heart crystaljock bomber, the punk jeans and the Sunny Ammo sneakers |
 
 ### 2026-10-19

@@ -27,6 +27,7 @@ The first preview: EDGEmat reads a garment's materials, shows them in plain word
 **Fixed**
 
 - Find showed no looks for jackets and other outer wear, whose appearances also name first and third person. It now walks them (third person when both exist).
+- The game folder: EDGEmat looked for REDdeck, EDGEdeck's old name, so it never used EDGEdeck's folder. It now asks EDGEdeck, and the `edgemat.gamePath` setting says so.
 
 **Changed**
 
