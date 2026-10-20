@@ -12,14 +12,13 @@ Last updated 2026-10-20.
 | Extension | 0.1.0 plus M2: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor; Find; View in 3D |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your tiling check in the game; meanwhile Generate's first slice |
+| Next up | Generate's first slice |
 | Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
-| The tiling check in the game, 5 steps ([Tests](testing.html#tiling-check)): the slim-fits pants with a numbered test pattern, at LayerTile 1 and 4 | Answers how a texture lies on a garment and what LayerTile does, which shapes how Generate puts a material on a garment | 2026-10-20 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
@@ -44,6 +43,7 @@ Last updated 2026-10-20.
 
 | What | Detail |
 |---|---|
+| **Tiling check done** | Your screenshots of the slim-fits pants: the garment keeps a texture upright and at one even scale; one leg is mirrored; the pattern breaks at the island borders. `LayerTile` repeats the texture that many times each way, and very likely the garment's folds too. Proposed for Generate: on a garment, bake the repeat into the texture and keep LayerTile 1 and the garment's own normal map; on objects, LayerTile is the repeat; no text in generated textures (design, "Generate a material") |
 | Tiling check ready | Generate's groundwork in the core: a texture written into a project from a PNG (a game texture of the kind copied first, so it takes the right settings), a textured `.mi` on `metal_base.remt`, and one material of a mesh pointed at it. `npm run tiling-check` uses them to put a numbered UV test pattern on the slim-fits pants, at LayerTile 1 on one look and 4 on another, for your in-game test |
 | **Seen in the game** | Your hand test of editing and Save to Project passed, all 14 checks. Then the round trip: the jacket from the editor, the jeans Claude recolored and the sneakers showed their new materials in the game, on your V. The sneakers were saved both as a new setup and in place (with Material Texture Override); the game showed the new setup, which the project's mesh copies name |
 | Deploying | Two things kept the mod out of the game, neither in EDGEmat. Red Hot Tools is installed on the laptop, so Pack and Try sent the archive to `archive\pc\hot`, which Red Hot Tools reads only while the game runs; the game was not running, so the archive stayed there. A Deploy from REDcode put it in the game. You are asking the REDcode session to make that path clearer. And the project packs as a REDmod (`redcode.pack.redmod` on), into `mods\`, which needs `redMod.exe deploy` (EDGEdeck's deploy runs it) and a game started with `-modded`. A material mod needs neither: unticking the setting packs to `archive\pc\mod` |
@@ -167,6 +167,8 @@ The facts that shape the editor. Each is in the [behavior spec](design/behavior.
 | `ratio` changes how the microblend maps onto the item | Shown as a setting with a plain description |
 | Level presets are pairs: out = scale × in + bias | Shown in plain words, raw values one click away |
 | The running game shows a setup's `ratio` to scripts, not its layers | Runtime recoloring needs another route than the script API |
+| A garment keeps a texture upright and at one even scale; some islands are mirrored; a pattern breaks at island borders | A generated texture must be seamless and have no text; fine textures hide the borders |
+| `metal_base`'s `LayerTile` repeats its textures that many times each way, very likely the normal map too | On a garment the repeat is baked into the texture, so the garment's folds keep their scale (proposed) |
 | An item reaches its layers through TweakDB, the `.ent`, the `.app`, the mesh appearance and its materials | M2's "find an item's materials" follows this chain |
 
 ## Try it

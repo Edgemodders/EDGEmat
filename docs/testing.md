@@ -17,7 +17,7 @@ Last updated 2026-10-20.
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
 | [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | 2026-10-19 | Pass |
 | [Setup editor: editing and Save to Project](#setup-editor-editing-and-save-to-project) | By hand, F5, with REDcode | M3 | 2026-10-20 | Pass |
-| [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | | Not run in the game yet |
+| [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
 | [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | Each release | 2026-10-19 | Pass |
@@ -172,7 +172,7 @@ All three go into the `EDGEmat_M3` project from the test above, on three garment
 
 ### Tiling check
 
-The open question "A tiled texture on a game garment" (design, "Open questions"): how a texture lies across a garment's UVs, and what `metal_base`'s `LayerTile` does. Its answer shapes how Generate puts a material on a garment. **Not run in the game yet.** Built 2026-10-20; the project builds, reads back and packs on the dev PC.
+The open question "A tiled texture on a game garment" (design, "Open questions"): how a texture lies across a garment's UVs, and what `metal_base`'s `LayerTile` does. Its answer shapes how Generate puts a material on a garment. **Run 2026-10-20 by the owner on the laptop (feminine body), with screenshots from the front, back and side: done.** Tile 1: upright, even scale, no visible stretch; one leg mirrored (the front of V's right leg reads "5a", "E3"); the pattern breaks down each leg and across the top of the thighs. Tile 4: the squares a quarter the size, repeating across (column 8 beside column 1) and down (row 8 above row 1); the folds very likely repeat with them (darker creases at the same rows down the leg). Findings in the design's open questions.
 
 `npm run tiling-check` writes a project from your own game: a UV test pattern (8 × 8 colored squares, each labelled with its column and row: 11 top left, 81 top right, 18 bottom left), two `metal_base` materials using it with the slim-fits' own normal map, at LayerTile 1 and 4, and the slim-fits pants' meshes for both bodies with one look on each.
 
