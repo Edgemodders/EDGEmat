@@ -8,19 +8,20 @@ Last updated 2026-10-20.
 
 | | |
 |---|---|
-| Phase | **M3 Edit in progress**: editing and Save to Project built and tested 2026-10-20, and seen in the game. Generate's first slice (New Material) built and seen in the game 2026-10-20. M3's tests are all done; it ends with the first preview, 0.3.0 |
-| Extension | 0.1.0 plus M2 and M3: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
+| Phase | **M3 Edit done 2026-10-20**, with Generate's first slice, and **0.3.0 released** the same day: the first preview, on the VS Code Marketplace, Open VSX and GitHub. Next: M4 Make |
+| Extension | 0.3.0: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | The 0.3.0 release on your go (the wiki, Nexus description and READMEs are updated for it) |
-| Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
+| Next up | Your install of 0.3.0 from the Marketplace (the release's install test). Then M4 Make: materials for new meshes, for EDGEfab |
+| Roadmap | M3 Edit with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
+| Install 0.3.0 from the Marketplace in a normal VS Code (not the development host), and check the Library, Find and New Material open | The release's install test ([Tests](testing.html#install-of-the-release)) | 2026-10-20 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
-| Screenshots: 8 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)), the two tutorials' in-game shots included | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
+| Screenshots: 8 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)). The tutorials' in-game shots are in (2026-10-20); their UI shots still wait | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
 | Try RED Hot Tools on the dev PC | Tells us whether hot-loading archives works today (design, "Hot-loading archives"), and tests REDcode's Pack and Try hot path. Planned for your next session at the PC | 2026-10-16 |
@@ -43,6 +44,7 @@ Last updated 2026-10-20.
 
 | What | Detail |
 |---|---|
+| **0.3.0 released** | The first preview, on your go: the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat) (your call: not only GitHub, as REDcode), and the [GitHub release](https://github.com/Edgemodders/EDGEmat/releases/tag/v0.3.0) with the VSIX, the MCP server file and the Nexus zip. The wiki's install page now starts from the Marketplace. Your six in-game shots fill the two tutorials |
 | Docs for 0.3 | The EDGEmat wiki in EDGEweb: editing and Save to Project in the setup editor page; new pages New Material and Your mod in the game (packing, the hot folder and REDmod pitfalls, CET); two tutorials from your tests, worn leather in the editor and snakeskin by asking Claude, with screenshot placeholders; the assistant's new tools and the key; settings, troubleshooting, install. The Nexus description and form for 0.3, with eight screenshot slots. The extension's and the repo's READMEs |
 | **Generate seen in the game** | Your New Material hand test passed, all 9 steps, with your own key: the first live calls to an image service. Then the round trip: worn leather from the page and a dark green snakeskin asked of Claude, on the two slim-fits, both in the game on your V. The pants keep their own folds at their normal size; the texture is fine and even, with no repeat seen; the panel lines read as stitching. M3's tests are all done ([Tests](testing.html#generate-round-trip)) |
 | **New Material built** | The page (Library title bar, or New Material Here on a material in Find, which targets both bodies): words or your own image, takes tiled 3 × 3, name, Repeat, Bumps, Shine, Metal, Add to Project. Keys in VS Code's secret storage (Set and Clear Image Service Key commands); a Cancel; the chosen model remembered. MCP `mat_generate`, `mat_from_image`, `mat_apply` (keys from the server's environment). Your hand test and the Generate round trip are next |

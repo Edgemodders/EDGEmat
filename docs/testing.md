@@ -22,7 +22,7 @@ Last updated 2026-10-20.
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
-| [CLI install of the VSIX](#cli-install-of-the-vsix) | By hand | Each release | 2026-10-19 | Pass |
+| [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
 | [In-game round 2](#in-game-round-2-ratio) | In the game | M0 | 2026-10-15 | Done |
@@ -280,16 +280,21 @@ Built 2026-10-19. **Last run 2026-10-19 by the owner through F5: all 7 checks pa
 | Claude describes it correctly | `mat_describe` over stdio, as Claude Code calls it, and Claude's description from it | 14 of 20 layers shown, with their surfaces, colors, finishes and shares. The owner: "100% accurate". The white stitching is not in the setup but a separate decal material on the mesh (`pasted__decal_stitches`, `garment_decals_d01.xbm`), which `mat_find` lists: a whole-garment description combines the two |
 | A setup from a mod archive | The setup editor hand test, step 10 (2026-10-17) | Pass |
 
-### CLI install of the VSIX
+### Install of the release
 
-Asked for by the owner on 2026-10-16. **Last run 2026-10-19 by the owner: pass.** F5 runs the source; this tests what a user installs. Run it on every release's VSIX, downloaded from the GitHub release ([Dev setup, "Releasing"](dev-setup.html#releasing)).
+Asked for by the owner on 2026-10-16 as the CLI install of the VSIX. **Last run 2026-10-19 by the owner on a test build's VSIX: pass.** F5 runs the source; this tests what a user installs. From 0.3.0 a release is on the VS Code Marketplace and Open VSX, so the test installs from there, in a normal VS Code with no development host open ([Dev setup, "Releasing"](dev-setup.html#releasing)):
+
+1. Extensions view (`Ctrl+Shift+X`), search `EDGEmat`, pick EDGEmat by Edgemodders with the Preview badge, **Install**. Or `code --install-extension edgemodders.edgemat`.
+2. Check the version on its page is the release's.
+3. Click the EDGEmat icon in the activity bar: the [Library view](#library-view-in-vs-code) checks, then Find and New Material open.
+
+Without a store, the release's VSIX the same way:
 
 ```powershell
-npm run edgemat:package
-code --install-extension dist\edgemat-<version>.vsix
+code --install-extension edgemat-<version>.vsix
 ```
 
-Then **Developer: Reload Window** (this restarts a Claude panel in the same window) and repeat the [Library view](#library-view-in-vs-code) checks. Uninstall with `code --uninstall-extension edgemodders.edgemat`.
+Uninstall with `code --uninstall-extension edgemodders.edgemat`.
 
 ### MCP server
 
