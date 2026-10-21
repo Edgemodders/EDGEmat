@@ -8,18 +8,17 @@ Last updated 2026-10-20.
 
 | | |
 |---|---|
-| Phase | **M3 Edit in progress**: editing and Save to Project built and tested 2026-10-20, and seen in the game. Generate's first slice (New Material) built 2026-10-20, your tests next; M3 ends with the first preview, 0.3.0 |
+| Phase | **M3 Edit in progress**: editing and Save to Project built and tested 2026-10-20, and seen in the game. Generate's first slice (New Material) built and seen in the game 2026-10-20. M3's tests are all done; it ends with the first preview, 0.3.0 |
 | Extension | 0.1.0 plus M2 and M3: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your New Material hand test and the Generate round trip ([Tests](testing.html#new-material)); then docs, wiki and Nexus for 0.3, and the release on your go |
+| Next up | The wiki and the Nexus description for 0.3, then the 0.3.0 release on your go |
 | Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
 
 | To-do | Why | Since |
 |---|---|---|
-| Hand test: New Material, 9 steps through F5 ([Tests](testing.html#new-material)), then the Generate round trip in the game ([Tests](testing.html#generate-round-trip)) | Generate's first slice; it needs a Gemini or OpenAI key of your own (a few cents a take) | 2026-10-20 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
@@ -44,6 +43,7 @@ Last updated 2026-10-20.
 
 | What | Detail |
 |---|---|
+| **Generate seen in the game** | Your New Material hand test passed, all 9 steps, with your own key: the first live calls to an image service. Then the round trip: worn leather from the page and a dark green snakeskin asked of Claude, on the two slim-fits, both in the game on your V. The pants keep their own folds at their normal size; the texture is fine and even, with no repeat seen; the panel lines read as stitching. M3's tests are all done ([Tests](testing.html#generate-round-trip)) |
 | **New Material built** | The page (Library title bar, or New Material Here on a material in Find, which targets both bodies): words or your own image, takes tiled 3 × 3, name, Repeat, Bumps, Shine, Metal, Add to Project. Keys in VS Code's secret storage (Set and Clear Image Service Key commands); a Cancel; the chosen model remembered. MCP `mat_generate`, `mat_from_image`, `mat_apply` (keys from the server's environment). Your hand test and the Generate round trip are next |
 | Generate's core | Behind the New Material page: the Gemini and OpenAI clients (models listed from your key's account, a time limit and cancel, errors in plain words, the texture prompt); an image made seamless, with bumps and shine maps derived; a material written into a project and put on mesh materials, with the repeat baked in on a garment. The smoke test runs both services against a stand-in server, so it needs no key |
 | **Tiling check done** | Your screenshots of the slim-fits pants: the garment keeps a texture upright and at one even scale; one leg is mirrored; the pattern breaks at the island borders. `LayerTile` repeats the texture that many times each way, and the garment's folds too (you saw finer wrinkles down the legs). Proposed for Generate: on a garment, bake the repeat into the texture and keep LayerTile 1 and the garment's own normal map; on objects, LayerTile is the repeat; no text in generated textures (design, "Generate a material") |

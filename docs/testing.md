@@ -17,8 +17,8 @@ Last updated 2026-10-20.
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
 | [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | 2026-10-19 | Pass |
 | [Setup editor: editing and Save to Project](#setup-editor-editing-and-save-to-project) | By hand, F5, with REDcode | M3 | 2026-10-20 | Pass |
-| [New Material](#new-material) | By hand, F5, with an image service key | M3 | | Not run yet |
-| [Generate round trip](#generate-round-trip) | In the game, with REDcode and Claude Code | M3 | | Not run yet |
+| [New Material](#new-material) | By hand, F5, with an image service key | M3 | 2026-10-20 | Pass |
+| [Generate round trip](#generate-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V |
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
@@ -176,7 +176,7 @@ All three go into the `EDGEmat_M3` project from the test above, on three garment
 
 ### New Material
 
-Built 2026-10-20 (M3, Generate's first slice). **Not run by the owner yet.** Before that: the page rendered in headless Chrome with a take (stubbed service), the smoke test's Generate checks, and `mat_from_image` and `mat_apply` over stdio. You need a REDcode project open (EDGEmat_M3 is fine) and, for steps 4 to 8, an API key for Google Gemini (aistudio.google.com › Get API key) or OpenAI (platform.openai.com › API keys; GPT Image may ask you to verify your organization first). Each Generate spends a few cents of your credits. `npm run build`, then F5; every step happens in the development host.
+Built 2026-10-20 (M3, Generate's first slice). **Run 2026-10-20 by the owner on the laptop: all pass**, with a real image service key (the first live calls). Before that: the page rendered in headless Chrome with a take (stubbed service), the smoke test's Generate checks, and `mat_from_image` and `mat_apply` over stdio. You need a REDcode project open (EDGEmat_M3 is fine) and, for steps 4 to 8, an API key for Google Gemini (aistudio.google.com › Get API key) or OpenAI (platform.openai.com › API keys; GPT Image may ask you to verify your organization first). Each Generate spends a few cents of your credits. `npm run build`, then F5; every step happens in the development host.
 
 | # | Do | Expected |
 |---|---|---|
@@ -192,7 +192,18 @@ Built 2026-10-20 (M3, Generate's first slice). **Not run by the owner yet.** Bef
 
 ### Generate round trip
 
-The M3 phase test's last row (design, "Phases"): a material generated from words goes on part of a garment and shows in the game, through the UI and by asking Claude. **Not run yet.**
+The M3 phase test's last row (design, "Phases"): a material generated from words goes on part of a garment and shows in the game, through the UI and by asking Claude. **Run 2026-10-20 by the owner on the laptop: pass.** Both pairs showed their new material on the owner's V, front, back and side. What the screenshots show:
+
+| | Worn leather (the page, Repeat 6, satin) | Snakeskin (asked of Claude) |
+|---|---|---|
+| Folds | The pants' own, at their normal size: knees, the backs of the thighs, the ankles. Not the small repeated wrinkles of the tile-4 pair | The same |
+| Scale | Fine creases and cracks, even over both legs | Scales of a believable size, even over both legs |
+| Repeat | Not visible at a glance | Not visible at a glance |
+| Seams | The panel lines read as stitching (owner: "totally fine") | The pattern breaks at the front thigh panel line, as expected at a UV border |
+| Bumps and shine | Creases catch the light; a soft sheen on the knees and seat | A wet-look sheen on the seat and thighs; the scales show as relief |
+| Color | A warm tan brown, lighter than "brown" may suggest | Dark green with black scale edges |
+
+Not checked: the other body; the normal map's green convention (the bumps read right, so no sign it is flipped).
 
 | # | Do | Expected |
 |---|---|---|
