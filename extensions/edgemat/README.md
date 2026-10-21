@@ -2,25 +2,29 @@
 
 The EDGE material editor for Cyberpunk 2077. Part of the EDGE modding platform by [EDGEmodders](https://github.com/Edgemodders).
 
-**Version 0.2 (M2, Read): a preview that reads materials, and does not edit them yet.** EDGEmat adds its own place in the activity bar:
+**Version 0.3, a preview: read, recolor and make materials, and save them into your mod project.** Each was tested in the game. EDGEmat adds its own place in the activity bar:
 
 | Part | What it does |
 |---|---|
 | **Library** | Every surface (multilayered material template) in your game with its colors, and every microblend, each with a thumbnail, searchable by plain words such as *leather*, *denim* or *dirt*. Built from your own game on first use, in well under a minute, and rebuilt after a game update. Nothing from the game ships with EDGEmat |
 | **Surface page** | Click a surface: a larger image tinted with the color you pick, every color as a swatch with a plain name ("dark muted blue"), the closest color to one you type or pick, and roughness, metal and bumps in plain words |
-| **Setup editor** | Open any `.mlsetup` from the game, a file, a project, a mod archive, or REDcode's Game Assets: each layer in plain words, a map of where each layer goes on the garment, and warnings for what looks wrong. **Open Setup** is in the Library's title bar |
-| **Find** | Type a garment's in-game name ("punk jeans") or part of a mesh path: its looks per body, its meshes and materials. Click a layered material to open its setup with the right masks |
+| **Setup editor** | Open any `.mlsetup` from the game, a file, a project, a mod archive, or REDcode's Game Assets: each layer in plain words, a map of where each layer goes on the garment, and warnings for what looks wrong. Click a layer to change its surface, color, finish, tiling, opacity and microblend, with undo. **Open Setup** is in the Library's title bar |
+| **Save to Project** | Saves a setup into your WolvenKit project (REDcode's open one): as a new setup, with the garment's meshes for both bodies pointed at it, so it shows in the game with no other mod. Then REDcode's Pack and Try |
+| **New Material** | A material from words, through Google Gemini or OpenAI with your own key, or from a photo of your own: made seamless, with bumps and shine, and put on a garment, which keeps its own folds. The sparkle in the Library's title bar, or on a material in Find. Nothing is sent until you press Generate |
+| **Find** | Type a garment's in-game name ("punk jeans") or part of a mesh path: its record id, its looks per body, its meshes and materials. Click a layered material to open its setup with the right masks |
 | **View in 3D** | The eye on a mesh opens it in [REDcode](https://github.com/Edgemodders/REDcode)'s 3D view, with its colors from EDGEmat. Colors only for now: bumps and shine come later |
 
-Next: recoloring (M3), then making new materials, from a model's textures or from words through an AI image service you choose (M4).
+Next: materials for brand-new clothes and objects (M4). The manual, with two tutorials: [edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/).
 
 ### For AI assistants
 
-The same features are in EDGEmat's MCP server, so Claude or another assistant can find a garment's materials, describe its layers and pick colors. Each GitHub release carries the server as one file, `edgemat-mcp-<version>.cjs`. It needs Node.js 20 or later, and finds the game and REDbridge as the extension does. For Claude Code, with the file's full path:
+The same features are in EDGEmat's MCP server, so Claude or another assistant can find a garment's materials, describe and recolor its layers, and make new materials, saving into your project. Each GitHub release carries the server as one file, `edgemat-mcp-<version>.cjs`. It needs Node.js 20 or later, and finds the game and REDbridge as the extension does. For Claude Code, with the file's full path:
 
 ```
 claude mcp add --scope user edgemat -- node "<folder>\edgemat-mcp-<version>.cjs"
 ```
+
+For materials from words (`mat_generate`), add your key: `-e GEMINI_API_KEY=<key>` or `-e OPENAI_API_KEY=<key>` before `--`.
 
 ## Setup
 

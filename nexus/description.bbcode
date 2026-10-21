@@ -1,57 +1,71 @@
 [center][img]https://raw.githubusercontent.com/Edgemodders/EDGEmat/main/docs/assets/brand/banner.png[/img][/center]
 
-[center][size=5][b][color=#fcee0a]See what every garment is made of. Then recolor it, or ask an AI to.[/color][/b][/size][/center]
+[center][size=5][b][color=#fcee0a]Recolor any garment, or wear a material you described in words. Or ask an AI to.[/color][/b][/size][/center]
 
-[center][size=3]EDGEmat is a material editor for Cyberpunk 2077's clothing, in VS Code. Type a garment's in-game name and it shows each of its layers in plain words, a map of where each layer sits, and the garment in 3D with its colors. Claude and other AI assistants can ask it the same questions.[/size][/center]
+[center][size=3]EDGEmat is a material editor for Cyberpunk 2077's clothing, in VS Code. Type a garment's in-game name and it shows each of its layers in plain words, a map of where each layer sits, and the garment in 3D. Change any layer and save it into your mod project, or describe a new material ("dark green snakeskin") and put it on the garment. Claude and other AI assistants can do all of it too.[/size][/center]
 
 [line]
 
 [quote][size=4][b][color=#fcee0a]STATUS: PREVIEW[/color][/b][/size]
-Version 0.2 reads a garment's materials and shows them. It does not change them yet: recoloring is the next phase. Everything on this page is built and tested on the developer's PC, on game version 2.31.
-[b]This is a VS Code extension, not a game mod.[/b] It reads your game's files and never changes them. Do not install it with Vortex.[/quote]
+Version 0.3 finds, recolors and makes materials. Everything on this page is built and tested on the developer's PC, and each change was seen in the game, on game version 2.31.
+[b]This is a VS Code extension, not a game mod.[/b] It never changes your game's files: it saves into a WolvenKit project, which REDcode packs into a mod. Do not install it with Vortex.[/quote]
 
 [line]
 
-[color=#19f3ff][i]» Screenshot 1: EDGEmat in VS Code: the Library and Find in the sidebar, the setup editor open on the Sunny Ammo sneakers with its color map and layer list.[/i][/color]
+[color=#19f3ff][i]» Screenshot 1: EDGEmat in VS Code: the Library and Find in the sidebar, the setup editor open on a garment with its color map and layer list.[/i][/color]
 
 [size=5][b][color=#fcee0a]What EDGEmat is[/color][/b][/size]
 
-Most clothing in Cyberpunk 2077 gets its look from [b]multilayered materials[/b]: a stack of up to 20 layers, such as leather, metal studs and stitching. Each layer has a surface, a color from that surface's list, and a mask that paints it onto part of the garment. Recoloring means editing that stack, and today that takes specialist tools and a good map of which file is which.
+Most clothing in Cyberpunk 2077 gets its look from [b]multilayered materials[/b]: a stack of up to 20 layers, such as leather, metal studs and stitching. Each layer has a surface, a color from that surface's list, and a mask that paints it onto part of the garment. Recoloring means editing that stack, and until now that took specialist tools and a good map of which file is which.
 
 EDGEmat is built by [url=https://edgemodders.ai/]EDGEmodders[/url], a modding community whose idea is simple: [b]anyone can mod[/b]. Plain words first, raw values one click away, and every feature in the buttons and for an AI assistant alike.
 
 [size=5][b][color=#fcee0a]Highlights[/color][/b][/size]
 
 [size=4][b][color=#19f3ff]Find a garment by its name[/color][/b][/size]
-Type "punk jeans" or "Sunny Ammo". EDGEmat walks the game's chain of files for you: the item, its look for each body type, its meshes, and their materials. The two bodies can even wear different meshes, and EDGEmat shows both.
+Type "punk jeans" or "Sunny Ammo". EDGEmat walks the game's chain of files for you: the item and its record id, its look for each body type, its meshes, and their materials. The two bodies can even wear different meshes, and EDGEmat shows both.
 
-[color=#19f3ff][i]» Screenshot 2: the Find view after searching "sunny ammo": the item open into Feminine body and Masculine body, down to the mesh and its materials.[/i][/color]
+[color=#19f3ff][i]» Screenshot 2: the Find view after searching "sunny ammo": the item with its record id, open into Feminine body and Masculine body, down to the mesh and its materials.[/i][/color]
 
-[size=4][b][color=#19f3ff]Every layer in plain words[/color][/b][/size]
-"Leather, black, mostly glossy, faint bumps, 6% of the jacket." Each layer's surface, color, shine, metal, bumps, tiling and detail texture, and how much of the garment it covers. Tick Raw values for the game's own names and numbers. Layers that don't show say why, and EDGEmat flags what looks wrong, such as a color the surface doesn't have (the game draws it white).
+[size=4][b][color=#19f3ff]Every layer in plain words, and a map you can click[/color][/b][/size]
+"Leather, black, mostly glossy, faint bumps, 6% of the jacket." Each layer's surface, color, shine, metal, bumps, tiling and detail texture, and how much of the garment it covers, beside a color map of where each layer goes. Tick Raw values for the game's own names and numbers. Layers that don't show say why, and EDGEmat flags what looks wrong, such as a color the surface doesn't have (the game draws it white).
 
-[size=4][b][color=#19f3ff]A color map you can click[/color][/b][/size]
-The garment's texture, unwrapped flat, with each layer painted in its color where its mask puts it. Click a spot to find its layer; select a layer to light up exactly where it goes.
+[size=4][b][color=#19f3ff]Recolor, then save into your mod[/color][/b][/size]
+Click a layer and change its surface, its color (from the surface's own swatches, filtered by words such as "blue"), its finish, tiling, opacity and detail texture. Each change shows at once; Ctrl+Z undoes it. [b]Save to Project[/b] writes it into your WolvenKit project as a new setup, with copies of the garment's meshes pointed at it, for both bodies: it shows in the game with no other mod. REDcode packs and installs it in one click.
 
-[color=#19f3ff][i]» Screenshot 3: the setup editor with one layer selected, its area lit on the color map and its details open.[/i][/color]
+[color=#19f3ff][i]» Screenshot 3: the setup editor with a layer being recolored: the swatches filtered by "blue", the layer blue on the color map, and the Save to Project button.[/i][/color]
+
+[size=4][b][color=#19f3ff]A new material from your words[/color][/b][/size]
+Describe it, "worn brown leather with fine creases", and an AI image service draws it: Google Gemini or OpenAI, with [b]your own key[/b] (a few cents a take). Or use a photo of your own, no key needed. Each take shows tiled 3 x 3 so you see seams first. EDGEmat makes it seamless, gives it bumps and shine, writes it into your project and puts it on part of a garment, which keeps its own folds and wrinkles. Nothing is sent anywhere until you press Generate.
+
+[color=#19f3ff][i]» Screenshot 4: the New Material page: the words, two takes, and the chosen one tiled 3 x 3 with Repeat, Bumps and Shine.[/i][/color]
+
+[color=#19f3ff][i]» Screenshot 5: V in the game wearing the worn leather slim-fits, made from one line of words.[/i][/color]
 
 [size=4][b][color=#19f3ff]The garment in 3D[/color][/b][/size]
 One click opens the mesh in REDcode's 3D viewer, with its colors from EDGEmat: each layer where it belongs, and the decals and stitching as their own textures. Colors only for now; shine and bumps come with the full preview.
 
-[color=#19f3ff][i]» Screenshot 4: REDcode's 3D view of the Sunny Ammo sneakers with their colors, and the Arasaka jacket beside it.[/i][/color]
+[color=#19f3ff][i]» Screenshot 6: REDcode's 3D view of the Sunny Ammo sneakers with their colors.[/i][/color]
 
 [size=4][b][color=#19f3ff]Every surface and every color, named[/color][/b][/size]
 A library of all the game's surfaces (about 390) and detail textures (about 130), built from your own game with thumbnails. Each surface's page shows every color it offers as a swatch with a plain name ("dark muted blue"), and sorts them by how close they are to a color you type or pick.
-
-[color=#19f3ff][i]» Screenshot 5: a surface page: the tinted image, the selected color's panel, and the swatches sorted closest to "dark red".[/i][/color]
 
 [size=4][b][color=#19f3ff]Open any material file[/color][/b][/size]
 From the game, your WolvenKit project, a file on disk, or inside another mod's archive, without unpacking it. EDGEmat finds the right masks, and never changes the original.
 
 [size=4][b][color=#19f3ff]Ask Claude[/color][/b][/size]
-EDGEmat comes with an MCP server, so Claude Code can find a garment's materials, describe its layers and find the closest color a surface has. "Which materials do the punk jeans use?" "What's the closest dark red that leather can take?" It makes no network calls of its own, and sends no telemetry.
+EDGEmat comes with an MCP server, so Claude Code can do what you do: "Make the punk jeans dark green on both bodies, in my project." "Make a dark green snakeskin material and put it on the Light Azure slim-fits." It finds the garment, recolors or generates, and saves into your project. It sends no telemetry; its only network calls go to the image service whose key you gave it.
 
-[color=#19f3ff][i]» Screenshot 6: Claude Code describing the Arasaka jacket's layers through EDGEmat.[/i][/color]
+[color=#19f3ff][i]» Screenshot 7: Claude Code making the snakeskin material through EDGEmat.[/i][/color]
+
+[color=#19f3ff][i]» Screenshot 8: V in the game wearing the snakeskin slim-fits Claude made.[/i][/color]
+
+[size=5][b][color=#fcee0a]Tutorials[/color][/b][/size]
+
+[list]
+[*][url=https://edgemodders.ai/wiki/edgemat/tutorial-worn-leather.html]Worn leather pants[/url] from one line of words, in the editor.[/*]
+[*][url=https://edgemodders.ai/wiki/edgemat/tutorial-snakeskin.html]Snakeskin pants by asking Claude[/url].[/*]
+[/list]
 
 [size=5][b][color=#fcee0a]What is in the download[/color][/b][/size]
 
@@ -68,7 +82,8 @@ Nothing from the game is in it: EDGEmat builds its library from your own game th
 [*]Cyberpunk 2077 on PC, Windows 10 or 11, 64-bit. Tested on game version 2.31.[/*]
 [*][url=https://code.visualstudio.com/]VS Code[/url] 1.70 or later (or VSCodium, or EDGEkit).[/*]
 [*]REDbridge 0.8.0 or later, the engine that reads the game's files. The easy way: install [url=https://github.com/Edgemodders/REDcode]REDcode[/url] and run its [b]Install REDbridge[/b], which also fetches .NET 10 for your Windows user. With REDcode set up, EDGEmat needs no configuration at all.[/*]
-[*]For View in 3D: REDcode.[/*]
+[*]To save into a mod and pack it: a WolvenKit project, and REDcode to pack it (REDcode makes the project too). For View in 3D: REDcode.[/*]
+[*]For materials from words: your own Google Gemini or OpenAI API key. Optional.[/*]
 [*]For the assistant: Node.js 20 or later, and Claude Code or another MCP client.[/*]
 [/list]
 
@@ -86,9 +101,8 @@ Or from a terminal: [i]code --install-extension edgemat-x.y.z.vsix[/i]. The step
 [size=5][b][color=#fcee0a]Roadmap[/color][/b][/size]
 
 [list]
-[*][b]Library[/b] and [b]Read[/b]: the library, surface pages, the setup editor, Find, View in 3D, the assistant's tools. Done: this version.[/*]
-[*][color=#19f3ff]Next:[/color] [b]Edit[/b]: change a layer's surface, color, tiling and detail, with undo, and save it into your mod project, or ask an assistant to.[/*]
-[*][b]Make[/b]: materials for new clothes and objects, from a model's textures, from a photo, or generated from your words ("brown leather") by an AI image service you choose, with your own key.[/*]
+[*][b]Library[/b], [b]Read[/b] and [b]Edit[/b]: the library, surface pages, the setup editor with editing and Save to Project, Find, View in 3D, New Material, the assistant's tools. Done: this version.[/*]
+[*][color=#19f3ff]Next:[/color] [b]Make[/b]: materials for brand-new clothes and objects, from a model's own textures, picked from the game, or generated; a mesh's looks.[/*]
 [*][b]Preview[/b]: shine, bumps, metal and detail on the 3D model, not just colors.[/*]
 [*][b]Beyond layers[/b]: colors no surface offers, other kinds of material.[/*]
 [*][b]Ship[/b]: the VS Code Marketplace and Open VSX.[/*]
@@ -101,13 +115,16 @@ The full plan, with every test: [url=https://edgemodders.github.io/EDGEmat/]EDGE
 No. It's a tool for making mods, running in VS Code. It reads the game's files and never changes them. Your game doesn't need it.
 
 [b]Can I recolor clothes with it now?[/b]
-Not yet. This preview shows you everything you need to know first: which files, which layers, which colors each surface offers. Editing is the next phase.
+Yes. Change a layer's surface, color and finish, save it into your project, and pack it with REDcode. A layer can take the colors its surface offers; truly free colors are a later phase.
+
+[b]Do the AI-made materials cost money?[/b]
+Only what your image service charges you, with your own key: a few cents a take. EDGEmat never comes with a key and sends nothing until you press Generate. A photo of your own costs nothing.
 
 [b]Do I need an AI or an account?[/b]
-No. EDGEmat works fully on its own. The AI assistant is optional; it uses your own Claude account.
+No. EDGEmat works fully on its own. The AI assistant is optional and uses your own Claude account; generating from words needs your own image service key.
 
 [b]How is it different from MlsetupBuilder?[/b]
-MlsetupBuilder is the editor many modders know, and EDGEmat learned from how it behaves. EDGEmat is a new editor written from scratch, in VS Code: it finds a garment's files from its name, describes layers in plain words, builds its library from your own game, and works with AI assistants.
+MlsetupBuilder is the editor many modders know, and EDGEmat learned from how it behaves. EDGEmat is a new editor written from scratch, in VS Code: it finds a garment's files from its name, describes layers in plain words, saves straight into a mod project with the meshes for both bodies, builds its library from your own game, makes materials from words, and works with AI assistants.
 
 [b]Single-player only?[/b]
 Yes. Cyberpunk 2077 is a single-player game, and EDGEmat is for single-player modding.

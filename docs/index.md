@@ -21,8 +21,8 @@ As of 2026-10-16.
 | M0 Spec | **Done 2026-10-16.** The [behavior spec](design/behavior.html) draft 0.2 is checked against the game and agreed; one bridge request filed and shipped ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)); the viewer hook requested ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); Neurolinked contacted |
 | M1 Library | **Done 2026-10-16** (smoke test and hand test in VS Code pass). The extension (0.1.0) with its activity bar container and Library view, the MCP server skeleton (`mat_library`, `mat_templates`, `mat_microblends`), the bridge client, and the library built from the game: 386 surfaces and 131 microblends in about 22 s, matching the game's counts (`npm run smoke` passes) |
 | M2 Read | **Done 2026-10-19.** The surface page, the read-only setup editor, Find and View in 3D, with MCP `mat_colors`, `mat_describe` and `mat_find`; every hand test, the CLI install test and the phase test passed (the jacket's layers match WolvenKit's reading field for field). Released with M3 in the 0.3 preview |
-| M3 Edit | **In progress.** Editing, Save to Project and MCP `mat_edit` built 2026-10-20; the owner's tests next. Then Generate's first slice from M4; ends with the first preview, 0.3.0 |
-| M4 Make (materials for new meshes, Generate) | Not started |
+| M3 Edit | **Done 2026-10-20.** Editing, Save to Project and MCP `mat_edit`, and Generate's first slice from M4: New Material and MCP `mat_generate`, `mat_from_image`, `mat_apply`. Every hand test passed, and recolors and generated materials were seen in the game. Released as the first preview, 0.3.0 |
+| M4 Make (materials for new meshes, Generate) | Generate's first slice done in M3; the rest not started |
 | M5 Preview | Not started |
 | M6 Beyond mlsetup | Not started |
 | M7 Ship | Not started |

@@ -12,7 +12,7 @@ Last updated 2026-10-20.
 | Extension | 0.1.0 plus M2 and M3: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | The wiki and the Nexus description for 0.3, then the 0.3.0 release on your go |
+| Next up | The 0.3.0 release on your go (the wiki, Nexus description and READMEs are updated for it) |
 | Roadmap | **M3 Edit** with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
@@ -20,7 +20,7 @@ Last updated 2026-10-20.
 | To-do | Why | Since |
 |---|---|---|
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
-| Screenshots: 6 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)) | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19 |
+| Screenshots: 8 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)), the two tutorials' in-game shots included | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
 | Try RED Hot Tools on the dev PC | Tells us whether hot-loading archives works today (design, "Hot-loading archives"), and tests REDcode's Pack and Try hot path. Planned for your next session at the PC | 2026-10-16 |
@@ -43,6 +43,7 @@ Last updated 2026-10-20.
 
 | What | Detail |
 |---|---|
+| Docs for 0.3 | The EDGEmat wiki in EDGEweb: editing and Save to Project in the setup editor page; new pages New Material and Your mod in the game (packing, the hot folder and REDmod pitfalls, CET); two tutorials from your tests, worn leather in the editor and snakeskin by asking Claude, with screenshot placeholders; the assistant's new tools and the key; settings, troubleshooting, install. The Nexus description and form for 0.3, with eight screenshot slots. The extension's and the repo's READMEs |
 | **Generate seen in the game** | Your New Material hand test passed, all 9 steps, with your own key: the first live calls to an image service. Then the round trip: worn leather from the page and a dark green snakeskin asked of Claude, on the two slim-fits, both in the game on your V. The pants keep their own folds at their normal size; the texture is fine and even, with no repeat seen; the panel lines read as stitching. M3's tests are all done ([Tests](testing.html#generate-round-trip)) |
 | **New Material built** | The page (Library title bar, or New Material Here on a material in Find, which targets both bodies): words or your own image, takes tiled 3 × 3, name, Repeat, Bumps, Shine, Metal, Add to Project. Keys in VS Code's secret storage (Set and Clear Image Service Key commands); a Cancel; the chosen model remembered. MCP `mat_generate`, `mat_from_image`, `mat_apply` (keys from the server's environment). Your hand test and the Generate round trip are next |
 | Generate's core | Behind the New Material page: the Gemini and OpenAI clients (models listed from your key's account, a time limit and cancel, errors in plain words, the texture prompt); an image made seamless, with bumps and shine maps derived; a material written into a project and put on mesh materials, with the repeat baked in on a garment. The smoke test runs both services against a stand-in server, so it needs no key |

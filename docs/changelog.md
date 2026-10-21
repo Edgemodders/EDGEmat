@@ -42,7 +42,7 @@ The first preview: EDGEmat reads a garment's materials, shows them in plain word
 
 - The log names REDcode's bridge when EDGEmat uses it.
 - The extension, the release and the Nexus zip carry the licenses of the open-source packages EDGEmat bundles (`THIRD-PARTY-NOTICES.txt`).
-- A user manual on the EDGEmodders wiki: https://edgemodders.ai/wiki/edgemat/
+- A user manual on the EDGEmodders wiki, with two tutorials (worn leather pants from words, snakeskin pants by asking Claude): https://edgemodders.ai/wiki/edgemat/
 
 ## 0.1.0 (2026-10-16), M1 Library
 
