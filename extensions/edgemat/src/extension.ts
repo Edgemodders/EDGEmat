@@ -8,6 +8,7 @@ import * as path from "node:path";
 import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library, type Project } from "./core";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
+import { MaterialPage } from "./materialPage";
 import { GameFiles, GameScheme, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
 import { SurfacePages } from "./surfacePage";
 
@@ -279,6 +280,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     packAndTry: packAndTryFor,
   };
   const setupEditor = new SetupEditor(host);
+  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndTry: packAndTryFor, log });
 
   context.subscriptions.push(
     output,
@@ -323,6 +325,10 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       if (p) await vscode.env.clipboard.writeText(p);
     }),
     vscode.commands.registerCommand("edgemat.viewIn3D", (node) => viewIn3D(FindView.meshOf(node))),
+    vscode.commands.registerCommand("edgemat.newMaterial", () => materialPage.open()),
+    vscode.commands.registerCommand("edgemat.newMaterialHere", (node) => materialPage.open(FindView.targetsOf(node))),
+    vscode.commands.registerCommand("edgemat.setImageKey", () => materialPage.setKey()),
+    vscode.commands.registerCommand("edgemat.clearImageKey", () => materialPage.clearKey()),
     materialsChanged,
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (["edgemat.gamePath", "edgemat.bridgePath", "edgemat.dotnetRoot", "redcode.gamePath", "redcode.bridgePath"].some((k) => e.affectsConfiguration(k))) {

@@ -3,7 +3,7 @@
 // mesh into its materials; a multilayered material opens its setup with the mask set it names.
 
 import * as vscode from "vscode";
-import { itemMaterials, loadItems, meshMaterials, searchItems, type BridgeClient, type ItemEntry, type ItemLook, type MaterialUse, type MeshLook } from "./core";
+import { itemMaterials, loadItems, meshMaterials, searchItems, type BridgeClient, type ItemEntry, type ItemLook, type MaterialTarget, type MaterialUse, type MeshLook } from "./core";
 import { gameUri, SetupEditor } from "./setupEditor";
 
 type Node =
@@ -11,8 +11,8 @@ type Node =
   | { kind: "item"; item: ItemEntry }
   | { kind: "look"; item: ItemEntry; look: ItemLook }
   | { kind: "meshFile"; path: string }
-  | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance" }
-  | { kind: "material"; use: MaterialUse; via: string }
+  | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance"; looks?: ItemLook[] }
+  | { kind: "material"; use: MaterialUse; via: string; mesh: string; targets: MaterialTarget[] }
   | { kind: "message"; text: string };
 
 const file = (p: string) => p.split("\\").pop() ?? p;
@@ -97,7 +97,8 @@ export class FindView implements vscode.TreeDataProvider<Node> {
       }
       case "look": {
         const via = `${node.item.name ?? node.item.id}, ${node.look.body}`;
-        return node.look.meshes.map((mesh): Node => ({ kind: "mesh", mesh, via, label: "file" }));
+        const looks = await this.walk(node.item);
+        return node.look.meshes.map((mesh): Node => ({ kind: "mesh", mesh, via, label: "file", looks: typeof looks === "string" ? undefined : looks }));
       }
       case "meshFile": {
         const bridge = await this.bridge();
@@ -110,7 +111,13 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         }
       }
       case "mesh":
-        return node.mesh.materials.map((use): Node => ({ kind: "material", use, via: node.via }));
+        return node.mesh.materials.map((use): Node => {
+          // The same material on every body's mesh of the item, so a new material goes on all of them.
+          const targets: MaterialTarget[] = [];
+          for (const look of node.looks ?? []) for (const m of look.meshes) if (m.materials.some((x) => x.name === use.name) && !targets.some((t) => t.mesh === m.mesh)) targets.push({ mesh: m.mesh, material: use.name });
+          if (!targets.some((t) => t.mesh === node.mesh.mesh)) targets.unshift({ mesh: node.mesh.mesh, material: use.name });
+          return { kind: "material", use, via: node.via, mesh: node.mesh.mesh, targets };
+        });
       default:
         return [];
     }
@@ -167,12 +174,13 @@ export class FindView implements vscode.TreeDataProvider<Node> {
           md.appendMarkdown("Multilayered. Click to open its setup with the mask set this material names.\n\n");
           md.appendCodeblock(`setup ${u.setup ?? "(none)"}\nmask  ${u.mask ?? "(none)"}${u.globalNormal ? `\nnormal ${u.globalNormal}` : ""}`, "text");
           if (u.setup) t.command = { command: "edgemat.openFoundSetup", title: "Open Setup", arguments: [u.setup, u.mask, node.via] };
-          t.contextValue = "edgemat.gamePath";
+          t.contextValue = "edgemat.gamePath edgemat.material";
         } else {
           t.description = file(u.base || "unknown material");
           t.iconPath = new vscode.ThemeIcon("circle-outline");
           md.appendMarkdown(`Not multilayered: EDGEmat edits these later (M6).${u.baseColor ? " Its color texture shows in View in 3D." : ""}\n\n`);
           if (u.baseColor) md.appendCodeblock(`color ${u.baseColor}`, "text");
+          t.contextValue = "edgemat.material";
         }
         if (u.base) md.appendCodeblock(`base ${u.base}${u.instances.length ? `\nvia  ${u.instances.join("\n     ")}` : ""}`, "text");
         t.tooltip = md;
@@ -190,6 +198,13 @@ export class FindView implements vscode.TreeDataProvider<Node> {
   static gamePathOf(node: unknown): string | undefined {
     const n = node as Node | undefined;
     return n?.kind === "meshFile" ? n.path : n?.kind === "mesh" ? n.mesh.mesh : n?.kind === "material" ? n.use.setup : undefined;
+  }
+
+  /** The mesh materials a new material goes on, from a material node: the same material on each body's mesh. */
+  static targetsOf(node: unknown): { targets: MaterialTarget[]; label: string } | undefined {
+    const n = node as Node | undefined;
+    if (n?.kind !== "material") return undefined;
+    return { targets: n.targets, label: `${n.use.name} · ${n.via}` };
   }
 
   /** The mesh behind a node, for View in 3D, with the look (mesh appearance) the node shows. */

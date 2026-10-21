@@ -17,6 +17,8 @@ Last updated 2026-10-20.
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
 | [View in 3D](#view-in-3d) | By hand, F5, with REDcode | M2 | 2026-10-19 | Pass |
 | [Setup editor: editing and Save to Project](#setup-editor-editing-and-save-to-project) | By hand, F5, with REDcode | M3 | 2026-10-20 | Pass |
+| [New Material](#new-material) | By hand, F5, with an image service key | M3 | | Not run yet |
+| [Generate round trip](#generate-round-trip) | In the game, with REDcode and Claude Code | M3 | | Not run yet |
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
@@ -172,6 +174,34 @@ All three go into the `EDGEmat_M3` project from the test above, on three garment
 | E | In the game, with Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Jacket_01_old_01", 1)`, `Game.AddToInventory("Items.Pants_03_basic_01", 1)`, `Game.AddToInventory("Items.CasualShoes_01_basic_01", 1)`. Equip all three; look in third person (photo mode or a mirror) and at your arms in first person | The jacket shows your blue and leather layer; the jeans are dark green; the sneakers have a red sole, a white collar lining and no black toe cap |
 | F | Screenshots before and after | Kept outside the repo |
 
+### New Material
+
+Built 2026-10-20 (M3, Generate's first slice). **Not run by the owner yet.** Before that: the page rendered in headless Chrome with a take (stubbed service), the smoke test's Generate checks, and `mat_from_image` and `mat_apply` over stdio. You need a REDcode project open (EDGEmat_M3 is fine) and, for steps 4 to 8, an API key for Google Gemini (aistudio.google.com › Get API key) or OpenAI (platform.openai.com › API keys; GPT Image may ask you to verify your organization first). Each Generate spends a few cents of your credits. `npm run build`, then F5; every step happens in the development host.
+
+| # | Do | Expected |
+|---|---|---|
+| 1 | EDGEmat's activity bar icon › the **Library** header › the sparkle icon (**New Material...**, leftmost) | A **New Material** tab: "Where it goes" says not on a mesh yet; **1. The image** with two tabs, From words (AI) and From an image file; a text box, Detail, the service (Google Gemini), the model ("Newest (listed when you generate)"), List models, a line on credits and the key, and **Generate** |
+| 2 | Close it. **Find** › `comfy rocker` › the item (Comfy rocker aramid-weave slim-fits) › your body › `l1_012_pw?_pants__jeans_tight.mesh` › hover the material **leather** › the sparkle icon at its right (or right-click › **New Material Here...**) | The tab opens titled "New Material: leather". "Where it goes" names leather on both meshes, `l1_012_pwa_...` and `l1_012_pma_...` (both bodies), and says the garment keeps its own folds |
+| 3 | Type `worn brown leather with fine creases`. Open **The words sent** | The words EDGEmat sends: a seamless texture of your words, flat light, no text or logos, and the detail size. Edit them and **Back to the standard words** appears |
+| 4 | Pick your service. Press **Generate** | A password box asks for the key the first time (it says where to make one). Then a notification "EDGEmat: generating with ..." with Cancel, and within about a minute **2. Takes** shows Take 1, selected, and **3. The material** shows it tiled 3 × 3. The model menu now lists your key's image models |
+| 5 | Press **Generate again**, then Cancel in the notification while it runs | The page says "Cancelled." in red; no take is added; nothing is charged for a cancelled call (unverified: the service may still count it) |
+| 6 | Generate once more, and click between the takes | The tiled view and the line under it follow the take you click. Look for seams in the 3 × 3 view: there should be none |
+| 7 | Under **3. The material**: name `worn leather`, Repeat 6, Bumps Moderate, Shine Satin. Press **Add to Project** | A notification "writing worn_leather into EDGEmat_M3", then "Saved worn_leather into EDGEmat_M3 and put on 2 mesh materials." with **Pack and Try** and **Show Files**. The page lists both meshes with "repeat in the texture, garment folds kept". In the project: `source\archive\edgemat\materials\worn_leather\` (textures and .mi files), the two slim-fits meshes, and `source\raw\edgemat\materials\worn_leather\` with the image and `worn_leather.edgemat.json` (service, model, prompt) |
+| 8 | **From an image file** › **Choose an image...** › any photo of a material on your PC | A take from the file, no key used |
+| 9 | Ctrl+Shift+P › **EDGEmat: Clear Image Service Key...** › your service | "the ... API key is cleared"; the next Generate asks again |
+
+### Generate round trip
+
+The M3 phase test's last row (design, "Phases"): a material generated from words goes on part of a garment and shows in the game, through the UI and by asking Claude. **Not run yet.**
+
+| # | Do | Expected |
+|---|---|---|
+| A | The material from the New Material test, step 7 (worn leather on the Comfy rocker slim-fits) | Saved already |
+| B | Register the MCP server with your key (`-e GEMINI_API_KEY=...`; [dev setup](dev-setup.html), section 4), start a new Claude Code session, and ask: "Using EDGEmat, make a dark green snakeskin material and put it on the Light Azure composite-lined slim-fits, both bodies, in my project <your EDGEmat_M3 folder>" | Claude finds the item's material (`mat_find`: flames_blue_pink on both meshes) and calls `mat_generate` with both targets; it says which files it wrote |
+| C | REDcode: **Pack and Install** with the game closed (or Pack and Try with the game running) | Packed and installed |
+| D | In the game: `Game.AddToInventory("Items.Pants_01_basic_01", 1)` and `Game.AddToInventory("Items.Pants_01_basic_02", 1)`. Equip each; photo mode front, back and side | The first pair worn leather, the second snakeskin, at a fine repeat, with the pants' own folds at their normal size (not the small repeated wrinkles of the tiling check's tile-4 pair). Note how the bumps and shine look, and any seams |
+| E | Screenshots of both | Shared with the session; kept outside the repo |
+
 ### Tiling check
 
 The open question "A tiled texture on a game garment" (design, "Open questions"): how a texture lies across a garment's UVs, and what `metal_base`'s `LayerTile` does. Its answer shapes how Generate puts a material on a garment. **Run 2026-10-20 by the owner on the laptop (feminine body), with screenshots from the front, back and side: done.** Tile 1: upright, even scale, no visible stretch; one leg mirrored (the front of V's right leg reads "5a", "E3"); the pattern breaks down each leg and across the top of the thighs. Tile 4: the squares a quarter the size, repeating across (column 8 beside column 1) and down (row 8 above row 1); the folds repeat with them: finer wrinkles down the legs, mostly at the front (the owner, in the game; darker creases at the same rows in the screenshots). Findings in the design's open questions.
@@ -266,6 +296,9 @@ Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`, `mat_describe`, `mat_fin
 | Started as a Claude Code plugin with its options left empty (`EDGEMAT_GAME_PATH`, `REDBRIDGE_EXE` and `EDGEMAT_CACHE` set to "") | `mat_find` item `sunny ammo` | Empty counts as unset: it falls back to the VS Code settings and walks the item (2 looks). Run 2026-10-17 over stdio |
 | "Make the jacket's biggest layer dark red and its next one glossy standard leather; just show me" | `mat_edit` with preview | Run 2026-10-20 over stdio on the Arasaka jacket's setup: layer 0 dark red (`c2162c_69039f`, distance 0.032), layer 2 leather standard clean, glossy to shiny, its color and bumps reset to the surface's defaults (said in notes); nothing written. "leather" alone is refused with the 7 surfaces it fits |
 | "... and save it into this project" | `mat_edit` with project | Run 2026-10-20 over stdio into a scratch project: the new setup `..._mcp_project.mlsetup` and the three meshes that use it (`t2_078_ma`, `_mb`, `_mm`), with the materials pointed at it |
+| "Make me a brown leather material" (no key in the server's environment) | `mat_generate` | Refused in words: set `GEMINI_API_KEY` or `OPENAI_API_KEY` in the MCP server's environment, with the `claude mcp add ... -e` form. Run 2026-10-20 over stdio |
+| "Make a material from this image and put it on the Comfy rocker slim-fits, both bodies" | `mat_from_image` with targets | Run 2026-10-20 over stdio into a scratch project, repeat 6: the plain material and textures in `edgemat\materials\rust_plate\`, both bodies' meshes with `leather` on `rust_plate_x6_..._n01.mi` (repeat in the texture, the garment's normal map kept), the image and its record in `source\raw` |
+| "Put that material on the Light Azure look too" | `mat_apply` | Run 2026-10-20 over stdio: the masculine mesh's `flames_blue_pink` on `rust_plate.mi`; an unknown material name is refused with the mesh's names |
 | "Describe the sneakers' red_yellow_graphic setup" | `mat_describe` with the game path | 20 layers, 19 shown, the converse mask set and the songbird one as another choice, a color map file, each layer in plain words with its share. Run 2026-10-17 over stdio: layer 7 rubber bumper damaged, black, 11.3% |
 
 ## M0: the spec against the game

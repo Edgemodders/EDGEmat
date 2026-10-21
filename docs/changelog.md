@@ -11,7 +11,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
-The first preview: EDGEmat reads a garment's materials, shows them in plain words and in 3D, and recolors them into your mod project, in the editor or by asking an assistant.
+The first preview: EDGEmat reads a garment's materials, shows them in plain words and in 3D, recolors them into your mod project, and makes new materials from words or a photo, in the editor or by asking an assistant.
 
 **New**
 
@@ -23,6 +23,8 @@ The first preview: EDGEmat reads a garment's materials, shows them in plain word
 - Editing in the setup editor: click a layer and change its surface, its color (from the surface's own, filtered by words such as "blue"), roughness, metal, bumps, tiling, offset, opacity and microblend. Each change shows at once; Ctrl+Z and Ctrl+Y undo and redo. A new surface resets the layer's color and finish to that surface's defaults, and says so.
 - **Save to Project**: saves a setup into your WolvenKit project (REDcode's open project, or one you pick). **As a new setup** writes it beside the original under a new name and copies the meshes that use it into the project, pointed at it: it shows in the game with no other mod. Or in place of the game's setup (needs the Material Texture Override mod), or at a path you choose. Then REDcode's Pack and Try is one click away. Ctrl+S on a game file, or on a file outside a project, opens Save to Project; a project's own file saves in place.
 - MCP `mat_edit`: an assistant recolors a setup in words ("dark red", "glossy", "leather standard clean") and saves it into a project the same way, or only previews the result.
+- **New Material**: a new material from words, through Google Gemini (Nano Banana) or OpenAI (GPT Image) with your own key and credits, or from your own photo with no service. Each Generate adds a take, shown tiled 3 × 3 so seams show; the one you pick is made seamless, gets bumps and shine from its light and dark, and is written into your project as textures and a material. Open it from the Library's title bar, or from a material in Find (**New Material Here**) to put it on that material for both bodies; on a garment the garment keeps its own folds. Your key stays in VS Code's secret storage, and nothing is sent until you press Generate. How each material was made (service, model, words) is kept beside it.
+- MCP `mat_generate`, `mat_from_image` and `mat_apply`: an assistant makes a material from words (with a key in the server's environment) or from an image file, and puts it on a garment's materials.
 
 **Fixed**
 

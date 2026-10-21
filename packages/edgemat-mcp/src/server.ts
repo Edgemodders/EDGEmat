@@ -11,11 +11,14 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { z } from "zod";
 import {
   applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
-  type ColorInfo, type LayerInfo, type Library, type MaterialUse, type MeshLook, type MeshSearch, type SettingsReader, type Template,
+  applyMaterial, generateImage, imageAsPng, listModels, makeMaterial, materialSlug, texturePrompt, Services,
+  type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
 declare const __VERSION__: string;
@@ -375,6 +378,133 @@ server.registerTool(
         items: { total: foundItems.length, list: foundItems.slice(0, limit).map((i) => ({ id: i.id, name: i.name, slot: i.slot })) },
         meshes: { total: meshes.length, list: meshes.slice(0, limit) },
       });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+// ---- Generate a material (design, "Generate a material"; the New Material page's twin) ------------------
+
+const TargetSchema = z.object({
+  mesh: z.string().describe("A mesh's game path, as mat_find lists it"),
+  material: z.string().describe("The material entry's name in that mesh, as mat_find lists it"),
+});
+const MaterialOptions = {
+  name: z.string().optional().describe("The material's name, made into file names ('brown leather' > brown_leather); default from the words or the file"),
+  repeat: z.number().int().min(1).max(32).default(4).describe("How many times it repeats across the garment or object; more is finer"),
+  bumps: z.number().min(0).max(2).default(1).describe("0 flat, 0.5 light, 1 moderate, 2 strong; made from the image's light and dark"),
+  shine: z.enum(["matte", "satin", "glossy"]).default("satin"),
+  metal: z.boolean().default(false),
+  targets: z.array(TargetSchema).optional().describe("Mesh materials to put it on. For a garment, list the same material on each body's mesh (mat_find's looks). On a garment the repeat is baked into the texture and the garment keeps its own folds"),
+};
+
+function projectFor(project: string | undefined) {
+  if (!project) throw new Error("Pass project: the WolvenKit project folder to write into.");
+  const p = projectAt(project);
+  if (!p) throw new Error(`${project} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`);
+  return p;
+}
+
+const materialOutResult = (r: MaterialResult, project: string) => ({
+  saved: { project, material: r.mi, folder: r.folder, applied: r.applied, files: r.written, image: r.raw[0], record: r.raw[1] },
+  next: r.applied.length
+    ? "Pack the project and install it (REDcode: Pack and Try, or Pack and Install with the game closed), then look at the garment in the game."
+    : "Not put on any mesh: pass targets (mat_find lists meshes and material names), or mat_apply the .mi later.",
+});
+
+server.registerTool(
+  "mat_generate",
+  {
+    description:
+      "Makes a new material from words through an AI image service, as EDGEmat's New Material page does: the image is made seamless, bumps and shine are derived, and it is written into a WolvenKit project " +
+      "as textures and a textured .mi (metal_base), and put on the target mesh materials. Spends the user's credits with their own key, from the environment: GEMINI_API_KEY (service gemini) or OPENAI_API_KEY (service openai). " +
+      "words: the material, such as 'worn brown leather with fine creases'; EDGEmat adds a prefix asking for a seamless texture in flat light with no text. " +
+      "imageOnly true makes only the image and returns its file, to look at before using it with mat_from_image. A generated material replaces a whole material: on a garment it covers every part that material paints.",
+    inputSchema: {
+      words: z.string(),
+      detail: z.enum(["fine", "medium", "coarse"]).default("medium"),
+      service: z.enum(["gemini", "openai"]).optional().describe("Default: the first with a key in the environment"),
+      model: z.string().optional().describe("Default: the newest image model the key can use"),
+      quality: z.enum(["low", "medium", "high"]).default("medium").describe("OpenAI only"),
+      prompt: z.string().optional().describe("The whole prompt, instead of the prefix plus words"),
+      imageOnly: z.boolean().default(false),
+      project: z.string().optional(),
+      ...MaterialOptions,
+    },
+  },
+  async ({ words, detail, service, model, quality, prompt, imageOnly, project, name, repeat, bumps, shine, metal, targets }) => {
+    try {
+      const s: ServiceId | undefined = service ?? (env(Services.gemini.env) ? "gemini" : env(Services.openai.env) ? "openai" : undefined);
+      if (!s) return failure(new Error("No image service key: set GEMINI_API_KEY or OPENAI_API_KEY in the MCP server's environment (for Claude Code: claude mcp add ... -e GEMINI_API_KEY=...)."));
+      const key = env(Services[s].env);
+      if (!key) return failure(new Error(`No ${Services[s].name} key: set ${Services[s].env} in the MCP server's environment.`));
+      const p = imageOnly ? undefined : projectFor(project);
+      const chosen = model ?? (await listModels(s, { key, timeoutMs: 30_000 }))[0]?.id;
+      if (!chosen) return failure(new Error(`${Services[s].name} lists no image models for this key.`));
+      const fullPrompt = prompt ?? texturePrompt(words, detail);
+      const started = Date.now();
+      const img = await generateImage(s, chosen, fullPrompt, { key, quality });
+      log(`${Services[s].name} ${chosen} made an image in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+      const b = await getBridge();
+      const png = await imageAsPng(b, img.bytes, img.mime.includes("jpeg") ? ".jpg" : ".png");
+      const made = { service: Services[s].name, model: chosen, prompt: fullPrompt, words };
+      if (!p) {
+        const dir = path.join(cacheDir, "generated");
+        fs.mkdirSync(dir, { recursive: true });
+        const file = path.join(dir, `${materialSlug(name ?? words)}-${new Date().toISOString().replace(/[:.]/g, "-")}.png`);
+        fs.writeFileSync(file, png);
+        fs.writeFileSync(file.replace(/\.png$/, ".json"), JSON.stringify({ made: new Date().toISOString(), ...made }, null, 2));
+        return text({ image: file, ...made, next: "Look at the image; then mat_from_image with this file, a project and targets." });
+      }
+      const r = await makeMaterial(b, p.archive, { name: name ?? words, image: png, repeat, bumps, shine, metal, made }, targets ?? []);
+      return text({ ...made, ...materialOutResult(r, p.dir) });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+server.registerTool(
+  "mat_from_image",
+  {
+    description:
+      "Makes a new material from an image file (a photo or texture: PNG, JPG, TGA, DDS, BMP or TIFF), with no AI service: made square and seamless, bumps and shine derived, written into a WolvenKit project " +
+      "as textures and a textured .mi (metal_base), and put on the target mesh materials. Also the second step after mat_generate with imageOnly.",
+    inputSchema: { file: z.string(), project: z.string(), ...MaterialOptions },
+  },
+  async ({ file, project, name, repeat, bumps, shine, metal, targets }) => {
+    try {
+      if (!fs.existsSync(file)) return failure(new Error(`No file at ${file}.`));
+      const p = projectFor(project);
+      const b = await getBridge();
+      const png = await imageAsPng(b, fs.readFileSync(file), path.extname(file));
+      // An image from mat_generate keeps its record.
+      const record = file.replace(/\.[^.]+$/, ".json");
+      const made = fs.existsSync(record) ? { ...JSON.parse(fs.readFileSync(record, "utf8")), file } : { file };
+      const r = await makeMaterial(b, p.archive, { name: name ?? path.basename(file, path.extname(file)).replace(/-\d{4}-\d\d-\d\dT.*$/, "").replace(/[_-]+/g, " "), image: png, repeat, bumps, shine, metal, made }, targets ?? []);
+      return text(materialOutResult(r, p.dir));
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+server.registerTool(
+  "mat_apply",
+  {
+    description:
+      "Puts an existing material (.mi, a game path, such as one mat_from_image wrote) on mesh materials: each mesh is copied into the project (or its copy there changed) and the named material entry takes the .mi as it is. " +
+      "Unlike mat_generate and mat_from_image it does not bake a repeat for a garment; to put a new material on a garment, make it with targets instead.",
+    inputSchema: { project: z.string(), mi: z.string(), targets: z.array(TargetSchema).min(1) },
+  },
+  async ({ project, mi, targets }) => {
+    try {
+      const p = projectFor(project);
+      const b = await getBridge();
+      const written: string[] = [];
+      for (const t of targets) for (const f of await applyMaterial(b, p.archive, t.mesh, t.material, mi)) if (!written.includes(f)) written.push(f);
+      return text({ saved: { project: p.dir, mi, targets, files: written }, next: "Pack the project and install it (REDcode: Pack and Try), then look in the game." });
     } catch (e) {
       return failure(e);
     }

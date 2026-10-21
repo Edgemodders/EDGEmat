@@ -40,7 +40,10 @@
     "onView:edgemat.find",
     "onCustomEditor:edgemat.setup",
     "onFileSystem:edgemat-game",
-    "onCommand:edgemat.saveToProject"
+    "onCommand:edgemat.saveToProject",
+    "onCommand:edgemat.newMaterial",
+    "onCommand:edgemat.setImageKey",
+    "onCommand:edgemat.clearImageKey"
   ],
   "contributes": {
     "viewsContainers": {
@@ -186,10 +189,37 @@
         "title": "Save to Project...",
         "category": "EDGEmat",
         "icon": "$(save-as)"
+      },
+      {
+        "command": "edgemat.newMaterial",
+        "title": "New Material...",
+        "category": "EDGEmat",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "edgemat.newMaterialHere",
+        "title": "New Material Here...",
+        "category": "EDGEmat",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "edgemat.setImageKey",
+        "title": "Set Image Service Key...",
+        "category": "EDGEmat"
+      },
+      {
+        "command": "edgemat.clearImageKey",
+        "title": "Clear Image Service Key...",
+        "category": "EDGEmat"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "edgemat.newMaterial",
+          "when": "view == edgemat.library",
+          "group": "navigation@0"
+        },
         {
           "command": "edgemat.find",
           "when": "view == edgemat.find",
@@ -244,13 +274,23 @@
         },
         {
           "command": "edgemat.copyGamePath",
-          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)$/",
+          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)( |$)/",
           "group": "inline"
         },
         {
           "command": "edgemat.copyGamePath",
-          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)$/",
+          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)( |$)/",
           "group": "copy@1"
+        },
+        {
+          "command": "edgemat.newMaterialHere",
+          "when": "view == edgemat.find && viewItem =~ /edgemat\\.material$/",
+          "group": "inline"
+        },
+        {
+          "command": "edgemat.newMaterialHere",
+          "when": "view == edgemat.find && viewItem =~ /edgemat\\.material$/",
+          "group": "make@1"
         }
       ],
       "commandPalette": [
@@ -281,6 +321,10 @@
         {
           "command": "edgemat.saveToProject",
           "when": "activeCustomEditorId == edgemat.setup"
+        },
+        {
+          "command": "edgemat.newMaterialHere",
+          "when": "false"
         }
       ],
       "editor/title": [

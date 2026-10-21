@@ -79,6 +79,12 @@ Register the MCP server with Claude Code (no options needed on a PC with REDcode
 claude mcp add --scope user edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
 ```
 
+For `mat_generate`, the server reads the image service's key from its environment (it cannot read VS Code's secret storage). Add `-e` with your own key, for one or both services; remove and add again to change it (`claude mcp remove --scope user edgemat`). `mat_from_image` and `mat_apply` need no key.
+
+```powershell
+claude mcp add --scope user edgemat -e GEMINI_API_KEY=<your key> -e OPENAI_API_KEY=<your key> -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
+```
+
 ### Releasing
 
 From 0.3.0, the first preview (0.2.0 was never released). `.github/workflows/publish.yml` runs on a `v*` tag: it checks the tag against both packages' versions, takes the release notes from the version's section of [`docs/changelog.md`](changelog.html) (and stops when there is none), typechecks, builds, packages the VSIX for Windows x64, and makes the GitHub release with the VSIX, the MCP server as `edgemat-mcp-<version>.cjs`, the Nexus Mods zip `EDGEmat-<version>-nexus.zip` ([`nexus/README.md`](https://github.com/Edgemodders/EDGEmat/blob/main/nexus/README.md)) and `THIRD-PARTY-NOTICES.txt`. Versions before 1.0 are marked pre-release. No Marketplace, Open VSX or npm until M7.

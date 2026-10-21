@@ -71,6 +71,18 @@ function statusWords(service: ServiceInfo, status: number): string {
   return `${service.name} refused the request`;
 }
 
+/** One signal that aborts when any of them does (AbortSignal.any, where the runtime lacks it). */
+function anySignal(signals: AbortSignal[]): AbortSignal | undefined {
+  if (!signals.length) return undefined;
+  if (typeof (AbortSignal as { any?: unknown }).any === "function") return AbortSignal.any(signals);
+  const c = new AbortController();
+  for (const s of signals) {
+    if (s.aborted) c.abort(s.reason);
+    else s.addEventListener("abort", () => c.abort(s.reason), { once: true });
+  }
+  return c.signal;
+}
+
 async function call(service: ServiceInfo, path: string, opts: CallOptions, init: { method?: string; body?: unknown; headers: Record<string, string> }): Promise<any> {
   const limit = opts.timeoutMs ?? 180_000;
   const signals = [opts.signal, limit > 0 ? AbortSignal.timeout(limit) : undefined].filter(Boolean) as AbortSignal[];
@@ -81,7 +93,7 @@ async function call(service: ServiceInfo, path: string, opts: CallOptions, init:
       method: init.method ?? (init.body === undefined ? "GET" : "POST"),
       headers: { ...init.headers, ...(init.body === undefined ? {} : { "content-type": "application/json" }) },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
-      signal: signals.length ? AbortSignal.any(signals) : undefined,
+      signal: anySignal(signals),
     });
   } catch (e) {
     if (opts.signal?.aborted) throw new ImageServiceError("Cancelled.");
