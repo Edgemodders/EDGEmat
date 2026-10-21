@@ -11,6 +11,8 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+## 0.3.0 (2026-10-20)
+
 The first preview: EDGEmat reads a garment's materials, shows them in plain words and in 3D, recolors them into your mod project, and makes new materials from words or a photo, in the editor or by asking an assistant.
 
 **New**
@@ -42,6 +44,7 @@ The first preview: EDGEmat reads a garment's materials, shows them in plain word
 
 - The log names REDcode's bridge when EDGEmat uses it.
 - The extension, the release and the Nexus zip carry the licenses of the open-source packages EDGEmat bundles (`THIRD-PARTY-NOTICES.txt`).
+- On the VS Code Marketplace and Open VSX: search for EDGEmat in VS Code's Extensions view. The MCP server is a file on the GitHub release.
 - A user manual on the EDGEmodders wiki, with two tutorials (worn leather pants from words, snakeskin pants by asking Claude): https://edgemodders.ai/wiki/edgemat/
 
 ## 0.1.0 (2026-10-16), M1 Library

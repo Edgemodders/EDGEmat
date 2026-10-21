@@ -1,10 +1,15 @@
 {
   "name": "edgemat",
   "displayName": "EDGEmat",
-  "description": "The EDGE material editor for Cyberpunk 2077: browse the game's surfaces and microblends, recolor garments and see the result.",
+  "description": "The EDGE material editor for Cyberpunk 2077: find a garment's materials by its name, recolor its layers, make new materials from your words, and save them into your mod.",
   "publisher": "edgemodders",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "license": "MIT",
+  "preview": true,
+  "galleryBanner": {
+    "color": "#08090d",
+    "theme": "dark"
+  },
   "icon": "images/icon.png",
   "repository": {
     "type": "git",

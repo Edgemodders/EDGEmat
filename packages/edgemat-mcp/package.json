@@ -1,7 +1,7 @@
 {
   "name": "@edgemodders/edgemat-mcp",
-  "version": "0.1.0",
-  "description": "EDGEmat for AI assistants over MCP: the Cyberpunk 2077 material library built from your own game, and later finding, describing and recoloring materials.",
+  "version": "0.3.0",
+  "description": "EDGEmat for AI assistants over MCP: find, describe and recolor Cyberpunk 2077 materials, and make new ones, with the material library built from your own game.",
   "license": "MIT",
   "author": "Edgemodders",
   "homepage": "https://edgemodders.github.io/EDGEmat/",

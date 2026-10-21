@@ -85,7 +85,7 @@ Last updated 2026-10-20.
 
 | What | Detail |
 |---|---|
-| Release plan | A **0.2.0 preview** on GitHub at the end of M2: the VSIX and the MCP server as one file, marked pre-release. No Marketplace, Open VSX or npm until M7, so nobody installs a read-only build from a store expecting editing. The release workflow makes it from a `v*` tag |
+| Release plan | The first preview is **0.3.0**, at the end of M3: the VS Code Marketplace and Open VSX, and a GitHub release with the VSIX, the MCP server as one file and the Nexus zip. The release workflow makes it from a `v*` tag. npm for the MCP server waits for M7 |
 | Test build sent | `edgemat-0.1.0-m2-preview.vsix` (everything through M2), for your laptop. It shows as 0.1.0; 0.2.0 installs over it |
 | EDGEchat | Its design plans an `edgemat` server. `edgemat-mcp` now treats an empty setting as unset, so EDGEchat needs no wrapper script for it. It needs the npm package (M7, or earlier if you want) |
 
@@ -147,6 +147,7 @@ Last updated 2026-10-20.
 | REDcode shows meshes, EDGEmat renders materials | No second mesh viewer; loose coupling through an API | 2026-10-15 |
 | EDGEfab owns new assets; EDGEmat owns materials and looks | Keeps each tool to one job | 2026-10-16 |
 | MlsetupBuilder is studied, never copied | It is GPL-3.0; EDGEmat is MIT | 2026-10-14 |
+| The preview goes to the Marketplace and Open VSX, not only GitHub | It edits and makes materials now, so a store install gets what the page promises; you install it from the store, as REDcode and EDGEdeck. Was M7 | 2026-10-20 |
 | M4 Make comes before the preview | EDGEfab needs materials for new meshes; a textured `.mi` is seen without the layered bake | 2026-10-19 |
 | Generated images become textured `.mi` materials, not layers | A layer has no color texture | 2026-10-19 |
 | AI generation follows EDGEwave's idiom; keys in VS Code's secret storage, environment variables for MCP | One look across the EDGE tools; the MCP server cannot read VS Code's secrets | 2026-10-19 |

@@ -31,9 +31,12 @@ fs.writeFileSync(
   path.join(stage, "README.txt"),
   [
     `EDGEmat ${version}: the EDGE material editor for Cyberpunk 2077, a VS Code extension.`,
-    "A preview: it reads a garment's materials and shows them, in plain words and in 3D. It does not edit them yet.",
+    "A preview: it finds a garment's materials, recolors them, and makes new materials from your words.",
     "",
     "This is a VS Code extension, not a game mod. Do not install it with Vortex.",
+    "",
+    "The easy way: search for EDGEmat in VS Code's Extensions view (Ctrl+Shift+X) and click",
+    "Install. It updates itself from then on. Or install the file in this folder:",
     "",
     "Install:",
     "  1. In VS Code (or VSCodium, or EDGEkit), open the Extensions view (Ctrl+Shift+X).",
