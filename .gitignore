@@ -14,3 +14,6 @@ rtti-dump*
 # generated from docs/changelog.md when the extension is packaged (tools/release/notes.mjs)
 extensions/edgemat/CHANGELOG.md
 extensions/edgemat/THIRD-PARTY-NOTICES.txt
+# copied beside the MCP server when it goes to npm (.github/workflows/publish.yml)
+packages/edgemat-mcp/LICENSE
+packages/edgemat-mcp/THIRD-PARTY-NOTICES.txt
