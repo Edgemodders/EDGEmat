@@ -5,12 +5,12 @@
 import * as vscode from "vscode";
 import type { EdgematApi } from "./api";
 import * as path from "node:path";
-import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library, type Project } from "./core";
+import { BridgeClient, buildLibrary, defaultCacheDir, findGames, gamePathInProject, isCurrent, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library, type Project } from "./core";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
 import { MaterialPage } from "./materialPage";
 import { connectAssistant, installServer, registerWithEditor } from "./mcp";
-import { GameFiles, GameScheme, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
+import { GameFiles, gamePathOfUri, GameScheme, gameUri, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
 import { SurfacePages } from "./surfacePage";
 
 /** The parts of REDcode's API (version 1, docs/api.md) EDGEmat uses. project and packAndTry came after 0.9.0. */
@@ -252,6 +252,34 @@ async function viewIn3D(target: { mesh: string; appearance?: string } | undefine
   if (target.appearance) vscode.window.setStatusBarMessage(`$(eye) EDGEmat: pick the look "${target.appearance}" in the 3D view`, 15000);
 }
 
+/**
+ * What Open Material in EDGEmat was given: a file from the Explorer or an editor tab (a Uri), a node of
+ * REDcode's Project view ({ file }, docs/api.md there), or a game path.
+ */
+function materialUri(arg: unknown): vscode.Uri | undefined {
+  if (arg instanceof vscode.Uri) return arg;
+  if (typeof arg === "string" && arg.trim()) return path.isAbsolute(arg) ? vscode.Uri.file(arg) : gameUri(arg.trim());
+  const file = (arg as { file?: unknown } | undefined)?.file;
+  if (typeof file === "string") return vscode.Uri.file(file);
+  return undefined;
+}
+
+/** Opens a material file in the EDGEmat page for its kind: a setup in the setup editor, a surface on its page. */
+async function openMaterial(arg: unknown, host: SetupEditorHost): Promise<void> {
+  const uri = materialUri(arg) ?? vscode.window.activeTextEditor?.document.uri;
+  if (!uri) return openSetupCommand(host);
+  const name = uri.path.toLowerCase();
+  if (/\.mlsetup(\.json)?$/.test(name)) {
+    await vscode.commands.executeCommand("vscode.openWith", uri, SetupEditor.viewType);
+  } else if (name.endsWith(".mltemplate")) {
+    const gamePath = gamePathOfUri(uri) ?? (uri.scheme === "file" ? gamePathInProject(uri.fsPath) : undefined);
+    if (gamePath) host.openSurface(gamePath);
+    else void vscode.window.showInformationMessage("EDGEmat opens a surface (.mltemplate) from the game or a project's source\\archive folder.");
+  } else {
+    void vscode.window.showInformationMessage(`EDGEmat opens setups (.mlsetup) and surfaces (.mltemplate). Other material files come later.`);
+  }
+}
+
 export function activate(context: vscode.ExtensionContext): EdgematApi {
   output = vscode.window.createOutputChannel("EDGEmat");
   view = new LibraryView();
@@ -303,6 +331,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     vscode.window.registerCustomEditorProvider(SetupEditor.viewType, setupEditor, { supportsMultipleEditorsPerDocument: true }),
     vscode.commands.registerCommand("edgemat.saveToProject", () => setupEditor.saveActiveToProject()),
     vscode.commands.registerCommand("edgemat.openSetup", () => openSetupCommand(host)),
+    vscode.commands.registerCommand("edgemat.openMaterial", (arg) => openMaterial(arg, host)),
     vscode.commands.registerCommand("edgemat.openItem", (node) => {
       const subject = LibraryView.subjectOf(node);
       if (subject) void pages.show(subject);

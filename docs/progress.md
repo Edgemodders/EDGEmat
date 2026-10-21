@@ -12,7 +12,7 @@ Last updated 2026-10-20.
 | Extension | 0.3.0: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
+| Next up | Your hand test of Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
 | Roadmap | M3 Edit with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
@@ -40,12 +40,18 @@ Last updated 2026-10-20.
 
 ## Log
 
+### 2026-10-21
+
+| What | Detail |
+|---|---|
+| **Open Material in EDGEmat...** | A right-click entry on `.mlsetup`, `.mlsetup.json` and `.mltemplate` files: in the Explorer, on an editor tab, and in REDcode's Project view, where REDcode 0.10.3 marks `.mlsetup` files for EDGEmat (`viewItem` `projectFile.mlsetup`; REDcode's `docs/api.md`). A setup opens in the setup editor, a surface on its page. Asked for by the owner ahead of REDcode's request: clicking a `.mlsetup` in REDcode's Project view opens REDcode's own editor ("Multilayer_Setup"), not EDGEmat's. REDcode 0.10.3 is not released yet (0.10.2 is the latest), so the Project view entry shows only then. Type check and build pass; the hand test is next |
+| **EDGEchat uses `@edgemodders/edgemat-mcp`** | EDGEchat gives the npm package to Claude Code, with `EDGEMAT_GAME_PATH`, `REDBRIDGE_EXE`, `GEMINI_API_KEY` and `OPENAI_API_KEY` from its own settings form, as it does for edgedeck-mcp and redcode-mcp. 0.3.1 is on npm (`latest`), and the variables already win over VS Code's settings (an empty one counts as unset). The package README said the reverse: fixed 2026-10-21, on npm with the next release |
+| **0.3.1: the MCP server comes with the extension** | Another session saw that 0.3.0's server was only a file on the GitHub release, so a Marketplace install had no assistant tools. Now the VSIX carries it and copies it to `%LOCALAPPDATA%\EDGEmat\mcp\edgemat-mcp.cjs` (one path for every version); **Connect an Assistant (MCP)...** registers it with Claude Code; VS Code 1.101+ sees it with no setup (guarded, so editors without that API, such as EDGEkit without Copilot, just skip it); and it is on npm as `@edgemodders/edgemat-mcp`. Checked here: the bundled server answers under Node and under VS Code's own binary, all 10 tools |
+
 ### 2026-10-20
 
 | What | Detail |
 |---|---|
-| **EDGEchat uses `@edgemodders/edgemat-mcp`** | EDGEchat gives the npm package to Claude Code, with `EDGEMAT_GAME_PATH`, `REDBRIDGE_EXE`, `GEMINI_API_KEY` and `OPENAI_API_KEY` from its own settings form, as it does for edgedeck-mcp and redcode-mcp. 0.3.1 is on npm (`latest`), and the variables already win over VS Code's settings (an empty one counts as unset). The package README said the reverse: fixed 2026-10-21, on npm with the next release |
-| **0.3.1: the MCP server comes with the extension** | Another session saw that 0.3.0's server was only a file on the GitHub release, so a Marketplace install had no assistant tools. Now the VSIX carries it and copies it to `%LOCALAPPDATA%\EDGEmat\mcp\edgemat-mcp.cjs` (one path for every version); **Connect an Assistant (MCP)...** registers it with Claude Code; VS Code 1.101+ sees it with no setup (guarded, so editors without that API, such as EDGEkit without Copilot, just skip it); and it is on npm as `@edgemodders/edgemat-mcp`. Checked here: the bundled server answers under Node and under VS Code's own binary, all 10 tools |
 | **0.3.0 released** | The first preview, on your go: the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat) (your call: not only GitHub, as REDcode), and the [GitHub release](https://github.com/Edgemodders/EDGEmat/releases/tag/v0.3.0) with the VSIX, the MCP server file and the Nexus zip. The wiki's install page now starts from the Marketplace. Your six in-game shots fill the two tutorials |
 | Docs for 0.3 | The EDGEmat wiki in EDGEweb: editing and Save to Project in the setup editor page; new pages New Material and Your mod in the game (packing, the hot folder and REDmod pitfalls, CET); two tutorials from your tests, worn leather in the editor and snakeskin by asking Claude, with screenshot placeholders; the assistant's new tools and the key; settings, troubleshooting, install. The Nexus description and form for 0.3, with eight screenshot slots. The extension's and the repo's READMEs |
 | **Generate seen in the game** | Your New Material hand test passed, all 9 steps, with your own key: the first live calls to an image service. Then the round trip: worn leather from the page and a dark green snakeskin asked of Claude, on the two slim-fits, both in the game on your V. The pants keep their own folds at their normal size; the texture is fine and even, with no repeat seen; the panel lines read as stitching. M3's tests are all done ([Tests](testing.html#generate-round-trip)) |

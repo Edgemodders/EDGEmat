@@ -49,7 +49,8 @@
     "onCommand:edgemat.newMaterial",
     "onCommand:edgemat.setImageKey",
     "onCommand:edgemat.clearImageKey",
-    "onCommand:edgemat.connectAssistant"
+    "onCommand:edgemat.connectAssistant",
+    "onCommand:edgemat.openMaterial"
   ],
   "contributes": {
     "viewsContainers": {
@@ -223,6 +224,12 @@
         "title": "Connect an Assistant (MCP)...",
         "category": "EDGEmat",
         "icon": "$(plug)"
+      },
+      {
+        "command": "edgemat.openMaterial",
+        "title": "Open Material in EDGEmat...",
+        "category": "EDGEmat",
+        "icon": "$(symbol-color)"
       }
     ],
     "menus": {
@@ -280,6 +287,11 @@
       ],
       "view/item/context": [
         {
+          "command": "edgemat.openMaterial",
+          "when": "view == redcode.project && viewItem =~ /^projectFile\\.mlsetup/",
+          "group": "navigation@1"
+        },
+        {
           "command": "edgemat.viewIn3D",
           "when": "view == edgemat.find && viewItem == edgemat.mesh",
           "group": "inline"
@@ -312,6 +324,10 @@
       ],
       "commandPalette": [
         {
+          "command": "edgemat.openMaterial",
+          "when": "false"
+        },
+        {
           "command": "edgemat.copyGamePath",
           "when": "false"
         },
@@ -342,6 +358,20 @@
         {
           "command": "edgemat.newMaterialHere",
           "when": "false"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "edgemat.openMaterial",
+          "when": "resourceFilename =~ /\\.(mlsetup|mlsetup\\.json|mltemplate)$/i",
+          "group": "navigation@9"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "edgemat.openMaterial",
+          "when": "resourceFilename =~ /\\.(mlsetup|mlsetup\\.json|mltemplate)$/i",
+          "group": "1_open@9"
         }
       ],
       "editor/title": [

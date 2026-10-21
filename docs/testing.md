@@ -22,6 +22,7 @@ Last updated 2026-10-20.
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
+| [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
@@ -280,6 +281,19 @@ Built 2026-10-19. **Last run 2026-10-19 by the owner through F5: all 7 checks pa
 | The same layers as WolvenKit | The Arasaka samurai jacket's setup (`ml_t2_078_ma_jacket__samurai.mlsetup`, the material `ml_t2_078_ma_jacket__samurai_masksset` on `t2_078_ma_jacket__samurai.mesh`, look `default`), read by EDGEmat and compared field by field with WolvenKit's own JSON of the file (REDbridge's `toJson` runs WolvenKit's reader) | 20 of 20 layers; all 360 fields equal (surface, color, tiling, offsets, opacity, levels, microblend and its settings); no field EDGEmat ignores; ratio and useNormal equal |
 | Claude describes it correctly | `mat_describe` over stdio, as Claude Code calls it, and Claude's description from it | 14 of 20 layers shown, with their surfaces, colors, finishes and shares. The owner: "100% accurate". The white stitching is not in the setup but a separate decal material on the mesh (`pasted__decal_stitches`, `garment_decals_d01.xbm`), which `mat_find` lists: a whole-garment description combines the two |
 | A setup from a mod archive | The setup editor hand test, step 10 (2026-10-17) | Pass |
+
+### Open Material in EDGEmat
+
+Added 2026-10-21, when REDcode marked `.mlsetup` files in its Project view for EDGEmat (REDcode `docs/api.md`, "Menus in the Project view"). In the development host (F5), with a WolvenKit project open that holds a `.mlsetup` under `sourcerchive`:
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | VS Code's Explorer: right-click the `.mlsetup` | **Open Material in EDGEmat...** in the menu's top group |
+| 2 | Choose it | The EDGEmat setup editor opens: layers in plain words, the Save to Project button in the tab's title bar |
+| 3 | Open the same file in another editor (right-click › Open With... › a text or CR2W editor), then right-click its tab | **Open Material in EDGEmat...** in the tab's menu; it opens the setup editor |
+| 4 | With REDcode 0.10.3 or later: REDcode's Project view, right-click the `.mlsetup` | **Open Material in EDGEmat...**; it opens the setup editor |
+| 5 | Right-click a `.mltemplate` under `sourcerchive` (in the Explorer) › **Open Material in EDGEmat...** | Its surface page, when the surface is in the library; else "not in the library" |
+| 6 | Right-click a `.mesh` or `.xbm` | No EDGEmat entry |
 
 ### Connect an assistant
 

@@ -37,7 +37,7 @@ const uriOptions = (uri: vscode.Uri): { mask?: string; via?: string } => {
     return {};
   }
 };
-const gamePathOfUri = (uri: vscode.Uri) =>
+export const gamePathOfUri = (uri: vscode.Uri) =>
   uri.scheme === GameScheme || uri.scheme === RedcodeGameScheme ? uri.path.replace(/^\/+/, "").replace(/\//g, "\\") : undefined;
 
 /**

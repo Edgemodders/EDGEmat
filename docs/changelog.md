@@ -11,6 +11,10 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+**New**
+
+- **Open Material in EDGEmat...** on a right-click: on a `.mlsetup`, `.mlsetup.json` or `.mltemplate` in the Explorer or on its editor tab, and on a `.mlsetup` in REDcode's Project view (with REDcode 0.10.3 or later). A setup opens in EDGEmat's setup editor, a surface on its page.
+
 ## 0.3.1 (2026-10-21)
 
 EDGEmat's MCP server now comes with the extension, so an assistant needs no separate download.
