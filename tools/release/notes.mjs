@@ -71,9 +71,9 @@ if (nexus) {
 } else {
   write(`${section.join("\n").trim()}
 
-**Install:** download \`edgemat-${version}.vsix\` below, then run \`code --install-extension edgemat-${version}.vsix\`, or in VS Code: Extensions view › **...** › **Install from VSIX...**. Windows only. Needs Cyberpunk 2077 and REDbridge 0.8.0 or later; with [REDcode](https://github.com/Edgemodders/REDcode) set up, EDGEmat needs no configuration.
+**Install:** in VS Code's Extensions view, search for **EDGEmat** and press **Install** ([VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat), [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat)). Or download \`edgemat-${version}.vsix\` below and run \`code --install-extension edgemat-${version}.vsix\`. Windows only. Needs Cyberpunk 2077 and REDbridge 0.8.0 or later; with [REDcode](https://github.com/Edgemodders/REDcode) set up, EDGEmat needs no configuration.
 
-**For AI assistants:** \`edgemat-mcp-${version}.cjs\` is EDGEmat's MCP server, one file for Node.js 20 or later. For Claude Code: \`claude mcp add --scope user edgemat -- node "<folder>\\edgemat-mcp-${version}.cjs"\`.
+**For AI assistants:** \`edgemat-mcp-${version}.cjs\` is EDGEmat's MCP server, one file for Node.js 20 or later. For Claude Code: \`claude mcp add --scope user edgemat -- node "<folder>\\edgemat-mcp-${version}.cjs"\`. To make materials from words, add \`-e GEMINI_API_KEY=<key>\` or \`-e OPENAI_API_KEY=<key>\` before \`--\`.
 
 Docs: ${Docs} (changelog: ${Docs}changelog.html)`);
 }
