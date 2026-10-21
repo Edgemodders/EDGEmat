@@ -32,6 +32,8 @@ export interface MaterialUse {
   globalNormal?: string;
   /** A textured material's color texture: its BaseColor, DiffuseTexture, Albedo or Diffuse parameter, the nearest in its chain. */
   baseColor?: string;
+  /** A textured material's normal map (Normal or NormalTexture), the nearest in its chain. A layered one's is globalNormal. */
+  normal?: string;
   /** The .mi files between the mesh and the base material, when the material is external. */
   instances: string[];
 }
@@ -143,6 +145,10 @@ async function resolveMaterial(read: Reader, material: Json, name: string, chunk
       if (value.MultilayerSetup && !use.setup) use.setup = v(value.MultilayerSetup) || undefined;
       if (value.MultilayerMask && !use.mask) use.mask = v(value.MultilayerMask) || undefined;
       if (value.GlobalNormal && !use.globalNormal) use.globalNormal = v(value.GlobalNormal) || undefined;
+    }
+    if (!use.normal) {
+      const found = (current.values ?? []).map((value: Json) => v(value.Normal ?? value.NormalTexture)).find((p: unknown) => typeof p === "string" && /\.xbm$/i.test(p));
+      if (found) use.normal = found;
     }
     if (!use.baseColor) {
       for (const key of ColorParameters) {

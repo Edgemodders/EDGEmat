@@ -204,6 +204,71 @@ try {
   const unknown = await core.applyMaterial(bridge, project.archive, slim, "no_such_material", mi).then(() => "", (e) => e.message);
   check(xbm.setup.compression === "TCM_QualityColor" && Number(xbm.setup.isGamma) === 1 && xbm.width === 256 && slimLeather?.base === core.MetalBase && slimLeather.baseColor === genTex && unknown.includes("leather"),
     `a textured material in ${Date.now() - t3} ms: the texture imported as ${xbm.setup.compression}, ${xbm.width} px; the slim-fits' leather now reads ${slimLeather?.base} with ${slimLeather?.baseColor?.split("\\").pop()}; an unknown material name is refused with the mesh's names`);
+
+  // Generate a material: an image made seamless, its maps, and the material on a garment (the repeat baked in) and plain.
+  const ramp = { width: 301, height: 301, data: new Uint8Array(301 * 301 * 4) };
+  for (let y = 0; y < 301; y++) for (let x = 0; x < 301; x++) ramp.data.set([Math.round((x * 255) / 300), Math.round((y * 255) / 300), 128, 255], (y * 301 + x) * 4);
+  const before = core.seamScore(ramp), after = core.seamScore(core.makeSeamless(ramp));
+  check(before > 50 && after < 2, `seamless: a colour ramp's wrap seam goes from ${before.toFixed(0)} to ${after.toFixed(2)} times the step inside (odd size, 301 px)`);
+  t3 = Date.now();
+  const newMat = await core.makeMaterial(bridge, project.archive, { name: "Smoke Test Ramp", image: core.writePng(ramp), repeat: 3, shine: "glossy", made: { words: "a ramp" } }, [{ mesh: slim, material: "flames_blue_pink" }]);
+  const readRoot = async (p) => JSON.parse((await bridge.fileToJson(path.join(project.archive, p))).json).Data.RootChunk;
+  const flames = (await core.meshMaterials(bridge, slim, "flames_blue_pink", project.archive))[0]?.materials[0];
+  const plainTile = (await readRoot(newMat.mi)).values.find((v) => v.LayerTile !== undefined)?.LayerTile;
+  const bakedTile = (await readRoot(newMat.applied[0].mi)).values.find((v) => v.LayerTile !== undefined)?.LayerTile;
+  const baked = await readRoot(`${newMat.folder}\\smoke_test_ramp_x3_d01.xbm`), nrm = await readRoot(`${newMat.folder}\\smoke_test_ramp_n01.xbm`), rgh = await readRoot(`${newMat.folder}\\smoke_test_ramp_r01.xbm`);
+  check(newMat.applied[0]?.how === "repeat in the texture" && /_n01\.xbm$/.test(flames?.normal ?? "") && !flames.normal.startsWith("edgemat") && flames.baseColor.endsWith("_x3_d01.xbm")
+    && plainTile === 3 && bakedTile === 1 && baked.width === 2048 && nrm.setup.group === "TEXG_Generic_Normal" && rgh.setup.group === "TEXG_Generic_Grayscale" && newMat.raw.every((f) => fs.existsSync(f)),
+    `a material from an image in ${Date.now() - t3} ms: on the slim-fits (a garment) the repeat is baked into a ${baked.width} px texture at LayerTile ${bakedTile}, keeping ${flames?.normal?.split("\\").pop()}; the plain material repeats at LayerTile ${plainTile} with its own normal and roughness maps; the image and its record are in source\\raw`);
+
+  // The image services, against a stand-in server: no network, no key.
+  const http = await import("node:http");
+  const onePng = core.writePng({ width: 4, height: 4, data: new Uint8Array(64).fill(200) }).toString("base64");
+  const seen = [];
+  const server = http.createServer((req, res) => {
+    let body = "";
+    req.on("data", (c) => (body += c));
+    req.on("end", () => {
+      seen.push({ url: req.url, body, key: req.headers["x-goog-api-key"] ?? req.headers.authorization });
+      const send = (status, j) => { res.statusCode = status; res.setHeader("content-type", "application/json"); res.end(JSON.stringify(j)); };
+      if (req.url.startsWith("/slow")) return setTimeout(() => send(200, {}), 3000);
+      if ((req.headers.authorization ?? "") === "Bearer bad") return send(401, { error: { message: "Incorrect API key provided" } });
+      if (req.url.startsWith("/v1beta/models?")) return send(200, { models: [
+        { name: "models/gemini-2.5-flash-image", displayName: "Nano Banana", supportedGenerationMethods: ["generateContent"] },
+        { name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", supportedGenerationMethods: ["generateContent"] },
+        { name: "models/imagen-4.0-generate-001", supportedGenerationMethods: ["predict"] },
+        { name: "models/gemini-3-pro-image", displayName: "Nano Banana Pro", supportedGenerationMethods: ["generateContent"] },
+      ] });
+      if (req.url.includes(":generateContent")) {
+        const j = JSON.parse(body);
+        if (j.contents[0].parts[0].text.includes("blocked")) return send(200, { promptFeedback: { blockReason: "SAFETY" } });
+        if (j.generationConfig.imageConfig.imageSize) return send(400, { error: { message: "imageSize is not supported for this model" } });
+        return send(200, { candidates: [{ content: { parts: [{ text: "here" }, { inlineData: { mimeType: "image/png", data: onePng } }] } }] });
+      }
+      if (req.url === "/v1/models") return send(200, { data: [{ id: "gpt-image-1-mini" }, { id: "gpt-4o" }, { id: "gpt-image-2.5-flare" }] });
+      if (req.url === "/v1/images/generations") return send(200, { data: [{ b64_json: onePng }] });
+      send(404, { error: { message: "no such route" } });
+    });
+  });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const gm = await core.listModels("gemini", { key: "k1", base });
+    const gi = await core.generateImage("gemini", "gemini-2.5-flash-image", core.texturePrompt("brown leather", "fine"), { key: "k1", base });
+    const blocked = await core.generateImage("gemini", "gemini-3-pro-image", "blocked words", { key: "k1", base }).then(() => "", (e) => e.message);
+    const om = await core.listModels("openai", { key: "k2", base });
+    const oi = await core.generateImage("openai", "gpt-image-2.5-flare", "brick", { key: "k2", base, quality: "low" });
+    const refused = await core.listModels("openai", { key: "bad", base }).then(() => "", (e) => e.message);
+    const slow = await core.listModels("openai", { key: "k2", base: `${base}/slow`, timeoutMs: 300 }).then(() => "", (e) => e.message);
+    const gen = seen.filter((s) => s.url.includes(":generateContent"));
+    check(gm.map((m) => m.id).join() === "gemini-3-pro-image,gemini-2.5-flash-image" && core.readPng(gi.bytes).width === 4 && gen.length === 3 && gen[0].key === "k1"
+      && blocked.includes("blocked (SAFETY)") && om.map((m) => m.id).join() === "gpt-image-2.5-flare,gpt-image-1-mini" && core.readPng(oi.bytes).width === 4
+      && JSON.parse(seen.find((s) => s.url === "/v1/images/generations").body).quality === "low" && refused.includes("refused the key") && refused.includes("Incorrect API key") && slow.includes("No answer"),
+      `image services (stand-in): Gemini lists ${gm.length} image models and retries without a size; a blocked prompt says why; OpenAI lists ${om.length}; a bad key: "${refused}"; a slow answer: "${slow}"`);
+  } finally {
+    server.closeAllConnections?.();
+    server.close();
+  }
 } finally {
   bridge.stop();
 }

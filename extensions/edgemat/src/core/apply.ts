@@ -11,7 +11,7 @@ import { localMaterial, readJson, writeJson } from "./project";
 
 type Json = Record<string, any>;
 
-export type TextureKind = "color" | "normal";
+export type TextureKind = "color" | "normal" | "rough";
 
 /**
  * Game textures whose import settings a new texture of each kind takes: WolvenKit's importer keeps the
@@ -22,6 +22,8 @@ export const TextureTemplates: Record<TextureKind, string> = {
   color: "ep1\\characters\\garment\\citizen_casual\\torso\\t2_160_full__blood\\textures\\t2_160_ma_full__blood_d01.xbm",
   // TEXG_Generic_Normal, TCM_Normalmap, 1024 px.
   normal: "base\\characters\\garment\\citizen_casual\\legs\\l1_012_pants__jeans_tight\\textures\\l1_012_wa_pants__jeans_tight_n01.xbm",
+  // TEXG_Generic_Grayscale, TCM_QualityR, isGamma 0, 1024 px.
+  rough: "base\\characters\\garment\\corp_kang_tao\\head\\h2_007_helmet__base\\textures\\h2_007_helmet__base_dec_stickers_r01.xbm",
 };
 
 export const MetalBase = "engine\\materials\\metal_base.remt";
@@ -51,10 +53,13 @@ export interface TexturedMaterial {
   /** The color texture's game path. */
   baseColor: string;
   normal?: string;
+  /** The roughness map; without one the game's default is white (rough). */
+  roughness?: string;
+  /** Roughness = scale × map + bias, each 0 to 1 (the game's defaults 1 and 0). */
+  roughnessScale?: number;
+  roughnessBias?: number;
   /** How many times the textures repeat across the UVs: metal_base's LayerTile, 0.1 to 100 (the game's default 1). */
   layerTile?: number;
-  /** 0 glossy to 1 rough; metal_base's default is 1 (rough). */
-  roughness?: number;
   /** 0 not metal to 1 metal; the default is 0. */
   metalness?: number;
 }
@@ -63,8 +68,10 @@ export interface TexturedMaterial {
 export function texturedMaterialJson(m: TexturedMaterial): Json {
   const values: Json[] = [{ $type: "rRef:ITexture", BaseColor: ref(m.baseColor) }];
   if (m.normal) values.push({ $type: "rRef:ITexture", Normal: ref(m.normal) });
-  // A texture's value is scale × map + bias, and the default maps are white (roughness) and black (metal).
-  if (m.roughness !== undefined) values.push({ $type: "Float", RoughnessScale: m.roughness });
+  if (m.roughness) values.push({ $type: "rRef:ITexture", Roughness: ref(m.roughness) });
+  // A texture's value is scale × map + bias, and the default metal map is black.
+  if (m.roughnessScale !== undefined) values.push({ $type: "Float", RoughnessScale: m.roughnessScale });
+  if (m.roughnessBias !== undefined) values.push({ $type: "Float", RoughnessBias: m.roughnessBias });
   if (m.metalness !== undefined) values.push({ $type: "Float", MetalnessBias: m.metalness });
   if (m.layerTile !== undefined) values.push({ $type: "Float", LayerTile: m.layerTile });
   return {
