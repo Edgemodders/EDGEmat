@@ -3,7 +3,7 @@
   "displayName": "EDGEmat",
   "description": "The EDGE material editor for Cyberpunk 2077: find a garment's materials by its name, recolor its layers, make new materials from your words, and save them into your mod.",
   "publisher": "edgemodders",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "preview": true,
   "galleryBanner": {
@@ -48,7 +48,8 @@
     "onCommand:edgemat.saveToProject",
     "onCommand:edgemat.newMaterial",
     "onCommand:edgemat.setImageKey",
-    "onCommand:edgemat.clearImageKey"
+    "onCommand:edgemat.clearImageKey",
+    "onCommand:edgemat.connectAssistant"
   ],
   "contributes": {
     "viewsContainers": {
@@ -216,6 +217,12 @@
         "command": "edgemat.clearImageKey",
         "title": "Clear Image Service Key...",
         "category": "EDGEmat"
+      },
+      {
+        "command": "edgemat.connectAssistant",
+        "title": "Connect an Assistant (MCP)...",
+        "category": "EDGEmat",
+        "icon": "$(plug)"
       }
     ],
     "menus": {
@@ -264,6 +271,11 @@
           "command": "edgemat.showLog",
           "when": "view == edgemat.library",
           "group": "more@2"
+        },
+        {
+          "command": "edgemat.connectAssistant",
+          "when": "view == edgemat.library",
+          "group": "more@3"
         }
       ],
       "view/item/context": [
@@ -359,7 +371,13 @@
           "markdownDescription": "DOTNET_ROOT for the bridge, when .NET 10 is installed per user. Empty: use REDcode's `redcode.dotnetRoot`."
         }
       }
-    }
+    },
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "edgemat.mcp",
+        "label": "EDGEmat"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "node ../../tools/release/notes.mjs --extension && node esbuild.mjs && node ../../tools/release/notices.mjs --extension",

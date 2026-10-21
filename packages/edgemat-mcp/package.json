@@ -1,10 +1,19 @@
 {
   "name": "@edgemodders/edgemat-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "EDGEmat for AI assistants over MCP: find, describe and recolor Cyberpunk 2077 materials, and make new ones, with the material library built from your own game.",
   "license": "MIT",
   "author": "Edgemodders",
   "homepage": "https://edgemodders.github.io/EDGEmat/",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "cyberpunk2077",
+    "modding",
+    "materials",
+    "mlsetup",
+    "wolvenkit"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Edgemodders/EDGEmat.git",
@@ -15,7 +24,9 @@
   },
   "files": [
     "dist/server.cjs",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.txt"
   ],
   "scripts": {
     "build": "node esbuild.mjs",
@@ -34,5 +45,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

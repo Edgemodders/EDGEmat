@@ -18,13 +18,15 @@ Next: materials for brand-new clothes and objects (M4). The manual, with two tut
 
 ### For AI assistants
 
-The same features are in EDGEmat's MCP server, so Claude or another assistant can find a garment's materials, describe and recolor its layers, and make new materials, saving into your project. Each GitHub release carries the server as one file, `edgemat-mcp-<version>.cjs`. It needs Node.js 20 or later, and finds the game and REDbridge as the extension does. For Claude Code, with the file's full path:
+The same features are in EDGEmat's MCP server, which comes with the extension, so Claude or another assistant can find a garment's materials, describe and recolor its layers, and make new materials, saving into your project.
 
-```
-claude mcp add --scope user edgemat -- node "<folder>\edgemat-mcp-<version>.cjs"
-```
+| Assistant | How |
+|---|---|
+| Claude Code | **EDGEmat: Connect an Assistant (MCP)...** (the Library's **...** menu, or the command palette) registers it, with your image service key if you want materials from words. Then start a new Claude Code session |
+| Agents inside VS Code 1.101 or later | Nothing to do: they see EDGEmat's tools |
+| Other MCP clients | The same command copies a JSON entry. Without VS Code: `@edgemodders/edgemat-mcp` on npm |
 
-For materials from words (`mat_generate`), add your key: `-e GEMINI_API_KEY=<key>` or `-e OPENAI_API_KEY=<key>` before `--`.
+The server finds the game and REDbridge as the extension does, and shares its material library.
 
 ## Setup
 

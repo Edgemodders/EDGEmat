@@ -47,7 +47,7 @@ export interface Take {
   name: string;
 }
 
-const KeySecret = (s: ServiceId) => `edgemat.${s}.apiKey`;
+export const KeySecret = (s: ServiceId) => `edgemat.${s}.apiKey`;
 const MaxTakes = 20;
 const PreviewSize = 512;
 

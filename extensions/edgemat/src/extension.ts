@@ -9,6 +9,7 @@ import { BridgeClient, buildLibrary, defaultCacheDir, findGames, isCurrent, isGa
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
 import { MaterialPage } from "./materialPage";
+import { connectAssistant, installServer, registerWithEditor } from "./mcp";
 import { GameFiles, GameScheme, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
 import { SurfacePages } from "./surfacePage";
 
@@ -329,6 +330,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     vscode.commands.registerCommand("edgemat.newMaterialHere", (node) => materialPage.open(FindView.targetsOf(node))),
     vscode.commands.registerCommand("edgemat.setImageKey", () => materialPage.setKey()),
     vscode.commands.registerCommand("edgemat.clearImageKey", () => materialPage.clearKey()),
+    vscode.commands.registerCommand("edgemat.connectAssistant", () => connectAssistant(context, log)),
+    ...registerWithEditor(context, String(context.extension.packageJSON.version), log),
     materialsChanged,
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (["edgemat.gamePath", "edgemat.bridgePath", "edgemat.dotnetRoot", "redcode.gamePath", "redcode.bridgePath"].some((k) => e.affectsConfiguration(k))) {
@@ -340,6 +343,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     { dispose: () => ownBridge?.stop() },
   );
 
+  installServer(context.extensionPath, log);
   setState("building");
   void refresh();
 

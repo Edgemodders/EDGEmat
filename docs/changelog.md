@@ -11,6 +11,16 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+## 0.3.1 (2026-10-21)
+
+EDGEmat's MCP server now comes with the extension, so an assistant needs no separate download.
+
+**New**
+
+- **Connect an Assistant (MCP)...** in the Library's **...** menu: registers EDGEmat with Claude Code in one step, with your image service key if you say so, or copies the command or a JSON entry for other clients. The server lives at `%LOCALAPPDATA%\EDGEmat\mcp\edgemat-mcp.cjs`, the same path for every version, and each update of the extension refreshes it, so the registration keeps working.
+- In VS Code 1.101 or later, agents inside VS Code see EDGEmat's tools with no setup, with your image service keys from EDGEmat. Where the editor has no MCP support, nothing changes.
+- The MCP server on npm, for clients that run without VS Code: `@edgemodders/edgemat-mcp` (https://www.npmjs.com/package/@edgemodders/edgemat-mcp).
+
 ## 0.3.0 (2026-10-20)
 
 The first preview: EDGEmat reads a garment's materials, shows them in plain words and in 3D, recolors them into your mod project, and makes new materials from words or a photo, in the editor or by asking an assistant.

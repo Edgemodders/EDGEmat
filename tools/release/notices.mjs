@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const extension = process.argv.includes("--extension");
-const maps = [join(root, "extensions/edgemat/dist/extension.js.map"), join(root, "extensions/edgemat/dist/webview/setup.js.map"), join(root, "extensions/edgemat/dist/webview/surface.js.map")];
+const maps = [join(root, "extensions/edgemat/dist/extension.js.map"), join(root, "extensions/edgemat/dist/webview/setup.js.map"), join(root, "extensions/edgemat/dist/webview/surface.js.map"), join(root, "extensions/edgemat/dist/mcp/edgemat-mcp.cjs.map")];
 if (!extension) maps.push(join(root, "packages/edgemat-mcp/dist/server.cjs.map"));
 const out = extension ? join(root, "extensions/edgemat/THIRD-PARTY-NOTICES.txt") : join(root, "dist/THIRD-PARTY-NOTICES.txt");
 
@@ -43,7 +43,7 @@ const entries = [...packages.keys()]
 
 const line = "-".repeat(78);
 const body = [
-  `EDGEmat${extension ? " (the VS Code extension)" : ", the VS Code extension and its MCP server,"} bundles these npm packages.`,
+  `EDGEmat${extension ? " (the VS Code extension, with its MCP server inside)" : ", the VS Code extension and its MCP server,"} bundles these npm packages.`,
   "Their notices and licenses follow. EDGEmat itself is MIT (LICENSE).",
   "",
   ...entries.map((e) => `- ${e.name} ${e.version} (${e.license})`),
