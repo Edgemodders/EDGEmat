@@ -4,8 +4,9 @@
 //
 //   edgemat-mcp [--bridge <REDbridge.exe or its folder>] [--game <Cyberpunk 2077 folder>] [--cache <dir>]
 //
-// Without options (or with empty ones) it finds the game and REDbridge as the extension does, from the VS Code settings
-// (edgemat.*, then redcode.*). Variables: EDGEMAT_GAME_PATH, REDBRIDGE_EXE, EDGEMAT_CACHE. The bridge starts only when a tool needs it.
+// Options win, then the variables EDGEMAT_GAME_PATH, REDBRIDGE_EXE, EDGEMAT_CACHE (EDGEchat passes these); without them
+// (or with empty ones) it finds the game and REDbridge as the extension does, from the VS Code settings (edgemat.*, then
+// redcode.*). Image keys: GEMINI_API_KEY, OPENAI_API_KEY. The bridge starts only when a tool needs it.
 // stdout is the MCP channel; logs go to stderr.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

@@ -19,8 +19,16 @@ To make materials from words (`mat_generate`), give it your own image service ke
 | Need | Notes |
 |---|---|
 | Windows, Node.js 20 or later | |
-| Cyberpunk 2077 | Found as the extension finds it: from VS Code's `edgemat.gamePath` or `redcode.gamePath` setting, else `--game` or `EDGEMAT_GAME_PATH` |
-| REDbridge 0.8.0 or later | From `edgemat.bridgePath` or `redcode.bridgePath`, else `--bridge` or `REDBRIDGE_EXE`. [REDcode](https://github.com/Edgemodders/REDcode)'s Install REDbridge sets it up |
+| Cyberpunk 2077 | `--game` or `EDGEMAT_GAME_PATH`; else found as the extension finds it, from VS Code's `edgemat.gamePath` or `redcode.gamePath` setting |
+| REDbridge 0.8.0 or later | `--bridge` or `REDBRIDGE_EXE` (the exe or its folder); else from `edgemat.bridgePath` or `redcode.bridgePath`. [REDcode](https://github.com/Edgemodders/REDcode)'s Install REDbridge sets it up |
+
+An option or variable you pass wins over VS Code's settings; an empty one counts as unset. So a client with its own settings form, such as EDGEchat, passes the four variables and needs nothing else:
+
+| Variable | For |
+|---|---|
+| `EDGEMAT_GAME_PATH` | The Cyberpunk 2077 folder |
+| `REDBRIDGE_EXE` | REDbridge |
+| `GEMINI_API_KEY`, `OPENAI_API_KEY` | `mat_generate` only |
 
 The material library is built from your own game the first time, and kept in `%LOCALAPPDATA%\EDGEmat` (`--cache` or `EDGEMAT_CACHE` to move it), shared with the extension.
 
