@@ -15,7 +15,8 @@
     "mcp:build": "npm run build --workspace packages/edgemat-mcp",
     "mcp:start": "node packages/edgemat-mcp/dist/server.cjs",
     "release:notes": "node tools/release/notes.mjs",
-    "release:nexus": "node tools/release/nexus-zip.mjs"
+    "release:nexus": "node tools/release/nexus-zip.mjs",
+    "release": "gh workflow run release.yml --ref main -f release=true"
   },
   "devDependencies": {
     "@vscode/vsce": "^4.0.0",

@@ -88,7 +88,7 @@ jobs:
           # The Nexus Mods file (nexus/README.md); it also writes dist/THIRD-PARTY-NOTICES.txt.
           node tools/release/nexus-zip.mjs
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: EDGEmat-build
           path: |
