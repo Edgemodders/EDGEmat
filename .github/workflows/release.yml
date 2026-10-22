@@ -1,0 +1,154 @@
+# Builds EDGEmat: the extension's VSIX (Windows x64, since REDbridge is Windows only; it carries the MCP
+# server too, src/mcp.ts), the MCP server as one file, the Nexus Mods zip and the license notices. The
+# same workflow as REDnode's release.yml, so every EDGE tool releases the same way.
+#
+#   Run workflow (Actions tab)                  builds the files and keeps them as the run's artifact,
+#                                               to install and test before a release
+#   Run workflow, "Make a release" ticked       also publishes the VSIX to the VS Code Marketplace
+#                                               (VSCE_PAT) and Open VSX (OVSX_PAT), tags the commit
+#                                               v<version> and makes the GitHub release with the files,
+#                                               then publishes the server to npm as
+#                                               @edgemodders/edgemat-mcp with provenance (NPM_TOKEN).
+#                                               Stops first if that tag exists (raise the version with
+#                                               tools/version.mjs), if it is not run on main, or if
+#                                               docs/changelog.md has no section for the version (the
+#                                               release notes, tools/release/notes.mjs)
+#
+# The three tokens are Edgemodders organisation secrets, shared with REDcode's and EDGEdeck's workflows.
+# Release gate: make a release only after every test of the builds since the last release has passed
+# (docs/testing.md). Untested or failed means no release.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Make a release (tags this commit v<version>, publishes to the Marketplace, Open VSX and npm). Only after every test has passed
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: The extension and the MCP server have one version
+        run: |
+          node tools/version.mjs --check
+          version=$(node -p "require('./extensions/edgemat/package.json').version")
+          {
+            echo "VERSION=${version}"
+            echo "VSIX=${GITHUB_WORKSPACE}/dist/edgemat-${version}.vsix"
+            echo "MCP=${GITHUB_WORKSPACE}/dist/edgemat-mcp-${version}.cjs"
+          } >> "$GITHUB_ENV"
+
+      - name: The version is not released yet
+        if: inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::Make a release from main, not ${GITHUB_REF_NAME}."
+            exit 1
+          fi
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/v${VERSION}" --silent 2>/dev/null; then
+            echo "::error::v${VERSION} is already released. Raise the version with node tools/version.mjs <version>."
+            exit 1
+          fi
+
+      - name: Release notes from docs/changelog.md
+        if: inputs.release
+        run: node tools/release/notes.mjs "${VERSION}" --out "${RUNNER_TEMP}/notes.md"
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - name: Package
+        id: package
+        run: |
+          mkdir -p dist
+          npm run mcp:build
+          cp packages/edgemat-mcp/dist/server.cjs "${MCP}"
+          cd extensions/edgemat
+          "${GITHUB_WORKSPACE}/node_modules/.bin/vsce" package --no-dependencies --target win32-x64 --out "${VSIX}"
+          cd "${GITHUB_WORKSPACE}"
+          # The Nexus Mods file (nexus/README.md); it also writes dist/THIRD-PARTY-NOTICES.txt.
+          node tools/release/nexus-zip.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EDGEmat-build
+          path: |
+            dist/edgemat-*.vsix
+            dist/edgemat-mcp-*.cjs
+            dist/EDGEmat-*-nexus.zip
+            dist/THIRD-PARTY-NOTICES.txt
+          if-no-files-found: error
+
+      - name: VS Code Marketplace
+        if: inputs.release
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: node_modules/.bin/vsce publish --packagePath "${VSIX}"
+
+      # Each registry is tried even when another one failed; the run still fails if any of them did.
+      - name: Open VSX
+        if: ${{ inputs.release && !cancelled() && steps.package.outcome == 'success' }}
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "${OVSX_PAT}" ]; then
+            echo "::warning::OVSX_PAT is not set; not published to Open VSX"
+            exit 0
+          fi
+          node_modules/.bin/ovsx publish "${VSIX}" --pat "${OVSX_PAT}"
+
+      - name: GitHub release
+        if: ${{ inputs.release && !cancelled() && steps.package.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${VERSION}" "${VSIX}" "${MCP}" "dist/EDGEmat-${VERSION}-nexus.zip" dist/THIRD-PARTY-NOTICES.txt --target "${GITHUB_SHA}" --title "EDGEmat ${VERSION}" --notes-file "${RUNNER_TEMP}/notes.md"
+
+  npm:
+    needs: build
+    if: inputs.release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      # The bundles, then the license and the notices beside the server (both generated, not committed).
+      - name: Build
+        run: |
+          npm run build
+          node tools/release/notices.mjs
+          cp dist/THIRD-PARTY-NOTICES.txt LICENSE packages/edgemat-mcp/
+
+      - name: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --workspace packages/edgemat-mcp --provenance --access public

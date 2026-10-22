@@ -65,7 +65,7 @@ File description on Nexus:
 
 ### Building it
 
-The release workflow (`.github/workflows/publish.yml`) builds it with every release and attaches it to the GitHub release, beside the `.vsix`, the MCP server and the notices. A release stays as in `docs/dev-setup.md`, "Releasing". Download the zip from the release and upload it to Nexus.
+The release workflow (`.github/workflows/release.yml`) builds it with every release and attaches it to the GitHub release, beside the `.vsix`, the MCP server and the notices. A release stays as in `docs/dev-setup.md`, "Releasing". Download the zip from the release and upload it to Nexus.
 
 By hand, after `npm run edgemat:package` and `npm run mcp:build`: `npm run release:nexus` writes `dist/EDGEmat-<version>-nexus.zip`.
 

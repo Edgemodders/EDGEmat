@@ -40,6 +40,12 @@ Last updated 2026-10-20.
 
 ## Log
 
+### 2026-10-22
+
+| What | Detail |
+|---|---|
+| **Release workflow as REDnode's** | `.github/workflows/release.yml` replaces `publish.yml`. **Run workflow** alone builds the VSIX, the MCP file, the Nexus zip and the notices as the run's artifact; with **Make a release** ticked it checks the version is new and the run is on `main`, publishes to the Marketplace, Open VSX, GitHub (tagging `v<version>`) and npm. `tools/version.mjs` sets the version in both packages and the lock file, and `--check` stops a run where they differ. Steps in [dev setup](dev-setup.html), "Releasing" |
+
 ### 2026-10-21
 
 | What | Detail |
@@ -157,6 +163,7 @@ Last updated 2026-10-20.
 | REDcode shows meshes, EDGEmat renders materials | No second mesh viewer; loose coupling through an API | 2026-10-15 |
 | EDGEfab owns new assets; EDGEmat owns materials and looks | Keeps each tool to one job | 2026-10-16 |
 | MlsetupBuilder is studied, never copied | It is GPL-3.0; EDGEmat is MIT | 2026-10-14 |
+| Releases use REDnode's workflow: **Run workflow**, with **Make a release** ticked to release; unticked gives a test build | The owner wants one release flow across the EDGE tools. `publish.yml` (a pushed `v*` tag) became `release.yml`; `tools/version.mjs` raises the version, as in REDnode | 2026-10-22 |
 | The MCP server comes with the extension, and goes to npm from 0.3.1 | A Marketplace install must get every feature, the assistant's included; npm serves clients without VS Code. Was M7 | 2026-10-21 |
 | The preview goes to the Marketplace and Open VSX, not only GitHub | It edits and makes materials now, so a store install gets what the page promises; you install it from the store, as REDcode and EDGEdeck. Was M7 | 2026-10-20 |
 | M4 Make comes before the preview | EDGEfab needs materials for new meshes; a textured `.mi` is seen without the layered bake | 2026-10-19 |
