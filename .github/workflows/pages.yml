@@ -15,8 +15,10 @@ permissions:
   pages: write
   id-token: write
 
+# Not "pages": run 39316013292 (2026-10-19) is stuck waiting in that group for good; GitHub will
+# neither cancel nor delete it, and every later run queued behind it.
 concurrency:
-  group: pages
+  group: pages-main
   cancel-in-progress: false
 
 jobs:
