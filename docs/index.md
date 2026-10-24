@@ -14,17 +14,17 @@ EDGEmat is the EDGEmodders material editor for Cyberpunk 2077, a VS Code extensi
 
 ## Roadmap status
 
-As of 2026-10-16.
+As of 2026-10-24. The latest release is 0.3.1 (2026-10-21), on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat).
 
 | Phase | Status |
 |---|---|
 | M0 Spec | **Done 2026-10-16.** The [behavior spec](design/behavior.html) draft 0.2 is checked against the game and agreed; one bridge request filed and shipped ([REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4)); the viewer hook requested ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); Neurolinked contacted |
 | M1 Library | **Done 2026-10-16** (smoke test and hand test in VS Code pass). The extension (0.1.0) with its activity bar container and Library view, the MCP server skeleton (`mat_library`, `mat_templates`, `mat_microblends`), the bridge client, and the library built from the game: 386 surfaces and 131 microblends in about 22 s, matching the game's counts (`npm run smoke` passes) |
 | M2 Read | **Done 2026-10-19.** The surface page, the read-only setup editor, Find and View in 3D, with MCP `mat_colors`, `mat_describe` and `mat_find`; every hand test, the CLI install test and the phase test passed (the jacket's layers match WolvenKit's reading field for field). Released with M3 in the 0.3 preview |
-| M3 Edit | **Done 2026-10-20.** Editing, Save to Project and MCP `mat_edit`, and Generate's first slice from M4: New Material and MCP `mat_generate`, `mat_from_image`, `mat_apply`. Every hand test passed, and recolors and generated materials were seen in the game. Released as the first preview, 0.3.0 |
+| M3 Edit | **Done 2026-10-20.** Editing, Save to Project and MCP `mat_edit`, and Generate's first slice from M4: New Material and MCP `mat_generate`, `mat_from_image`, `mat_apply`. Every hand test passed, and recolors and generated materials were seen in the game. Released as the first preview, 0.3.0; 0.3.1 carries the MCP server in the extension |
 | M4 Make (materials for new meshes, Generate) | Generate's first slice done in M3; the rest not started |
 | M5 Preview | Not started |
 | M6 Beyond mlsetup | Not started |
-| M7 Ship | Not started |
+| M7 Ship | Parts done early: the Marketplace and Open VSX with 0.3.0, the MCP server on npm with 0.3.1. The Nexus page source is ready in `nexus/`, not posted |
 
 Source code and issues: [github.com/Edgemodders/EDGEmat](https://github.com/Edgemodders/EDGEmat)

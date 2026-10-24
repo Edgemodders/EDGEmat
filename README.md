@@ -17,7 +17,7 @@ It edits multilayered materials (`.mlsetup`, `.mltemplate`, `.mlmask`) first, th
 **[Read the docs](https://edgemodders.github.io/EDGEmat/)** &middot; [Design](docs/design.md) &middot; [Dev setup](docs/dev-setup.md)
 
 > [!NOTE]
-> **Status: 0.3.0 preview released** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat). A Library of every surface and microblend in your game, built from the game (M1). Surface pages, the setup editor, Find and View in 3D (M2). Editing and Save to Project, and New Material from words or a photo (M3), each seen in the game. Assistants get all of it through MCP. Next: materials for new meshes (M4).
+> **Status: 0.3.1 preview released** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat). A Library of every surface and microblend in your game, built from the game (M1). Surface pages, the setup editor, Find and View in 3D (M2). Editing and Save to Project, and New Material from words or a photo (M3), each seen in the game. Assistants get all of it through MCP; since 0.3.1 the MCP server comes with the extension (**Connect an Assistant (MCP)...**). Next: materials for new meshes (M4). The manual, with two tutorials: [edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/).
 
 ## Repository layout
 
@@ -25,7 +25,8 @@ It edits multilayered materials (`.mlsetup`, `.mltemplate`, `.mlmask`) first, th
 |---|---|
 | `extensions/edgemat` | The VS Code extension. `src/core` is everything that is not UI, with no VS Code imports |
 | `packages/edgemat-mcp` | The MCP server, bundling the extension's core |
-| `docs/` | Documentation site: the design, the behavior spec, dev setup |
+| `docs/` | Documentation site: the progress log, the changelog, the tests, the design, the behavior spec, dev setup |
+| `nexus/` | The Nexus Mods page source (not posted yet) |
 | `tools/brand/` | Renders the banner, icon and badges; `activity.svg` is the activity bar icon |
 
 ## Prior art
