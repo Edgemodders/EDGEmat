@@ -9,7 +9,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  applyLayerEdit, describeSurface, gamePathInProject, isGameFile, meshesUsing, newPathFor, openSetup, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
+  applyLayerEdit, describeSurface, gamePathInProject, isGameFile, meshesToPoint, meshesUsing, newPathFor, openSetup, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
   type BridgeClient, type LayerPatch, type Library, type MeshSearch, type OpenedSetup, type Project, type Setup, type SetupSource,
 } from "./core";
 import type { SetupPageData, SurfaceChoices } from "./webview/setup";
@@ -173,8 +173,16 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     w.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(this.host.extensionUri, "dist"), vscode.Uri.file(this.host.cacheDir())] };
     doc.panels.add(panel);
     this.active = doc;
+    // A hidden tab's page is thrown away, and comes back from the html it was first given; edits since came
+    // as updates, so it would show the setup as opened. Coming back, it gets the setup as it is now.
+    let hidden = false;
     panel.onDidChangeViewState(() => {
       if (panel.active) this.active = doc;
+      if (!panel.visible) hidden = true;
+      else if (hidden) {
+        hidden = false;
+        this.post(doc, panel, true);
+      }
     });
     panel.onDidDispose(() => {
       doc.panels.delete(panel);
@@ -417,8 +425,10 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
         const go = await vscode.window.showWarningMessage(`${why} So nothing would point at the new setup. Save the setup alone?`, { modal: true }, "Save the Setup Alone");
         if (!go) return false;
       } else {
+        // The project's own meshes are ticked when any use the setup; the game's others are offered, not ticked.
+        const ticked = new Set(meshesToPoint(uses).map((u) => u.mesh));
         const chosen = await vscode.window.showQuickPick(
-          uses.map((u) => ({ label: path.win32.basename(u.mesh), description: u.materials.join(", "), detail: u.mesh, picked: true })),
+          uses.map((u) => ({ label: path.win32.basename(u.mesh), description: `${u.inProject ? "in your project · " : ""}${u.materials.join(", ")}`, detail: u.mesh, picked: ticked.has(u.mesh) })),
           { title: "Point these meshes at the new setup", placeHolder: "Each is copied into the project (unless it is there already) with these materials changed", canPickMany: true },
         );
         if (!chosen) return false;

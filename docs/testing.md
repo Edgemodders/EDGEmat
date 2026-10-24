@@ -22,7 +22,7 @@ Last updated 2026-10-20.
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
-| [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-23); REDcode's button is requested |
+| [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day; rerun from step 2 |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |

@@ -86,7 +86,15 @@ export interface MeshUse {
   materials: string[];
   /** The mask sets those materials name, as game paths. */
   masks?: string[];
+  /** The project has its own copy of the mesh. */
+  inProject?: boolean;
 }
+
+/**
+ * The meshes a new copy of a setup goes on by default: the project's own when any of them use it (the
+ * modder is changing those, wherever they sit), else every one found.
+ */
+export const meshesToPoint = (uses: MeshUse[]): MeshUse[] => (uses.some((u) => u.inProject) ? uses.filter((u) => u.inProject) : uses);
 
 /** Which materials of a mesh name one of `setups` (directly, or through the .mi an entry points at), and their mask sets. */
 async function usesIn(bridge: BridgeClient, archive: string | undefined, root: Json, setups: string[]): Promise<{ materials: string[]; masks: string[] }> {
@@ -118,39 +126,43 @@ async function usesIn(bridge: BridgeClient, archive: string | undefined, root: J
 }
 
 /**
- * The meshes that use a setup, looked for in the garment's folder: the setup's folder, or the one above
- * a textures folder. Game meshes (unless `gameMeshes` is false) and the project's own. Shadow meshes are
- * left out. At most `limit` meshes are read. `report`, when given, gets the folder, how many meshes were
+ * The meshes that use a setup: every mesh in the project, wherever it sits (a mesh added from another
+ * folder often uses a setup kept with another garment), first; then the game's meshes in the garment's
+ * folder (the setup's folder, or the one above a textures folder), unless `gameMeshes` is false. Shadow
+ * meshes are left out. At most `limit` meshes are read. `report`, when given, gets the folder, how many meshes were
  * read, and the ones that could not be read, with why. `alsoNamed`: other setups that count as this one,
  * such as the copy saved before, which the project's meshes already point at.
  */
 export async function meshesUsing(bridge: BridgeClient, setup: string, archive?: string, limit = 60, gameMeshes = true, report?: MeshSearch, alsoNamed: string[] = []): Promise<MeshUse[]> {
   let folder = path.win32.dirname(setup);
   if (/\\textures$/i.test(folder)) folder = path.win32.dirname(folder);
-  const meshes = new Set<string>();
-  if (gameMeshes) {
-    const r = await bridge.list({ prefix: folder + "\\", limit: 20000 });
-    for (const i of r.items) if (/\.mesh$/i.test(i.name) && !isShadow(i.name)) meshes.add(i.name);
-  }
-  const local = archive ? path.join(archive, folder) : undefined;
-  if (local && fs.existsSync(local)) {
+  // Keyed in lower case: the project's copy and the game's file are one mesh.
+  const meshes = new Map<string, { mesh: string; inProject: boolean }>();
+  if (archive && fs.existsSync(archive)) {
     const walk = (d: string) => {
       for (const f of fs.readdirSync(d, { withFileTypes: true })) {
         const full = path.join(d, f.name);
         if (f.isDirectory()) walk(full);
-        else if (/\.mesh$/i.test(f.name)) meshes.add(path.relative(archive!, full));
+        else if (/\.mesh$/i.test(f.name)) {
+          const mesh = path.relative(archive, full);
+          meshes.set(mesh.toLowerCase(), { mesh, inProject: true });
+        }
       }
     };
-    walk(local);
+    walk(archive);
+  }
+  if (gameMeshes) {
+    const r = await bridge.list({ prefix: folder + "\\", limit: 20000 });
+    for (const i of r.items) if (/\.mesh$/i.test(i.name) && !isShadow(i.name) && !meshes.has(i.name.toLowerCase())) meshes.set(i.name.toLowerCase(), { mesh: i.name, inProject: false });
   }
   const out: MeshUse[] = [];
-  const read = [...meshes].filter((m) => !isShadow(m)).slice(0, limit);
+  const read = [...meshes.values()].filter((m) => !isShadow(m.mesh)).slice(0, limit);
   if (report) Object.assign(report, { folder, read: read.length, skipped: [] });
-  for (const mesh of read) {
+  for (const { mesh, inProject } of read) {
     try {
       const { json } = await readJson(bridge, archive, mesh);
       const use = await usesIn(bridge, archive, json.Data.RootChunk, [setup, ...alsoNamed]);
-      if (use.materials.length) out.push({ mesh, ...use });
+      if (use.materials.length) out.push({ mesh, ...use, inProject });
     } catch (e) {
       // A mesh that cannot be read is skipped, and reported.
       report?.skipped.push({ mesh, reason: e instanceof Error ? e.message : String(e) });

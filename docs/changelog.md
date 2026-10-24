@@ -21,6 +21,11 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 - REDcode's 3D view draws the materials again after you save a setup or put a new material on a mesh, so the change shows without reopening it.
 - **View in 3D** on a mesh in your project opens the project's copy.
 
+**Fixed**
+
+- The setup editor lost its unsaved edits from view when you switched to another tab and back (the edits were kept, and the tab still showed them as unsaved).
+- **Save to Project** › **As a new setup** looked for the meshes that use the setup only in the setup's own folder. A garment that uses a setup kept with another garment (V's slim-fits use the citizen jeans' setup) had the other garment's game meshes copied into the project instead of its own. It now looks at every mesh in your project too, and ticks only your project's meshes when any of them use the setup. The MCP server's `mat_edit` does the same.
+
 ## 0.3.1 (2026-10-21)
 
 EDGEmat's MCP server now comes with the extension, so an assistant needs no separate download.

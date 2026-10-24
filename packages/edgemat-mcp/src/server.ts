@@ -16,7 +16,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
 import {
-  applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
+  applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, generateImage, imageAsPng, listModels, makeMaterial, materialSlug, texturePrompt, Services,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
@@ -313,8 +313,12 @@ server.registerTool(
         const to = target ?? (from ? newPathFor(from, suffix) : undefined);
         if (!to) return failure(new Error("This file has no game path: pass target, the game path to save it at."));
         const search: MeshSearch = { folder: "", read: 0, skipped: [] };
-        const meshes = from ? await meshesUsing(b, from, p.archive, 60, true, search, [to]) : [];
-        if (from && !meshes.length) notes.push(`No mesh in ${search.folder} uses ${from} (${search.read} read), so nothing points at the new setup yet.`);
+        const found = from ? await meshesUsing(b, from, p.archive, 60, true, search, [to]) : [];
+        // The project's own meshes when any use the setup; the game's others are named, not changed.
+        const meshes = meshesToPoint(found);
+        if (from && !found.length) notes.push(`No mesh in the project or in ${search.folder} uses ${from} (${search.read} read), so nothing points at the new setup yet.`);
+        const left = found.filter((m) => !meshes.includes(m));
+        if (left.length) notes.push(`Pointed only the project's own meshes at the new setup. These game meshes use it too, left as they are: ${left.map((m) => m.mesh).join(", ")}.`);
         for (const s of search.skipped) notes.push(`Could not read ${s.mesh}: ${s.reason}`);
         saved = await saveToProject(b, { setup: edited, archive: p.archive, target: to, from, meshes: meshes.map((m) => m.mesh), suffix });
       }

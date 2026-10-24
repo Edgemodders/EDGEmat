@@ -41,6 +41,12 @@ Last updated 2026-10-24.
 
 ## Log
 
+### 2026-10-24
+
+| What | Detail |
+|---|---|
+| **Two bugs from the Open Mesh hand test** | The owner's test (EDGEquest_Q2, the slim-fits' project copy, its default material): (1) switching tabs and back showed the setup as opened, losing the edit from view while the tab stayed unsaved. VS Code throws a hidden webview away and rebuilds it from its first html; the editor now sends the current setup when the tab shows again. (2) **As a new setup** pointed 10 citizen_casual game meshes at the new setup, copied into the project, and not the project's own mesh: the slim-fits in `player_equipment` use the citizen jeans' setup, and the search only looked in the setup's folder. `meshesUsing` now reads every mesh in the project first and marks it; `meshesToPoint` ticks only the project's meshes when any use the setup (the setup editor and `mat_edit`). Checked read-only on EDGEmat_Tiling: both project bodies ticked, the 11 game meshes listed and not ticked |
+
 ### 2026-10-23
 
 | What | Detail |
