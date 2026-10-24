@@ -371,7 +371,7 @@ Checklist items 1 to 10 in the [behavior spec](design/behavior.html#checklist-fo
 | Need | Why |
 |---|---|
 | **Material Texture Override** (Nexus mod 25246, version 0.2), deployed | A replaced game `.mlsetup` has no effect in the game without it. This cost a day in M0 |
-| The test archive deployed through REDdeck, and listed in `archive\pc\mod\modlist.txt` | The game reads `modlist.txt`; earlier archives win |
+| The test archive deployed through EDGEdeck (called REDdeck until 2026-10-17), and listed in `archive\pc\mod\modlist.txt` | The game reads `modlist.txt`; earlier archives win |
 | Only one test archive deployed at a time | Rounds replace the same files |
 | The sneakers on V | "Sunny Ammo synthetic high-tops" (`Items.CasualShoes_01_basic_01`), or any of `basic_01` to `_05`, `old_01`, `old_02`. With Cyber Engine Tweaks: `Game.AddToInventory("Items.CasualShoes_01_basic_01", 1)` |
 | A screenshot before and after | Kept outside the repo (game images are game content), for example in the test project |
