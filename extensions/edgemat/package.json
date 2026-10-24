@@ -50,7 +50,8 @@
     "onCommand:edgemat.setImageKey",
     "onCommand:edgemat.clearImageKey",
     "onCommand:edgemat.connectAssistant",
-    "onCommand:edgemat.openMaterial"
+    "onCommand:edgemat.openMaterial",
+    "onCommand:edgemat.openMesh"
   ],
   "contributes": {
     "viewsContainers": {
@@ -230,6 +231,12 @@
         "title": "Open Material in EDGEmat...",
         "category": "EDGEmat",
         "icon": "$(symbol-color)"
+      },
+      {
+        "command": "edgemat.openMesh",
+        "title": "Open Mesh in EDGEmat",
+        "category": "EDGEmat",
+        "icon": "$(symbol-color)"
       }
     ],
     "menus": {
@@ -324,6 +331,10 @@
       ],
       "commandPalette": [
         {
+          "command": "edgemat.openMesh",
+          "when": "false"
+        },
+        {
           "command": "edgemat.openMaterial",
           "when": "false"
         },
@@ -362,12 +373,22 @@
       ],
       "explorer/context": [
         {
+          "command": "edgemat.openMesh",
+          "when": "resourceExtname == .mesh",
+          "group": "navigation@9"
+        },
+        {
           "command": "edgemat.openMaterial",
           "when": "resourceFilename =~ /\\.(mlsetup|mlsetup\\.json|mltemplate)$/i",
           "group": "navigation@9"
         }
       ],
       "editor/title/context": [
+        {
+          "command": "edgemat.openMesh",
+          "when": "resourceExtname == .mesh",
+          "group": "1_open@9"
+        },
         {
           "command": "edgemat.openMaterial",
           "when": "resourceFilename =~ /\\.(mlsetup|mlsetup\\.json|mltemplate)$/i",

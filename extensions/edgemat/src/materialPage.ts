@@ -17,6 +17,8 @@ export interface MaterialPageHost {
   bridge(): Promise<BridgeClient | undefined>;
   project(): Promise<Project | undefined>;
   packAndTry(project: Project): (() => Promise<unknown>) | undefined;
+  /** Tells 3D views (REDcode's, through EDGEmat's API) that materials changed, so they draw them again. */
+  materialsChanged(): void;
   log(line: string): void;
 }
 
@@ -224,6 +226,7 @@ export class MaterialPage {
     for (const f of result.written) this.host.log(`  ${f}`);
     for (const a of result.applied) this.host.log(`  ${a.mesh} › ${a.material}: ${a.mi} (${a.how})`);
     const where = result.applied.length ? ` and put on ${result.applied.length} mesh material${result.applied.length === 1 ? "" : "s"}` : "";
+    if (result.applied.length) this.host.materialsChanged();
     const pack = this.host.packAndTry(project);
     const actions = [...(pack ? ["Pack and Try"] : []), "Show Files"];
     void vscode.window.showInformationMessage(`Saved ${materialSlug(req.name)} into ${project.name}${where}.`, ...actions).then(async (pick) => {

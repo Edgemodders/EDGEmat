@@ -22,6 +22,7 @@ Last updated 2026-10-20.
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
+| [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-23); REDcode's button is requested |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
@@ -281,6 +282,20 @@ Built 2026-10-19. **Last run 2026-10-19 by the owner through F5: all 7 checks pa
 | The same layers as WolvenKit | The Arasaka samurai jacket's setup (`ml_t2_078_ma_jacket__samurai.mlsetup`, the material `ml_t2_078_ma_jacket__samurai_masksset` on `t2_078_ma_jacket__samurai.mesh`, look `default`), read by EDGEmat and compared field by field with WolvenKit's own JSON of the file (REDbridge's `toJson` runs WolvenKit's reader) | 20 of 20 layers; all 360 fields equal (surface, color, tiling, offsets, opacity, levels, microblend and its settings); no field EDGEmat ignores; ratio and useNormal equal |
 | Claude describes it correctly | `mat_describe` over stdio, as Claude Code calls it, and Claude's description from it | 14 of 20 layers shown, with their surfaces, colors, finishes and shares. The owner: "100% accurate". The white stitching is not in the setup but a separate decal material on the mesh (`pasted__decal_stitches`, `garment_decals_d01.xbm`), which `mat_find` lists: a whole-garment description combines the two |
 | A setup from a mod archive | The setup editor hand test, step 10 (2026-10-17) | Pass |
+
+### Open Mesh in EDGEmat
+
+Added 2026-10-23: from a mesh in 3D to its materials in EDGEmat, and the 3D view drawing them again after a save. In the development host (F5), with REDcode, and a WolvenKit project holding a game `.mesh` under `sourcerchive` (REDcode's Asset Browser › right-click a mesh › Add to Project). The Comfy rocker slim-fits' `l1_012_pwa_pants__jeans_tight.mesh` is a good one: its leather material is multilayered.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | VS Code's Explorer: right-click the project's `.mesh` › **Open Mesh in EDGEmat** | EDGEmat's Find view opens. Its message names the mesh and "the project's copy". The mesh's looks are listed under it |
+| 2 | Open a look › hover a multilayered material (layers icon) | Its setup and mask in the tooltip; a click opens the setup editor |
+| 3 | Open the mesh in REDcode (click it in REDcode's Project view), switch to its 3D view, keep the tab open | The mesh in 3D with EDGEmat's colors |
+| 4 | In the setup editor from step 2, change a layer's color, then **Save to Project** | Saved. Within a few seconds the 3D view from step 3 draws its materials again. The changed color shows if the mesh uses the saved setup (unverified: Save to Project may save the setup under a new name, and point the project's meshes at it) |
+| 5 | In Find, right-click a look's material › **New Material Here...**, make a material (or From an image file), **Add to Project** | Saved and put on the mesh; the 3D view draws again with the new material's color |
+| 6 | In Find, right-click the mesh › **View in 3D** | REDcode's 3D view opens the project's copy, not the game's |
+| 7 | When REDcode has the button: in the 3D view of a mesh, pick a look, press **Open in EDGEmat** | As step 1, with the look on screen open |
 
 ### Open Material in EDGEmat
 

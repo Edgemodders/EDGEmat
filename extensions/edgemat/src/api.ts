@@ -12,6 +12,10 @@ export interface EdgematApi {
    * version: color only, always "approximate". A material with nothing to show is left out.
    */
   renderMaterials(req: RenderRequest): Promise<Record<string, RenderedMaterial>>;
-  /** Fires when a material a viewer shows changed. Nothing fires it yet; editing (M3) will. */
+  /**
+   * Fires when a material a viewer shows may have changed: after a setup is saved (in place or with Save to
+   * Project) and after a new material is put on mesh materials. `mesh` is unset and `materials` empty for
+   * now: every viewer draws its materials again.
+   */
   readonly onDidChangeMaterials: vscode.Event<{ mesh?: string; materials: string[] }>;
 }

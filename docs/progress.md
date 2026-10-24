@@ -12,7 +12,7 @@ Last updated 2026-10-20.
 | Extension | 0.3.0: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your hand test of Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
+| Next up | Your hand tests of Open Mesh in EDGEmat and Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
 | Roadmap | M3 Edit with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
@@ -39,6 +39,12 @@ Last updated 2026-10-20.
 | [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open. After REDnode's current task |
 
 ## Log
+
+### 2026-10-23
+
+| What | Detail |
+|---|---|
+| **Open Mesh in EDGEmat** | The owner found no way from a mesh in REDcode's 3D view to its materials in EDGEmat. Built EDGEmat's half: the command `edgemat.openMesh` (`{ mesh, appearance }`, also on a `.mesh`'s right-click) shows the mesh in Find with the look on screen open, reading a project's copies; `onDidChangeMaterials` now fires after a setup save and after New Material puts a material on a mesh (it never fired before), so REDcode's 3D view draws again; View in 3D opens a project's copy as the file. REDcode's button is requested. Adding a look is M4's Looks editor; the same command will open it. Type check and build pass; the hand test is next |
 
 ### 2026-10-22
 

@@ -116,6 +116,8 @@ export interface SetupEditorHost {
   project(): Promise<Project | undefined>;
   /** REDcode's Pack and Try for that project, when REDcode has it open; undefined otherwise. */
   packAndTry(project: Project): (() => Promise<unknown>) | undefined;
+  /** Tells 3D views (REDcode's, through EDGEmat's API) that materials changed, so they draw them again. */
+  materialsChanged(): void;
   log(line: string): void;
 }
 
@@ -303,6 +305,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     }
     doc.saved = doc.setup;
     this.host.log(`Saved ${inPlace.file}`);
+    this.host.materialsChanged();
     // A project file at one of the game's own paths replaces the game's setup.
     const gamePath = gamePathInProject(inPlace.file);
     if (bridge && gamePath && !doc.warnedInPlace && (await isGameFile(bridge, gamePath))) {
@@ -429,6 +432,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     doc.saved = doc.setup;
     this.host.log(`Saved into ${project.archive}: ${result.written.join(", ")}`);
     for (const n of result.notes) this.host.log(`  ${n}`);
+    this.host.materialsChanged();
     const meshWord = result.meshes.length ? ` and ${result.meshes.length} mesh${result.meshes.length === 1 ? "" : "es"} pointed at it` : "";
     doc.notice = `Saved into ${project.name} as ${target}${meshWord}.`;
     this.refresh(doc);

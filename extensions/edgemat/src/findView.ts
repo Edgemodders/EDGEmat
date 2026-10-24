@@ -2,16 +2,20 @@
 // down to its materials. An item opens into its looks (one per body), each look into its meshes, each
 // mesh into its materials; a multilayered material opens its setup with the mask set it names.
 
+import * as path from "node:path";
 import * as vscode from "vscode";
-import { itemMaterials, loadItems, meshMaterials, searchItems, type BridgeClient, type ItemEntry, type ItemLook, type MaterialTarget, type MaterialUse, type MeshLook } from "./core";
+import { isFilePath, itemMaterials, loadItems, meshMaterials, projectArchive, searchItems, type BridgeClient, type ItemEntry, type ItemLook, type MaterialTarget, type MaterialUse, type MeshLook } from "./core";
 import { gameUri, SetupEditor } from "./setupEditor";
 
 type Node =
   | { kind: "group"; label: string; children: Node[] }
   | { kind: "item"; item: ItemEntry }
   | { kind: "look"; item: ItemEntry; look: ItemLook }
-  | { kind: "meshFile"; path: string }
-  | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance"; looks?: ItemLook[] }
+  // From Open in EDGEmat: `root` is the project's sourcerchive when the mesh is a project file (its copies
+  // are read first), `appearance` the look the 3D view showed, which opens. `open` is a fresh number each
+  // time, for fresh tree ids, so VS Code opens them again instead of keeping an earlier state.
+  | { kind: "meshFile"; path: string; root?: string; appearance?: string; open?: number }
+  | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance"; looks?: ItemLook[]; open?: number; root?: string }
   | { kind: "material"; use: MaterialUse; via: string; mesh: string; targets: MaterialTarget[] }
   | { kind: "message"; text: string };
 
@@ -23,11 +27,15 @@ export class FindView implements vscode.TreeDataProvider<Node> {
   readonly onDidChangeTreeData = this.changed.event;
   private roots: Node[] = [];
   private query = "";
+  /** The mesh shown by showMesh, for the view's message. */
+  private shown = "";
+  private serial = 0;
   private readonly walks = new Map<string, Promise<ItemLook[] | string>>();
 
   constructor(private readonly bridge: () => Promise<BridgeClient | undefined>, private readonly cacheDir: () => string, private readonly log: (line: string) => void) {}
 
   get summary(): string {
+    if (this.shown) return this.shown;
     if (!this.query) return "";
     const n = (k: string) => (this.roots.find((r) => r.kind === "group" && r.label.startsWith(k)) as { children: Node[] } | undefined)?.children.length ?? 0;
     return `"${this.query}": ${n("Items")} items, ${n("Meshes")} meshes`;
@@ -36,6 +44,7 @@ export class FindView implements vscode.TreeDataProvider<Node> {
   /** Searches items by name and meshes by path. The first search reads the item list from TweakDB (a few seconds, once per game version). */
   async search(query: string): Promise<void> {
     this.query = query.trim();
+    this.shown = "";
     const bridge = await this.bridge();
     if (!bridge) {
       this.roots = [{ kind: "message", text: "Finding needs REDbridge: set the game folder first." }];
@@ -59,8 +68,22 @@ export class FindView implements vscode.TreeDataProvider<Node> {
     this.changed.fire();
   }
 
+  /**
+   * One mesh, as Open in EDGEmat hands it over from REDcode's 3D view: a game path, or a file. A file under a
+   * project's sourcerchive reads the project's copies first, as View in 3D does; the look on screen opens.
+   */
+  showMesh(mesh: string, appearance?: string): void {
+    const root = isFilePath(mesh) ? projectArchive(mesh) : undefined;
+    const gamePath = root ? path.relative(root, mesh) : mesh;
+    this.query = "";
+    this.shown = `${file(mesh)}${root ? ", the project's copy" : ""}${appearance ? `, look ${appearance}` : ""}`;
+    this.roots = [{ kind: "meshFile", path: gamePath, root, appearance, open: ++this.serial }];
+    this.changed.fire();
+  }
+
   clear(): void {
     this.query = "";
+    this.shown = "";
     this.roots = [];
     this.changed.fire();
   }
@@ -104,8 +127,9 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         const bridge = await this.bridge();
         if (!bridge) return [{ kind: "message", text: "REDbridge is not available." }];
         try {
-          const looks = await meshMaterials(bridge, node.path);
-          return looks.map((mesh): Node => ({ kind: "mesh", mesh, via: `${file(node.path)}, ${mesh.appearance}`, label: "appearance" }));
+          const looks = await meshMaterials(bridge, node.path, undefined, node.root);
+          const want = node.appearance?.toLowerCase();
+          return looks.map((mesh): Node => ({ kind: "mesh", mesh, via: `${file(node.path)}, ${mesh.appearance}`, label: "appearance", open: want && mesh.appearance.toLowerCase() === want ? node.open : undefined, root: node.root }));
         } catch (e) {
           return [{ kind: "message", text: e instanceof Error ? e.message : String(e) }];
         }
@@ -147,18 +171,20 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         return t;
       }
       case "meshFile": {
-        const t = new vscode.TreeItem(file(node.path), Closed);
-        t.description = node.path.slice(0, node.path.lastIndexOf("\\"));
-        t.tooltip = node.path;
+        const t = new vscode.TreeItem(file(node.path), node.open ? vscode.TreeItemCollapsibleState.Expanded : Closed);
+        t.description = node.root ? "the project's copy" : node.path.slice(0, node.path.lastIndexOf("\\"));
+        t.tooltip = node.root ? `${node.path}\nThe project's copy, in ${node.root}` : node.path;
+        if (node.open) t.id = `open${node.open}:${node.path}`;
         t.iconPath = new vscode.ThemeIcon("symbol-structure");
         t.contextValue = "edgemat.mesh";
         return t;
       }
       case "mesh": {
-        const t = new vscode.TreeItem(node.label === "file" ? file(node.mesh.mesh) : node.mesh.appearance, node.label === "file" ? vscode.TreeItemCollapsibleState.Expanded : Closed);
+        const t = new vscode.TreeItem(node.label === "file" ? file(node.mesh.mesh) : node.mesh.appearance, node.label === "file" || node.open ? vscode.TreeItemCollapsibleState.Expanded : Closed);
         const ml = node.mesh.materials.filter((m) => m.multilayered).length;
         t.description = `${node.label === "file" ? `look ${node.mesh.appearance} · ` : ""}${ml} multilayered of ${node.mesh.materials.length}`;
         t.tooltip = `${node.mesh.mesh}\nmesh appearance ${node.mesh.appearance}${node.mesh.component ? `\ncomponent ${node.mesh.component}` : ""}`;
+        if (node.open) t.id = `open${node.open}:${node.mesh.mesh}:${node.mesh.appearance}`;
         t.iconPath = new vscode.ThemeIcon(node.label === "file" ? "symbol-structure" : "symbol-color");
         t.contextValue = "edgemat.mesh";
         return t;
@@ -207,10 +233,11 @@ export class FindView implements vscode.TreeDataProvider<Node> {
     return { targets: n.targets, label: `${n.use.name} · ${n.via}` };
   }
 
-  /** The mesh behind a node, for View in 3D, with the look (mesh appearance) the node shows. */
+  /** The mesh behind a node, for View in 3D, with the look (mesh appearance) the node shows; the project's copy when Find read that. */
   static meshOf(node: unknown): { mesh: string; appearance?: string } | undefined {
     const n = node as Node | undefined;
-    return n?.kind === "meshFile" ? { mesh: n.path } : n?.kind === "mesh" ? { mesh: n.mesh.mesh, appearance: n.mesh.appearance } : undefined;
+    const at = (p: string, root?: string) => (root ? path.join(root, p) : p);
+    return n?.kind === "meshFile" ? { mesh: at(n.path, n.root), appearance: n.appearance } : n?.kind === "mesh" ? { mesh: at(n.mesh.mesh, n.root), appearance: n.mesh.appearance } : undefined;
   }
 }
 

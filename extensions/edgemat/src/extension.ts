@@ -5,7 +5,7 @@
 import * as vscode from "vscode";
 import type { EdgematApi } from "./api";
 import * as path from "node:path";
-import { BridgeClient, buildLibrary, defaultCacheDir, findGames, gamePathInProject, isCurrent, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library, type Project } from "./core";
+import { BridgeClient, buildLibrary, defaultCacheDir, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library, type Project } from "./core";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
 import { MaterialPage } from "./materialPage";
@@ -247,9 +247,31 @@ async function viewIn3D(target: { mesh: string; appearance?: string } | undefine
     if (pick) await vscode.commands.executeCommand("redcode.restartBridge");
     return;
   }
-  const uri = vscode.Uri.from({ scheme: "redcode-game", path: "/" + target.mesh.replace(/\\/g, "/") });
+  // A project's copy opens as the file; a game mesh through REDcode's game files.
+  const uri = isFilePath(target.mesh) ? vscode.Uri.file(target.mesh) : vscode.Uri.from({ scheme: "redcode-game", path: "/" + target.mesh.replace(/\\/g, "/") });
   await vscode.commands.executeCommand("vscode.openWith", uri, "redcode.cr2w");
   if (target.appearance) vscode.window.setStatusBarMessage(`$(eye) EDGEmat: pick the look "${target.appearance}" in the 3D view`, 15000);
+}
+
+/**
+ * What Open in EDGEmat hands over from REDcode's 3D view: the mesh as REDcode's viewer names it to
+ * renderMaterials (its game path, or the file on disk), and the look on screen. Also takes a Uri, a plain
+ * string, or a node of REDcode's Project view ({ file }).
+ */
+export interface OpenMeshRequest {
+  mesh?: string;
+  uri?: vscode.Uri | string;
+  appearance?: string;
+}
+
+function meshOfRequest(arg: unknown): { mesh: string; appearance?: string } | undefined {
+  if (arg instanceof vscode.Uri) return arg.scheme === "file" ? { mesh: arg.fsPath } : gamePathOfUri(arg) ? { mesh: gamePathOfUri(arg)! } : undefined;
+  if (typeof arg === "string") return arg.trim() ? { mesh: arg.trim() } : undefined;
+  const r = (arg ?? {}) as OpenMeshRequest & { file?: unknown };
+  const appearance = typeof r.appearance === "string" && r.appearance.trim() ? r.appearance.trim() : undefined;
+  const uri = typeof r.uri === "string" ? vscode.Uri.parse(r.uri) : r.uri;
+  const mesh = typeof r.mesh === "string" && r.mesh.trim() ? { mesh: r.mesh.trim() } : uri ? meshOfRequest(uri) : typeof r.file === "string" ? { mesh: r.file } : undefined;
+  return mesh && { ...mesh, appearance };
 }
 
 /**
@@ -307,9 +329,10 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     },
     project: () => chooseProject(context),
     packAndTry: packAndTryFor,
+    materialsChanged: () => materialsChanged.fire({ materials: [] }),
   };
   const setupEditor = new SetupEditor(host);
-  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndTry: packAndTryFor, log });
+  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndTry: packAndTryFor, materialsChanged: () => materialsChanged.fire({ materials: [] }), log });
 
   context.subscriptions.push(
     output,
@@ -343,6 +366,18 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       await vscode.window.withProgress({ location: { viewId: "edgemat.find" }, title: "Finding" }, () => find.search(q));
       findTree.message = find.summary || undefined;
       void vscode.commands.executeCommand("setContext", "edgemat.findActive", true);
+    }),
+    // REDcode's 3D view hands its mesh over here (Open in EDGEmat): Find shows it, the look on screen open.
+    vscode.commands.registerCommand("edgemat.openMesh", async (arg?: OpenMeshRequest) => {
+      const req = meshOfRequest(arg ?? vscode.window.activeTextEditor?.document.uri);
+      if (!req || !/\.mesh$/i.test(req.mesh)) {
+        void vscode.window.showInformationMessage("Open Mesh in EDGEmat takes a mesh (.mesh), from REDcode's 3D view or a project.");
+        return;
+      }
+      find.showMesh(req.mesh, req.appearance);
+      findTree.message = find.summary || undefined;
+      void vscode.commands.executeCommand("setContext", "edgemat.findActive", true);
+      await vscode.commands.executeCommand("edgemat.find.focus");
     }),
     vscode.commands.registerCommand("edgemat.clearFind", () => {
       find.clear();

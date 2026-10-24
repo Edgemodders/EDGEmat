@@ -14,6 +14,12 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 **New**
 
 - **Open Material in EDGEmat...** on a right-click: on a `.mlsetup`, `.mlsetup.json` or `.mltemplate` in the Explorer or on its editor tab, and on a `.mlsetup` in REDcode's Project view (with REDcode 0.10.3 or later). A setup opens in EDGEmat's setup editor, a surface on its page.
+- **Open Mesh in EDGEmat** on a right-click on a `.mesh` (the Explorer or its editor tab), and from REDcode's 3D view once REDcode adds its button: the Find view shows the mesh with the look on screen open, and each material's setup or **New Material Here**. A mesh in your project shows the project's copy.
+
+**Changed**
+
+- REDcode's 3D view draws the materials again after you save a setup or put a new material on a mesh, so the change shows without reopening it.
+- **View in 3D** on a mesh in your project opens the project's copy.
 
 ## 0.3.1 (2026-10-21)
 
