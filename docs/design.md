@@ -2,7 +2,7 @@
 
 EDGEmat is the EDGEmodders material editor for Cyberpunk 2077: a VS Code extension and an MCP server. A modder picks a garment, clicks a layer, chooses a color and sees it on the model. Or they skip the UI and tell REDagent or Claude "make this jacket red".
 
-**Status: draft 0.2.** Agreed with the user on 2026-10-14: a standalone extension in the EDGE family, `.mlsetup` editing first, an MCP server beside the UI, and MlsetupBuilder studied for behavior, never copied. M0 done on 2026-10-16: the [behavior spec](design/behavior.html) is checked against the game and agreed, and Neurolinked contacted. Since then the design gained the activity bar container, opening files from anywhere, the game folder and bridge through REDcode's API, and the preview split with REDcode. M1 done on 2026-10-16. Next: M2. **Revised 2026-10-19 with the owner:** [Generate a material](#generate-a-material) from words or a photo, [game materials on a new mesh](#game-materials-on-a-new-mesh), and a new phase **M4 Make** ahead of the preview, so EDGEfab's clothes and objects get materials sooner. Phases are now M0 to M7.
+**Status: draft 0.2.** Agreed with the user on 2026-10-14: a standalone extension in the EDGE family, `.mlsetup` editing first, an MCP server beside the UI, and MlsetupBuilder studied for behavior, never copied. M0 done on 2026-10-16: the [behavior spec](design/behavior.html) is checked against the game and agreed, and Neurolinked contacted. Since then the design gained the activity bar container, opening files from anywhere, the game folder and bridge through REDcode's API, and the preview split with REDcode. M1 done on 2026-10-16, M2 on 2026-10-19, M3 on 2026-10-20 (released as the 0.3.0 preview; 0.3.1 on 2026-10-21). Next: M4 Make. **Revised 2026-10-19 with the owner:** [Generate a material](#generate-a-material) from words or a photo, [game materials on a new mesh](#game-materials-on-a-new-mesh), and a new phase **M4 Make** ahead of the preview, so EDGEfab's clothes and objects get materials sooner. Phases are now M0 to M7.
 
 ## Mission
 
@@ -219,9 +219,9 @@ The game loads `.archive` files at startup, so today every change means a restar
 
 | Option | Notes |
 |---|---|
-| **RED Hot Tools** (a community RED4ext plugin) | Reported to reload archives from a hot folder in a running game. Unverified on the dev PC. Try it first |
-| **An EDGE hot loader** | If RED Hot Tools does not fit, the same idea built into REDnode's native plugin: mount a changed archive and refresh what uses it |
-| **Refresh what is on screen** | A reloaded resource shows only when the game loads it again. REDnode can respawn an object or re-apply V's appearance (switching appearances at runtime already works, as EDGEbuilder does) |
+| **RED Hot Tools** (a community RED4ext plugin) | Reloads archives from a hot folder in a running game. **Works** (2026-10-20 on the owner's laptop; REDnode uses it). The official 1.3.0 can end the game when it replaces an archive in a mod folder with names in capitals, such as `EDGEmat_M3.archive`; the [Edgemodders build](https://github.com/CyberbuildsAI/cp2077-red-hot-tools/releases) `v1.3.0+edgemodders.1` fixes it (upstream PR [psiberx/cp2077-red-hot-tools#20](https://github.com/psiberx/cp2077-red-hot-tools/pull/20)) |
+| **An EDGE hot loader** | Not needed so far: REDnode 0.26.0 and later drive RED Hot Tools with checks and a queue around it (`archives.reload`, MCP `archives_reload`), and refuse a swap the official build would get wrong |
+| **Refresh what is on screen** | A reloaded resource shows only when the game loads it again. Since REDnode 0.26.20 a swap re-applies the appearance of the clothing V wears, so a recolored garment should show at once (unverified for material changes). Other objects still need the game to load them again |
 
 The flow for a modder: **Pack and try** in REDcode packs the project, deploys it to the hot folder (EDGEdeck's deploy, so the mod list stays right), and asks REDnode to reload and refresh. Setups replaced in place also need Material Texture Override (spec section 6), unknown whether that holds for hot loading. This also serves the runtime-materials goal in [Later ideas](#materials-at-runtime-through-redagent).
 
@@ -360,7 +360,7 @@ Likely shape: one MCP call that returns the whole garment at once (`mat_item`, u
 |---|---|---|
 | 1. What is being looked at | The running game names the object in view: its entity, mesh component, mesh and mesh appearance | Not built. REDnode reads and calls into the running game; a "looked-at object" query is a REDnode or EDGEbuilder request when the time comes |
 | 2. The change | Find the object's setup, pick the nearest preset in each layer's template (or a template with a better match), write the result | EDGEmat's core, M2 and M3. World props use the same multilayered setups as clothing |
-| 3. Into the running game | The game loads `.archive` files at startup, so a changed file has to be reloaded live | Open. RED Hot Tools (a community tool) is said to reload archives in a running game, unverified. If it does not fit, an EDGE hot reloader built the same way. REDnode's hot reload restarts its own JS mods; it does not reload game files. Planned with the custom-asset workflow: [Hot-loading archives](#hot-loading-archives) |
+| 3. Into the running game | The game loads `.archive` files at startup, so a changed file has to be reloaded live | Possible today: REDnode's `archives.reload` swaps a changed archive into the running game through RED Hot Tools ([Hot-loading archives](#hot-loading-archives)). What is on screen updates only when the game loads it again, except the clothing V wears |
 
 | Route | Notes |
 |---|---|

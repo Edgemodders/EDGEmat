@@ -2,14 +2,14 @@
 
 What has been done on EDGEmat, what was decided and why, and what is open. Newest first within each section. Read this to catch up without asking. The [design](design.html) and the [behavior spec](design/behavior.html) hold the full detail.
 
-Last updated 2026-10-20.
+Last updated 2026-10-24.
 
 ## At a glance
 
 | | |
 |---|---|
 | Phase | **M3 Edit done 2026-10-20**, with Generate's first slice, and **0.3.0 released** the same day: the first preview, on the VS Code Marketplace, Open VSX and GitHub. Next: M4 Make |
-| Extension | 0.3.0: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
+| Extension | 0.3.1: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
 | Next up | Your hand tests of Open Mesh in EDGEmat and Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
@@ -24,20 +24,20 @@ Last updated 2026-10-20.
 | Screenshots: 8 for the Nexus page (`nexus/README.md`, "Screenshots") and the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)). The tutorials' in-game shots are in (2026-10-20); their UI shots still wait | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
 | Record Neurolinked's reply, if one comes | Design, "Prior art" | 2026-10-16 |
-| Try RED Hot Tools on the dev PC | Tells us whether hot-loading archives works today (design, "Hot-loading archives"), and tests REDcode's Pack and Try hot path. Planned for your next session at the PC | 2026-10-16 |
+| Try RED Hot Tools on the dev PC | Answered on the laptop: RED Hot Tools is installed there and Pack and Try went hot on 2026-10-20 (log). On the dev PC, use the [Edgemodders build](https://github.com/CyberbuildsAI/cp2077-red-hot-tools/releases) (`v1.3.0+edgemodders.1`): the official 1.3.0 can end the game when it replaces an archive in a mod folder with names in capitals, such as `EDGEmat_M3.archive` (design, "Hot-loading archives") | 2026-10-16 |
 
 ## Waiting on other repos
 
 | Request | What | Status |
 |---|---|---|
 | [REDbridge #4](https://github.com/Edgemodders/REDbridge/issues/4) | `tweakdb.records`: from an item ID to its appearance | **Shipped** in REDbridge 0.8.0, 2026-10-15. Used in M0 to find the sneakers' items |
-| [REDcode #6](https://github.com/Edgemodders/REDcode/issues/6) | REDcode's mesh viewer asks EDGEmat for rendered materials; appearance switching; a GLB's own textures | **Shipped** in REDcode 0.10.0, 2026-10-16. Appearance switching and GLB textures hand-tested. The `renderMaterials` hook waits for EDGEmat to provide it (M5) |
+| [REDcode #6](https://github.com/Edgemodders/REDcode/issues/6) | REDcode's mesh viewer asks EDGEmat for rendered materials; appearance switching; a GLB's own textures | **Shipped** in REDcode 0.10.0, 2026-10-16. Appearance switching and GLB textures hand-tested. EDGEmat provides `renderMaterials` since 2026-10-19 (colors only, for View in 3D); the full bake is M5 |
 | [REDcode #7](https://github.com/Edgemodders/REDcode/issues/7) | "Pack and try" (hot load) and "Edit in Blender" | **Shipped** in REDcode 0.10.0, 2026-10-16, hand-tested. Without Red Hot Tools, Pack and Try falls back to Pack and Install; the hot path is untested |
 | [REDbridge #5](https://github.com/Edgemodders/REDbridge/issues/5) | Mesh import for a new asset, from a GLB | **Shipped** in REDbridge 0.9.0, 2026-10-16. A GLB is imported over a template mesh (WolvenKit cannot make one from a GLB alone). The result names the GLB's materials per submesh but does not apply them: assigning materials is EDGEmat's Looks editor (M4). Not yet loaded in the game |
 | [REDcode #13](https://github.com/Edgemodders/REDcode/issues/13) | The mesh viewer's **Open in EDGEmat** button: runs `edgemat.openMesh` with `{ mesh, appearance }`; optionally a `.mesh` kind in the Project view | Open, filed 2026-10-23. EDGEmat's side is built (`50b38bc`) |
-| [REDbridge #8](https://github.com/Edgemodders/REDbridge/issues/8) | `project.import` takes a texture setup (color, normal, grayscale) for a new `.xbm` | Open, filed 2026-10-19. Not blocking: EDGEmat copies a game texture of the right kind to the target first |
-| [EDGEbuilder #1](https://github.com/Edgemodders/EDGEbuilder/issues/1) | Index the user's mod archives, so custom objects can be placed | Open. EDGEbuilder's session is on it |
-| [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open. After REDnode's current task |
+| [REDbridge #8](https://github.com/Edgemodders/REDbridge/issues/8) | `project.import` takes a texture setup (color, normal, grayscale) for a new `.xbm` | **Built** on REDbridge's main, closed 2026-10-23; not in a release yet (0.10.0 is the latest). Not blocking: EDGEmat copies a game texture of the right kind to the target first |
+| [EDGEbuilder #1](https://github.com/Edgemodders/EDGEbuilder/issues/1) | Index the user's mod archives, so custom objects can be placed | Open. Planned as EDGEbuilder's phase B2c, its plan to be agreed |
+| [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open, mostly shipped: REDnode 0.26.0 and later swap archives into the running game through RED Hot Tools (`archives.reload`, MCP `archives_reload`), and since 0.26.20 the clothing V wears shows the new version at once (unverified for a material change). A world object may keep the old look until the game loads it again |
 
 ## Log
 
