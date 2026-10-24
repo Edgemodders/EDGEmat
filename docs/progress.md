@@ -34,6 +34,7 @@ Last updated 2026-10-20.
 | [REDcode #6](https://github.com/Edgemodders/REDcode/issues/6) | REDcode's mesh viewer asks EDGEmat for rendered materials; appearance switching; a GLB's own textures | **Shipped** in REDcode 0.10.0, 2026-10-16. Appearance switching and GLB textures hand-tested. The `renderMaterials` hook waits for EDGEmat to provide it (M5) |
 | [REDcode #7](https://github.com/Edgemodders/REDcode/issues/7) | "Pack and try" (hot load) and "Edit in Blender" | **Shipped** in REDcode 0.10.0, 2026-10-16, hand-tested. Without Red Hot Tools, Pack and Try falls back to Pack and Install; the hot path is untested |
 | [REDbridge #5](https://github.com/Edgemodders/REDbridge/issues/5) | Mesh import for a new asset, from a GLB | **Shipped** in REDbridge 0.9.0, 2026-10-16. A GLB is imported over a template mesh (WolvenKit cannot make one from a GLB alone). The result names the GLB's materials per submesh but does not apply them: assigning materials is EDGEmat's Looks editor (M4). Not yet loaded in the game |
+| [REDcode #13](https://github.com/Edgemodders/REDcode/issues/13) | The mesh viewer's **Open in EDGEmat** button: runs `edgemat.openMesh` with `{ mesh, appearance }`; optionally a `.mesh` kind in the Project view | Open, filed 2026-10-23. EDGEmat's side is built (`50b38bc`) |
 | [REDbridge #8](https://github.com/Edgemodders/REDbridge/issues/8) | `project.import` takes a texture setup (color, normal, grayscale) for a new `.xbm` | Open, filed 2026-10-19. Not blocking: EDGEmat copies a game texture of the right kind to the target first |
 | [EDGEbuilder #1](https://github.com/Edgemodders/EDGEbuilder/issues/1) | Index the user's mod archives, so custom objects can be placed | Open. EDGEbuilder's session is on it |
 | [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open. After REDnode's current task |
@@ -44,7 +45,7 @@ Last updated 2026-10-20.
 
 | What | Detail |
 |---|---|
-| **Open Mesh in EDGEmat** | The owner found no way from a mesh in REDcode's 3D view to its materials in EDGEmat. Built EDGEmat's half: the command `edgemat.openMesh` (`{ mesh, appearance }`, also on a `.mesh`'s right-click) shows the mesh in Find with the look on screen open, reading a project's copies; `onDidChangeMaterials` now fires after a setup save and after New Material puts a material on a mesh (it never fired before), so REDcode's 3D view draws again; View in 3D opens a project's copy as the file. REDcode's button is requested. Adding a look is M4's Looks editor; the same command will open it. Type check and build pass; the hand test is next |
+| **Open Mesh in EDGEmat** | The owner found no way from a mesh in REDcode's 3D view to its materials in EDGEmat. Built EDGEmat's half: the command `edgemat.openMesh` (`{ mesh, appearance }`, also on a `.mesh`'s right-click) shows the mesh in Find with the look on screen open, reading a project's copies; `onDidChangeMaterials` now fires after a setup save and after New Material puts a material on a mesh (it never fired before), so REDcode's 3D view draws again; View in 3D opens a project's copy as the file. REDcode's button is requested ([REDcode #13](https://github.com/Edgemodders/REDcode/issues/13)). Adding a look is M4's Looks editor; the same command will open it. Type check and build pass; the hand test is next |
 
 ### 2026-10-22
 
