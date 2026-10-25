@@ -19,6 +19,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 **Changed**
 
 - REDcode's 3D view draws the materials again after you save a setup or put a new material on a mesh, so the change shows without reopening it.
+- A live preview in REDcode's 3D view: while a setup is open in EDGEmat's setup editor, the 3D view shows it as edited, before you save, and follows each edit, undo and redo. Close the editor without saving and the 3D view goes back to the saved setup.
 - **View in 3D** on a mesh in your project opens the project's copy.
 
 **Fixed**

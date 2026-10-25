@@ -34,7 +34,11 @@ export interface RenderRequest {
  * Renders a mesh's materials, by name. A material with nothing to show (no setup, no mask set, no
  * color texture) is left out, so the viewer keeps its flat color for it. Problems go to `log`.
  */
-export async function renderMaterials(bridge: BridgeClient, lib: Library | undefined, dir: string, req: RenderRequest, log: (line: string) => void = () => {}): Promise<Record<string, RenderedMaterial>> {
+/**
+ * `live`: the color map of a setup open in an editor, by the game path a material names, so a 3D view shows
+ * edits not saved yet; undefined when no editor has it open.
+ */
+export async function renderMaterials(bridge: BridgeClient, lib: Library | undefined, dir: string, req: RenderRequest, log: (line: string) => void = () => {}, live?: (setup: string) => string | undefined): Promise<Record<string, RenderedMaterial>> {
   const root = isFilePath(req.mesh) ? projectArchive(req.mesh) : undefined;
   const uses = req.materials?.length
     ? await namedMaterials(bridge, req.mesh, req.materials, root)
@@ -44,7 +48,7 @@ export async function renderMaterials(bridge: BridgeClient, lib: Library | undef
   const out: Record<string, RenderedMaterial> = {};
   for (const use of uses) {
     try {
-      const png = await colorMap(bridge, lib, dir, use, local);
+      const png = (use.multilayered && use.setup ? live?.(use.setup) : undefined) ?? (await colorMap(bridge, lib, dir, use, local));
       if (png) out[use.name] = { baseColor: fs.readFileSync(png), fidelity: "approximate" };
     } catch (e) {
       log(`3D view, ${use.name}: ${e instanceof Error ? e.message : String(e)}`);

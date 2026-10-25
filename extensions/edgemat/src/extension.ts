@@ -419,7 +419,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       // Layer colors come from the library: wait for a first build.
       if (!view.current && building) await building;
       const started = Date.now();
-      const maps = await renderMaterials(bridge, library(), cacheDir, req, log);
+      const maps = await renderMaterials(bridge, library(), cacheDir, req, log, (setup) => setupEditor.liveColorMap(setup));
       log(`3D view: ${Object.keys(maps).length} of ${req.materials?.length ?? "the"} materials for ${req.mesh}${req.appearance ? `, look ${req.appearance}` : ""}, in ${Date.now() - started} ms`);
       return maps;
     },

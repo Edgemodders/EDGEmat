@@ -295,6 +295,7 @@ Added 2026-10-23: from a mesh in 3D to its materials in EDGEmat, and the 3D view
 | 4 | In the setup editor from step 2, change a layer's color, then **Save to Project** › **As a new setup** (recommended) › accept the game path › keep the project's mesh ticked › Enter | Saved, and the project's mesh pointed at the new setup. Within a few seconds the 3D view from step 3 draws its materials again with the new color. Unverified: how REDcode's open tab takes its mesh file changing on disk (redraws, asks to reload, or keeps its copy). *In place of the game's setup* needs the Material Texture Override mod in the game; *At a game path you choose* changes no mesh, so the 3D view would not change |
 | 5 | In Find, right-click a look's material › **New Material Here...**, make a material (or From an image file), **Add to Project** | Saved and put on the mesh; the 3D view draws again with the new material's color |
 | 6 | In Find, right-click the mesh › **View in 3D** | REDcode's 3D view opens the project's copy, not the game's |
+| 4b | With the 3D view and the setup editor both open: change a color without saving, then Ctrl+Z, then Ctrl+Y | The 3D view follows each within about a second: the new color, back, and again. Close the editor tab, **Don't Save**: the 3D view goes back to the saved setup |
 | 7 | When REDcode has the button: in the 3D view of a mesh, pick a look, press **Open in EDGEmat** | As step 1, with the look on screen open |
 
 ### Open Material in EDGEmat

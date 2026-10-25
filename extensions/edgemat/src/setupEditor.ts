@@ -89,6 +89,10 @@ class SetupDocument implements vscode.CustomDocument {
   notice?: string;
   /** Asked once per document: saving in place over a game setup needs Material Texture Override. */
   warnedInPlace = false;
+  /** Where Save to Project last wrote it, as a game path: the project's meshes point there now. */
+  savedTo?: string;
+  /** The page's last view of the setup as edited, with its color map, for 3D views (liveColorMap). */
+  view?: OpenedSetup;
   readonly panels = new Set<vscode.WebviewPanel>();
   constructor(readonly uri: vscode.Uri, readonly source: SetupSource, origin: string) {
     const { mask, via } = uriOptions(uri);
@@ -135,8 +139,32 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   readonly onDidChangeCustomDocument = this.changes.event;
   /** The document of the setup editor in front, for the Save to Project command. */
   private active?: SetupDocument;
+  /** Every document with a tab open, for liveColorMap. */
+  private readonly open = new Set<SetupDocument>();
+  private liveTimer?: ReturnType<typeof setTimeout>;
 
   constructor(private readonly host: SetupEditorHost) {}
+
+  /**
+   * The color map of a setup as an open editor has it now, unsaved edits included, by the game path a mesh's
+   * material names: the setup's own path, or where Save to Project wrote it. REDcode's 3D view draws it.
+   */
+  liveColorMap(setup: string): string | undefined {
+    const want = setup.toLowerCase();
+    for (const doc of this.open) {
+      if (doc.gamePath?.toLowerCase() === want || doc.savedTo?.toLowerCase() === want) return doc.view?.composite?.file;
+    }
+    return undefined;
+  }
+
+  /** Tells 3D views to draw again once edits pause, so dragging a color does not ask for a render per step. */
+  private changedLive(): void {
+    if (this.liveTimer) clearTimeout(this.liveTimer);
+    this.liveTimer = setTimeout(() => {
+      this.liveTimer = undefined;
+      this.host.materialsChanged();
+    }, 300);
+  }
 
   async openCustomDocument(uri: vscode.Uri, context: vscode.CustomDocumentOpenContext): Promise<SetupDocument> {
     const doc = await this.makeDocument(uri);
@@ -172,6 +200,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     const w = panel.webview;
     w.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(this.host.extensionUri, "dist"), vscode.Uri.file(this.host.cacheDir())] };
     doc.panels.add(panel);
+    this.open.add(doc);
     this.active = doc;
     // A hidden tab's page is thrown away, and comes back from the html it was first given; edits since came
     // as updates, so it would show the setup as opened. Coming back, it gets the setup as it is now.
@@ -187,6 +216,8 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     panel.onDidDispose(() => {
       doc.panels.delete(panel);
       if (this.active === doc && !doc.panels.size) this.active = undefined;
+      // Closed: 3D views go back to the setup on disk.
+      if (!doc.panels.size && this.open.delete(doc)) this.changedLive();
     });
 
     w.onDidReceiveMessage(async (m: { type: string; text?: string; path?: string; index?: number; patch?: LayerPatch }) => {
@@ -273,13 +304,16 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
         doc.setup = before;
         doc.notice = undefined;
         this.refresh(doc);
+        this.changedLive();
       },
       redo: () => {
         doc.setup = after;
         this.refresh(doc);
+        this.changedLive();
       },
     });
     this.refresh(doc);
+    this.changedLive();
   }
 
   private refresh(doc: SetupDocument): void {
@@ -290,6 +324,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   private post(doc: SetupDocument, panel: vscode.WebviewPanel, full = false): void {
     if (!doc.opened || !doc.setup) return;
     const view = doc.setup === doc.opened.setup ? doc.opened : withSetup(doc.opened, doc.setup, this.host.library(), this.host.cacheDir());
+    doc.view = view;
     const data = this.data(panel.webview, doc, view);
     if (full || !panel.webview.html.includes('id="data"')) panel.webview.html = this.html(panel.webview, data);
     else void panel.webview.postMessage({ type: "update", data });
@@ -340,6 +375,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     doc.setup = doc.saved;
     doc.notice = undefined;
     this.refresh(doc);
+    this.changedLive();
   }
 
   async backupCustomDocument(doc: SetupDocument, context: vscode.CustomDocumentBackupContext): Promise<vscode.CustomDocumentBackup> {
@@ -440,6 +476,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
       saveToProject(bridge, { setup: doc.setup!, archive: project.archive, target, from: gamePath, meshes, suffix }),
     );
     doc.saved = doc.setup;
+    doc.savedTo = target;
     this.host.log(`Saved into ${project.archive}: ${result.written.join(", ")}`);
     for (const n of result.notes) this.host.log(`  ${n}`);
     this.host.materialsChanged();
