@@ -6,6 +6,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { BridgeClient } from "./bridgeClient";
+import { Desk } from "./desk";
 import { isFilePath, namedMaterials, meshMaterials, type MaterialUse } from "./find";
 import { wholeTexture } from "./images";
 import type { Library } from "./library";
@@ -33,8 +34,6 @@ export interface RenderRequest {
 /**
  * Renders a mesh's materials, by name. A material with nothing to show (no setup, no mask set, no
  * color texture) is left out, so the viewer keeps its flat color for it. Problems go to `log`.
- */
-/**
  * `live`: the color map of a setup open in an editor, by the game path a material names, so a 3D view shows
  * edits not saved yet; undefined when no editor has it open.
  */
@@ -43,8 +42,9 @@ export async function renderMaterials(bridge: BridgeClient, lib: Library | undef
   const uses = req.materials?.length
     ? await namedMaterials(bridge, req.mesh, req.materials, root)
     : (await meshMaterials(bridge, req.mesh, req.appearance ?? "default", root))[0]?.materials ?? [];
-  // A game path, or the project's copy at that path when there is one.
-  const local = (p: string) => (root && fs.existsSync(path.join(root, p)) ? path.join(root, p) : undefined);
+  // A game path, or the project's copy at that path when there is one, else the Desk's (an edited setup).
+  const desk = new Desk(dir);
+  const local = (p: string) => (root && fs.existsSync(path.join(root, p)) ? path.join(root, p) : desk.copyOf(p));
   const out: Record<string, RenderedMaterial> = {};
   for (const use of uses) {
     try {

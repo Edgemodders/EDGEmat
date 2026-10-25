@@ -34,7 +34,7 @@ export type SetupPageData =
       map?: { image: string; pick: number[] };
       surfaces: Record<string, SurfaceChoices>;
       /** dirty: edits not saved yet; saves: where Ctrl+S goes, the file itself or into a project. */
-      edit: { dirty: boolean; notice?: string; saves: "file" | "project" };
+      edit: { dirty: boolean; notice?: string; saves: "file" | "desk" | "project" };
     };
 
 interface State { selected?: number; raw?: boolean; hideUnused?: boolean; view?: "all" | "layer"; colorFilter?: string }
@@ -108,7 +108,9 @@ function render(d: Extract<SetupPageData, { kind: "setup" }>): void {
     raw(`useNormal ${info.useNormal} · WolvenKit JSON ${info.jsonVersion}`)));
   head.append(el("div", { class: "editbar" },
     d.edit.dirty ? el("span", { class: "dirty" }, "Edited, not saved yet.") : "Select a layer to change it.",
-    d.edit.saves === "file" ? "Ctrl+S saves this project file; Ctrl+Z undoes." : "Ctrl+S or Save to Project saves it into a project; the original is never changed. Ctrl+Z undoes."));
+    d.edit.saves === "file" ? "Ctrl+S saves this project file; Ctrl+Z undoes."
+      : d.edit.saves === "desk" ? "Ctrl+S saves it on the Desk; Save to Project, or + on the Desk, puts it in a project. Ctrl+Z undoes."
+      : "Ctrl+S or Save to Project saves it into a project; the original is never changed. Ctrl+Z undoes."));
   document.body.append(head);
   if (d.edit.notice) document.body.append(el("div", { class: "notice" }, d.edit.notice));
   if (info.warnings.length) document.body.append(el("div", { class: "warnings" }, ...info.warnings.map((w) => el("div", {}, w))));

@@ -5,7 +5,9 @@
 import * as vscode from "vscode";
 import type { EdgematApi } from "./api";
 import * as path from "node:path";
-import { BridgeClient, buildLibrary, defaultCacheDir, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, type GameChoice, type Library, type Project } from "./core";
+import * as fs from "node:fs";
+import { BridgeClient, buildLibrary, defaultCacheDir, Desk, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, suffixFor, type GameChoice, type Library, type Project } from "./core";
+import { DeskView } from "./deskView";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
 import { MaterialPage } from "./materialPage";
@@ -189,7 +191,7 @@ const LastProject = "edgemat.lastProject";
  * The project to save into: the one REDcode has open, else one the modder picks (the last one used is
  * offered first). Remembered for next time.
  */
-async function chooseProject(context: vscode.ExtensionContext): Promise<Project | undefined> {
+async function chooseProject(context: vscode.ExtensionContext, title = "Save to Project"): Promise<Project | undefined> {
   const open = redcode()?.project?.();
   const fromRedcode = open ? projectAt(open.dir) : undefined;
   if (fromRedcode) return fromRedcode;
@@ -199,7 +201,7 @@ async function chooseProject(context: vscode.ExtensionContext): Promise<Project 
     ...(lastProject ? [{ label: lastProject.name, description: "used last", detail: lastProject.dir, project: lastProject }] : []),
     { label: "$(folder-opened) A project folder or .cpmodproj...", detail: "A WolvenKit project, such as one made with REDcode: New Project" },
   ];
-  const pick = await vscode.window.showQuickPick(items, { title: "Save to Project: which project?", placeHolder: redcode() ? "REDcode has no project open. Pick one, or open it in REDcode first." : "Pick a WolvenKit project" });
+  const pick = await vscode.window.showQuickPick(items, { title: `${title}: which project?`, placeHolder: redcode() ? "REDcode has no project open. Pick one, or open it in REDcode first." : "Pick a WolvenKit project" });
   if (!pick) return undefined;
   let project = pick.project;
   if (!project) {
@@ -256,7 +258,7 @@ async function viewIn3D(target: { mesh: string; appearance?: string } | undefine
 /**
  * What Open in EDGEmat hands over from REDcode's 3D view: the mesh as REDcode's viewer names it to
  * renderMaterials (its game path, or the file on disk), and the look on screen. Also takes a Uri, a plain
- * string, or a node of REDcode's Project view ({ file }).
+ * string, a node of REDcode's Project view ({ file }), or one of its Game Assets view ({ file: { name } }).
  */
 export interface OpenMeshRequest {
   mesh?: string;
@@ -270,7 +272,13 @@ function meshOfRequest(arg: unknown): { mesh: string; appearance?: string } | un
   const r = (arg ?? {}) as OpenMeshRequest & { file?: unknown };
   const appearance = typeof r.appearance === "string" && r.appearance.trim() ? r.appearance.trim() : undefined;
   const uri = typeof r.uri === "string" ? vscode.Uri.parse(r.uri) : r.uri;
-  const mesh = typeof r.mesh === "string" && r.mesh.trim() ? { mesh: r.mesh.trim() } : uri ? meshOfRequest(uri) : typeof r.file === "string" ? { mesh: r.file } : undefined;
+  const asset = (r.file as { name?: unknown } | undefined)?.name;
+  const mesh =
+    typeof r.mesh === "string" && r.mesh.trim() ? { mesh: r.mesh.trim() }
+    : uri ? meshOfRequest(uri)
+    : typeof r.file === "string" ? { mesh: r.file }
+    : typeof asset === "string" ? { mesh: asset }
+    : undefined;
   return mesh && { ...mesh, appearance };
 }
 
@@ -311,6 +319,13 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
   const library = () => view.current ?? loadLibrary(cacheDir);
   const find = new FindView(bridgeNow, () => cacheDir, log);
   const findTree = vscode.window.createTreeView("edgemat.find", { treeDataProvider: find, showCollapseAll: true });
+  const desk = new Desk(cacheDir);
+  fs.mkdirSync(desk.dir, { recursive: true });
+  const deskView = new DeskView(desk, bridgeNow, () => cacheDir, log);
+  const deskTree = vscode.window.createTreeView("edgemat.desk", { treeDataProvider: deskView, showCollapseAll: true });
+  // The MCP server's mat_desk changes desk.json too.
+  const deskWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(desk.dir), "desk.json"));
+  for (const on of [deskWatcher.onDidChange, deskWatcher.onDidCreate, deskWatcher.onDidDelete]) on(() => deskView.load());
   const materialsChanged = new vscode.EventEmitter<{ mesh?: string; materials: string[] }>();
   const host: SetupEditorHost = {
     extensionUri: context.extensionUri,
@@ -330,6 +345,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     project: () => chooseProject(context),
     packAndTry: packAndTryFor,
     materialsChanged: () => materialsChanged.fire({ materials: [] }),
+    desk,
+    deskChanged: () => deskView.refresh(),
   };
   const setupEditor = new SetupEditor(host);
   const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndTry: packAndTryFor, materialsChanged: () => materialsChanged.fire({ materials: [] }), log });
@@ -367,24 +384,56 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       findTree.message = find.summary || undefined;
       void vscode.commands.executeCommand("setContext", "edgemat.findActive", true);
     }),
-    // REDcode's 3D view hands its mesh over here (Open in EDGEmat): Find shows it, the look on screen open.
+    // Open in EDGEmat, from REDcode's Game Assets and Project views and its 3D view: a mesh or a setup goes on
+    // the Desk, shown there with the look on screen open; a setup opens too, and a surface opens on its page.
     vscode.commands.registerCommand("edgemat.openMesh", async (arg?: OpenMeshRequest) => {
       const req = meshOfRequest(arg ?? vscode.window.activeTextEditor?.document.uri);
-      if (!req || !/\.mesh$/i.test(req.mesh)) {
-        void vscode.window.showInformationMessage("Open Mesh in EDGEmat takes a mesh (.mesh), from REDcode's 3D view or a project.");
+      const kind = !req ? undefined : /\.mesh$/i.test(req.mesh) ? "mesh" : /\.mlsetup$/i.test(req.mesh) ? "setup" : /\.mltemplate$/i.test(req.mesh) ? "surface" : undefined;
+      if (!req || !kind) {
+        void vscode.window.showInformationMessage("Open in EDGEmat takes a mesh (.mesh), a setup (.mlsetup) or a surface (.mltemplate), from REDcode's Game Assets, Project or 3D view.");
         return;
       }
-      find.showMesh(req.mesh, req.appearance);
-      findTree.message = find.summary || undefined;
-      void vscode.commands.executeCommand("setContext", "edgemat.findActive", true);
-      await vscode.commands.executeCommand("edgemat.find.focus");
+      if (kind === "surface") {
+        const gamePath = isFilePath(req.mesh) ? gamePathInProject(req.mesh) : req.mesh;
+        if (gamePath) host.openSurface(gamePath);
+        return;
+      }
+      const node = deskView.put(kind, req.mesh, req.appearance);
+      await vscode.commands.executeCommand("edgemat.desk.focus");
+      if (node) await deskTree.reveal(node, { select: true, focus: true, expand: true });
+      if (node?.kind === "setupFile") await openFoundSetup(node.entry.path, undefined, "the Desk", node.entry.root, true);
     }),
+    deskTree,
+    deskWatcher,
+    vscode.commands.registerCommand("edgemat.removeFromDesk", async (node) => {
+      const entry = (node as { entry?: { kind: string; path: string; root?: string } } | undefined)?.entry;
+      if (entry?.kind === "setup" && !entry.root && desk.copyOf(entry.path)) {
+        const go = await vscode.window.showWarningMessage(`Take ${path.win32.basename(entry.path)} off the Desk? Its edits on the Desk are deleted.`, { modal: true }, "Take It Off");
+        if (!go) return;
+      }
+      if (deskView.remove(node)) materialsChanged.fire({ materials: [] });
+    }),
+    vscode.commands.registerCommand("edgemat.clearDesk", async () => {
+      const n = desk.entries().length;
+      const edited = desk.edited().length;
+      if (!n && !edited) return;
+      const go = await vscode.window.showWarningMessage(
+        "Clear the Desk?",
+        { modal: true, detail: `${n} thing${n === 1 ? "" : "s"} come${n === 1 ? "s" : ""} off the Desk${edited ? `, and the edits of ${edited} setup${edited === 1 ? "" : "s"} saved there are deleted` : ""}. Nothing in your projects or the game changes.` },
+        "Clear the Desk",
+      );
+      if (!go) return;
+      desk.clear();
+      deskView.load();
+      materialsChanged.fire({ materials: [] });
+    }),
+    vscode.commands.registerCommand("edgemat.deskToProject", () => deskToProject()),
     vscode.commands.registerCommand("edgemat.clearFind", () => {
       find.clear();
       findTree.message = undefined;
       void vscode.commands.executeCommand("setContext", "edgemat.findActive", false);
     }),
-    vscode.commands.registerCommand("edgemat.openFoundSetup", (setup: string, mask?: string, via?: string) => openFoundSetup(setup, mask, via)),
+    vscode.commands.registerCommand("edgemat.openFoundSetup", (setup: string, mask?: string, via?: string, root?: string, onDesk?: boolean) => openFoundSetup(setup, mask, via, root, onDesk)),
     vscode.commands.registerCommand("edgemat.copyGamePath", async (node) => {
       const p = LibraryView.gamePathOf(node) ?? FindView.gamePathOf(node);
       if (p) await vscode.env.clipboard.writeText(p);
@@ -406,6 +455,64 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     }),
     { dispose: () => ownBridge?.stop() },
   );
+
+  /** The Desk's + button: everything on it goes into a project, after the modder confirms. */
+  async function deskToProject(): Promise<void> {
+    const entries = desk.entries();
+    if (!entries.length) {
+      void vscode.window.showInformationMessage("The Desk is empty. Right-click a mesh in REDcode's Game Assets or Project view and pick Open in EDGEmat to put it here.");
+      return;
+    }
+    const unsaved = setupEditor.unsavedOnDesk();
+    if (unsaved.length) {
+      const go = await vscode.window.showWarningMessage(`${unsaved.join(", ")} ${unsaved.length === 1 ? "has" : "have"} edits not saved yet, which would not go into the project. Save them first with Ctrl+S.`, { modal: true }, "Add Without Them");
+      if (!go) return;
+    }
+    const bridge = await bridgeNow();
+    if (!bridge) {
+      void vscode.window.showErrorMessage("Adding the Desk to a project needs REDbridge. Set the game folder and REDbridge first.");
+      return;
+    }
+    const project = await chooseProject(context, "Add the Desk to Project");
+    if (!project) return;
+    const meshes = entries.filter((e) => e.kind === "mesh").length;
+    const edited = desk.edited().length;
+    const plural = (k: number, w: string) => `${k} ${w}${k === 1 ? "" : "s"}`;
+    const go = await vscode.window.showWarningMessage(
+      `Add the Desk to ${project.name}?`,
+      {
+        modal: true,
+        detail:
+          `${plural(meshes, "mesh")} and ${plural(edited, "setup")} edited on the Desk go into ${project.archive}. ` +
+          `Each edited setup is saved as a new setup (named with _${suffixFor(project.name)}), and the Desk's meshes that use it are copied in and pointed at it; the other meshes are copied as they are. ` +
+          "Meshes already in the project are kept, and changed only to point at the new setups.",
+      },
+      "Add to Project",
+      "Add and Clear the Desk",
+    );
+    if (!go) return;
+    try {
+      const r = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Adding the Desk to ${project.name}` }, () => desk.toProject(bridge, project, suffixFor(project.name)));
+      log(`Desk added to ${project.archive}: ${r.written.join(", ") || "nothing written"}`);
+      for (const s of r.setups) log(`  ${s.from} saved as ${s.to}${s.meshes.length ? `, pointed at by ${s.meshes.join(", ")}` : ""}`);
+      for (const n of r.notes) log(`  ${n}`);
+      if (go === "Add and Clear the Desk") {
+        desk.clear();
+        deskView.load();
+      }
+      materialsChanged.fire({ materials: [] });
+      const pack = packAndTryFor(project);
+      const choice = await vscode.window.showInformationMessage(
+        `Added the Desk to ${project.name}: ${plural(r.written.length, "file")} written${r.notes.length ? `, ${plural(r.notes.length, "note")} in the EDGEmat log` : ""}.`,
+        ...(pack ? ["Pack and Try"] : []),
+        ...(r.notes.length ? ["Show Log"] : []),
+      );
+      if (choice === "Pack and Try" && pack) await pack();
+      else if (choice === "Show Log") output.show();
+    } catch (e) {
+      void vscode.window.showErrorMessage(`Adding the Desk to ${project.name} failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
 
   installServer(context.extensionPath, log);
   setState("building");

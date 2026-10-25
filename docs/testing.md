@@ -2,15 +2,15 @@
 
 Every test run on EDGEmat so far: how to run it again, what to expect, and what it showed. Each phase ends with a test on the dev PC ([design, "Phases"](design.html#phases)); new tests are added here when they are first run.
 
-Last updated 2026-10-20.
+Last updated 2026-10-25.
 
 ## At a glance
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
-| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-20 | Pass |
-| [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass |
+| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-25 | Pass, with the Desk's three checks |
+| [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache |
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
@@ -22,7 +22,8 @@ Last updated 2026-10-20.
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
-| [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day; rerun from step 2 |
+| [The Desk](#the-desk) | By hand, F5, with REDcode | After 0.3.1 | | Not run yet. Type check, build and the smoke test's Desk checks pass (2026-10-25); `mat_desk` answers over stdio |
+| [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day. Since 2026-10-25 the mesh goes on the Desk: run [The Desk](#the-desk) first, then this test from step 3 |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
@@ -67,6 +68,7 @@ Needs the game and REDbridge, found from the VS Code settings as the extension f
 | A textured material (M3, Generate's first slice) | A 256 px test pattern imported as a texture takes the color settings of the game texture copied first (`TCM_QualityColor`, gamma 1); a `metal_base` .mi at LayerTile 4 names it; the slim-fits' `leather` material, pointed at the .mi, reads `metal_base.remt` with that texture; an unknown material name is refused with the mesh's names. Under 1 s |
 | Generate: a material from an image (M3) | A colour ramp (301 px, odd on purpose) made seamless: its wrap seam goes from 255 to about 1 times the step inside. Made into a material and put on the slim-fits' `flames_blue_pink` (a garment): the repeat (3) baked into a 2048 px texture at LayerTile 1, the garment's own normal map kept; the plain material at LayerTile 3 with its own normal (`TEXG_Generic_Normal`) and roughness (`TEXG_Generic_Grayscale`) maps; the image and its record in `source\raw`. About 14 s |
 | Generate: image services (M3) | Against a stand-in server, no network or key: Gemini's model list keeps the 2 image models (not text or Imagen), newest first; an image comes back after one retry without a size; a blocked prompt says why. OpenAI lists the `gpt-image` models; quality is sent; a bad key reads "OpenAI refused the key: ..."; no answer within the limit reads "No answer from OpenAI in 0.3 s ..." |
+| The Desk (2026-10-25) | In a scratch Desk: the slim-fits mesh put on twice is one entry; its setup (the citizen jeans', `ml_l1_012_wa_pants__jeans_tight.mlsetup`) edited to red and saved on the Desk is the one edit there, and the 3D view's color map changes with it. Added to a scratch project in about 0.1 s: the setup as `..._desk_project.mlsetup` reads back with the edit, and the mesh copied in names it (2 files). Added again: only the setup is written, the mesh still counted. With the mesh taken off, the edit stays on the Desk with a note; Clear empties it |
 | Page images (M2) | 3 of 3 for `leather_bull_01_30`: the first in about 1.6 s while the bridge warms up, the rest in well under half a second, then instant from the cache |
 
 The counts change after a game patch. A patch that adds surfaces is fine as long as "read" matches "listing".
@@ -283,13 +285,37 @@ Built 2026-10-19. **Last run 2026-10-19 by the owner through F5: all 7 checks pa
 | Claude describes it correctly | `mat_describe` over stdio, as Claude Code calls it, and Claude's description from it | 14 of 20 layers shown, with their surfaces, colors, finishes and shares. The owner: "100% accurate". The white stitching is not in the setup but a separate decal material on the mesh (`pasted__decal_stitches`, `garment_decals_d01.xbm`), which `mat_find` lists: a whole-garment description combines the two |
 | A setup from a mod archive | The setup editor hand test, step 10 (2026-10-17) | Pass |
 
-### Open Mesh in EDGEmat
+### The Desk
 
-Added 2026-10-23: from a mesh in 3D to its materials in EDGEmat, and the 3D view drawing them again after a save. In the development host (F5), with REDcode, and a WolvenKit project holding a game `.mesh` under `sourcerchive` (REDcode's Asset Browser › right-click a mesh › Add to Project). The Comfy rocker slim-fits' `l1_012_pwa_pants__jeans_tight.mesh` is a good one: its leather material is multilayered.
+Added 2026-10-25: the Desk view, Open in EDGEmat from REDcode's views, saving on the Desk, and **+** to put it all in a project. In the development host (F5), with REDcode, and a WolvenKit project open in REDcode (a fresh one is best, such as one made with REDcode's New Project). The slim-fits mesh is a good one: `base\characters\garment\player_equipment\legs\l1_012_pants__jeans_tight\l1_012_pwa_pants__jeans_tight.mesh`.
 
 | Step | Do | Expect |
 |---|---|---|
-| 1 | VS Code's Explorer: right-click the project's `.mesh` › **Open Mesh in EDGEmat** | EDGEmat's Find view opens. Its message names the mesh and "the project's copy". The mesh's looks are listed under it |
+| 1 | Click EDGEmat's icon in the activity bar (left edge) | Three views: **Desk** at the top, then Library and Find. The Desk is empty and says how to put something on it |
+| 2 | Click REDcode's icon in the activity bar › **Game Assets** view › search or browse to the slim-fits `.mesh` › right-click it | **Open in EDGEmat** in the menu, beside Open in Editor |
+| 3 | Choose **Open in EDGEmat** | EDGEmat's activity bar opens on the Desk. The mesh is there, selected and open: its looks, with the first one open on its materials |
+| 4 | Right-click a `.ent` or `.app` in Game Assets › **Open in EDGEmat** | The entry is there for now (REDcode #15); a message says it takes a mesh, a setup or a surface. Nothing goes on the Desk |
+| 5 | On the Desk, click a multilayered material (layers icon) under the open look | The setup editor opens. Under the title: "Ctrl+S saves it on the Desk" |
+| 6 | Change a layer's color (click a layer in the list, then a swatch), then press **Ctrl+S** | Saved with no question. The tab's unsaved dot goes. On the Desk the material now reads "edited on the Desk" |
+| 7 | Open the mesh in REDcode's 3D view (on the Desk, hover the mesh row › the eye icon, **View in 3D**) | The pants show the new color |
+| 8 | Close the setup editor, then click the same material on the Desk again | It opens with your color: from the Desk's copy, not the game's |
+| 9 | Close VS Code's development host and press F5 again; open EDGEmat | The mesh is still on the Desk, the material still "edited on the Desk" |
+| 10 | Hover the Desk's title bar (the word DESK) | A **+** (Add the Desk to Project...) and a clear-all icon (Clear the Desk...) on the right |
+| 11 | Click **+** | If REDcode has a project open, that one; else pick one. A dialog: "Add the Desk to <project>?", saying 1 mesh and 1 setup, with **Add to Project** and **Add and Clear the Desk** |
+| 12 | Choose **Add to Project** | "Added the Desk to <project>: 2 files written", with Pack and Try. In REDcode's Project view: the setup beside the game's as `..._<project>.mlsetup` (under `citizen_casual\legs\...\textures`), and the slim-fits `.mesh` under `player_equipment\legs`. The Desk is unchanged |
+| 13 | **Pack and Try** (or Pack and Install), then look at V in the slim-fits in the game | The pants in your color, with no other mod |
+| 14 | REDcode's Project view: right-click the project's `.mesh` › **Open in EDGEmat** | It goes on the Desk as a second entry, marked "the project's copy" |
+| 15 | On the Desk, hover the project mesh's row › the × icon (Take Off the Desk) | It comes off; the game mesh stays |
+| 16 | Hover the Desk's title bar › **Clear the Desk...** › **Clear the Desk** | The Desk is empty. The project keeps its files |
+| 17 | Optional, with Claude Code connected: ask "put the slim-fits on EDGEmat's Desk" | `mat_desk` adds it, and the Desk view shows it within a second or two |
+
+### Open Mesh in EDGEmat
+
+Added 2026-10-23: from a mesh in 3D to its materials in EDGEmat, and the 3D view drawing them again after a save. In the development host (F5), with REDcode, and a WolvenKit project holding a game `.mesh` under `source\archive` (REDcode's Asset Browser › right-click a mesh › Add to Project). The Comfy rocker slim-fits' `l1_012_pwa_pants__jeans_tight.mesh` is a good one: its leather material is multilayered.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | VS Code's Explorer: right-click the project's `.mesh` › **Open in EDGEmat** | Since 2026-10-25: EDGEmat's Desk opens with the mesh on it, "the project's copy", its looks listed under it (was: the Find view) |
 | 2 | Open a look › hover a multilayered material (layers icon) | Its setup and mask in the tooltip; a click opens the setup editor |
 | 3 | Open the mesh in REDcode (click it in REDcode's Project view), switch to its 3D view, keep the tab open | The mesh in 3D with EDGEmat's colors |
 | 4 | In the setup editor from step 2, change a layer's color, then **Save to Project** › **As a new setup** (recommended) › accept the game path › keep the project's mesh ticked › Enter | Saved, and the project's mesh pointed at the new setup. Within a few seconds the 3D view from step 3 draws its materials again with the new color. Unverified: how REDcode's open tab takes its mesh file changing on disk (redraws, asks to reload, or keeps its copy). *In place of the game's setup* needs the Material Texture Override mod in the game; *At a game path you choose* changes no mesh, so the 3D view would not change |
@@ -300,7 +326,7 @@ Added 2026-10-23: from a mesh in 3D to its materials in EDGEmat, and the 3D view
 
 ### Open Material in EDGEmat
 
-Added 2026-10-21, when REDcode marked `.mlsetup` files in its Project view for EDGEmat (REDcode `docs/api.md`, "Menus in the Project view"). In the development host (F5), with a WolvenKit project open that holds a `.mlsetup` under `sourcerchive`:
+Added 2026-10-21, when REDcode marked `.mlsetup` files in its Project view for EDGEmat (REDcode `docs/api.md`, "Menus in the Project view"). In the development host (F5), with a WolvenKit project open that holds a `.mlsetup` under `source\archive`:
 
 | Step | Do | Expect |
 |---|---|---|
@@ -308,7 +334,7 @@ Added 2026-10-21, when REDcode marked `.mlsetup` files in its Project view for E
 | 2 | Choose it | The EDGEmat setup editor opens: layers in plain words, the Save to Project button in the tab's title bar |
 | 3 | Open the same file in another editor (right-click › Open With... › a text or CR2W editor), then right-click its tab | **Open Material in EDGEmat...** in the tab's menu; it opens the setup editor |
 | 4 | With REDcode 0.10.3 or later: REDcode's Project view, right-click the `.mlsetup` | **Open Material in EDGEmat...**; it opens the setup editor |
-| 5 | Right-click a `.mltemplate` under `sourcerchive` (in the Explorer) › **Open Material in EDGEmat...** | Its surface page, when the surface is in the library; else "not in the library" |
+| 5 | Right-click a `.mltemplate` under `source\archive` (in the Explorer) › **Open Material in EDGEmat...** | Its surface page, when the surface is in the library; else "not in the library" |
 | 6 | Right-click a `.mesh` or `.xbm` | No EDGEmat entry |
 
 ### Connect an assistant

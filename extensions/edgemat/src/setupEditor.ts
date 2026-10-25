@@ -4,12 +4,13 @@
 // words, a flat color map of the setup in texture space, and where each layer shows. Since M3 it edits:
 // each change applies live, with undo and redo through VS Code. Saving writes a project's own file in
 // place; anything else (a game file, a file outside a project, a mod's) goes through Save to Project.
+// A setup opened from the Desk saves on the Desk (EDGEmat's own folder) until it goes into a project.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  applyLayerEdit, describeSurface, gamePathInProject, isGameFile, meshesToPoint, meshesUsing, newPathFor, openSetup, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
+  applyLayerEdit, Desk, describeSurface, gamePathInProject, isGameFile, meshesToPoint, meshesUsing, newPathFor, openSetup, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
   type BridgeClient, type LayerPatch, type Library, type MeshSearch, type OpenedSetup, type Project, type Setup, type SetupSource,
 } from "./core";
 import type { SetupPageData, SurfaceChoices } from "./webview/setup";
@@ -19,17 +20,15 @@ const RedcodeGameScheme = "redcode-game";
 
 /**
  * edgemat-game:/base/x.mlsetup for base\x.mlsetup. `mask`: the mask set a mesh's material names for it;
- * `via`: where it was found, such as an item's name. Both ride in the query as base64 JSON, which
- * survives VS Code decoding the URI and names holding & or =.
+ * `via`: where it was found, such as an item's name; `desk`: opened from the Desk, so it saves there. They
+ * ride in the query as base64 JSON, which survives VS Code decoding the URI and names holding & or =.
  */
-export const gameUri = (gamePath: string, opts: { mask?: string; via?: string } = {}) =>
-  vscode.Uri.from({
-    scheme: GameScheme,
-    path: "/" + gamePath.replace(/\\/g, "/"),
-    query: opts.mask || opts.via ? `o=${Buffer.from(JSON.stringify(opts)).toString("base64url")}` : "",
-  });
+type UriOptions = { mask?: string; via?: string; desk?: boolean };
+export const optionsQuery = (opts: UriOptions) => (opts.mask || opts.via || opts.desk ? `o=${Buffer.from(JSON.stringify(opts)).toString("base64url")}` : "");
+export const gameUri = (gamePath: string, opts: UriOptions = {}) =>
+  vscode.Uri.from({ scheme: GameScheme, path: "/" + gamePath.replace(/\\/g, "/"), query: optionsQuery(opts) });
 
-const uriOptions = (uri: vscode.Uri): { mask?: string; via?: string } => {
+const uriOptions = (uri: vscode.Uri): UriOptions => {
   const o = /(?:^|&)o=([\w-]+)/.exec(uri.query)?.[1];
   try {
     return o ? JSON.parse(Buffer.from(o, "base64url").toString("utf8")) : {};
@@ -94,7 +93,8 @@ class SetupDocument implements vscode.CustomDocument {
   /** The page's last view of the setup as edited, with its color map, for 3D views (liveColorMap). */
   view?: OpenedSetup;
   readonly panels = new Set<vscode.WebviewPanel>();
-  constructor(readonly uri: vscode.Uri, readonly source: SetupSource, origin: string) {
+  /** `onDesk`: opened from the Desk, so Ctrl+S saves the Desk's copy. */
+  constructor(readonly uri: vscode.Uri, readonly source: SetupSource, origin: string, readonly onDesk = false) {
     const { mask, via } = uriOptions(uri);
     this.mask = mask;
     this.origin = via ? `${origin} · from ${via}` : origin;
@@ -122,11 +122,16 @@ export interface SetupEditorHost {
   packAndTry(project: Project): (() => Promise<unknown>) | undefined;
   /** Tells 3D views (REDcode's, through EDGEmat's API) that materials changed, so they draw them again. */
   materialsChanged(): void;
+  /** The Desk, where a setup opened from it is saved. */
+  desk: Desk;
+  /** Tells the Desk view a setup was saved on the Desk. */
+  deskChanged(): void;
   log(line: string): void;
 }
 
-/** Where a save goes: the file itself (a project's own file), or into a project through Save to Project. */
-function saveInPlace(doc: SetupDocument): { file: string; json: boolean } | undefined {
+/** Where a save goes: the Desk's copy, the file itself (a project's own file), or into a project through Save to Project. */
+function saveInPlace(doc: SetupDocument, desk: Desk): { file: string; json: boolean; desk?: boolean } | undefined {
+  if (doc.onDesk && doc.gamePath) return { file: path.join(desk.archive, doc.gamePath), json: false, desk: true };
   if (doc.uri.scheme !== "file" || !("file" in doc.source) || fromMods.has(doc.source.file.toLowerCase())) return undefined;
   const file = doc.source.file;
   if (/\.json$/i.test(file)) return /[\\/]source[\\/]raw[\\/]/i.test(file) ? { file, json: true } : undefined;
@@ -157,6 +162,11 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     return undefined;
   }
 
+  /** The setups open from the Desk with edits not saved yet, by name. */
+  unsavedOnDesk(): string[] {
+    return [...this.open].filter((d) => d.onDesk && d.dirty).map((d) => this.title(d));
+  }
+
   /** Tells 3D views to draw again once edits pause, so dragging a color does not ask for a render per step. */
   private changedLive(): void {
     if (this.liveTimer) clearTimeout(this.liveTimer);
@@ -181,10 +191,16 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
 
   private async makeDocument(uri: vscode.Uri): Promise<SetupDocument> {
     const gamePath = gamePathOfUri(uri);
-    if (gamePath) return new SetupDocument(uri, { gamePath }, "game file");
+    if (gamePath) {
+      // From the Desk: its copy once edited there, else the game's.
+      if (!uriOptions(uri).desk) return new SetupDocument(uri, { gamePath }, "game file");
+      const copy = this.host.desk.copyOf(gamePath);
+      return new SetupDocument(uri, copy ? { file: copy, gamePath } : { gamePath }, copy ? "on the Desk, edited" : "on the Desk, as in the game", true);
+    }
     if (uri.scheme === "file") {
       const mod = fromMods.get(uri.fsPath.toLowerCase());
       if (mod) return new SetupDocument(uri, { file: uri.fsPath, gamePath: mod.gamePath }, `from the mod ${mod.archive}`);
+      if (this.host.desk.holds(uri.fsPath)) return new SetupDocument(uri, { file: uri.fsPath, gamePath: path.relative(this.host.desk.archive, uri.fsPath) }, "on the Desk, edited", true);
       const inProject = gamePathInProject(uri.fsPath);
       return new SetupDocument(uri, { file: uri.fsPath, gamePath: inProject }, inProject ? "project file" : "file");
     }
@@ -334,7 +350,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
 
   async saveCustomDocument(doc: SetupDocument): Promise<void> {
     if (!doc.setup) return;
-    const inPlace = saveInPlace(doc);
+    const inPlace = saveInPlace(doc, this.host.desk);
     if (!inPlace) {
       if (!(await this.saveToProjectFlow(doc))) throw new vscode.CancellationError();
       return;
@@ -344,11 +360,17 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
       fs.writeFileSync(inPlace.file, JSON.stringify(setupToJson(doc.setup), null, 2));
     } else {
       if (!bridge) throw new Error("Saving a binary .mlsetup needs REDbridge.");
+      fs.mkdirSync(path.dirname(inPlace.file), { recursive: true });
       await bridge.fromJson(inPlace.file, { json: JSON.stringify(setupToJson(doc.setup)) });
     }
     doc.saved = doc.setup;
     this.host.log(`Saved ${inPlace.file}`);
     this.host.materialsChanged();
+    if (inPlace.desk) {
+      this.host.deskChanged();
+      this.refresh(doc);
+      return;
+    }
     // A project file at one of the game's own paths replaces the game's setup.
     const gamePath = gamePathInProject(inPlace.file);
     if (bridge && gamePath && !doc.warnedInPlace && (await isGameFile(bridge, gamePath))) {
@@ -477,6 +499,11 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     );
     doc.saved = doc.setup;
     doc.savedTo = target;
+    // The Desk's copy keeps up, so adding the Desk to a project later saves these edits, not older ones.
+    if (doc.onDesk && gamePath) {
+      await this.host.desk.saveSetup(bridge, gamePath, doc.setup);
+      this.host.deskChanged();
+    }
     this.host.log(`Saved into ${project.archive}: ${result.written.join(", ")}`);
     for (const n of result.notes) this.host.log(`  ${n}`);
     this.host.materialsChanged();
@@ -579,7 +606,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
         normalStrength: presets(s.bumps),
       };
     }
-    const inPlace = saveInPlace(doc);
+    const inPlace = saveInPlace(doc, this.host.desk);
     return {
       kind: "setup",
       title: this.title(doc),
@@ -595,7 +622,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
       edit: {
         dirty: doc.dirty,
         notice: doc.notice,
-        saves: inPlace ? "file" : "project",
+        saves: inPlace?.desk ? "desk" : inPlace ? "file" : "project",
       },
     };
   }

@@ -192,6 +192,37 @@ try {
   check(fromProject.maskFrom === "material" && !!fromProject.composite && rogue.masks?.name === "ml_l1_066_wa_pants__rogue_masksset" && !!rogue.composite,
     `mask sets named by meshes: the saved setup opened from the project uses ${fromProject.masks?.name}; the rogue pants' setup, whose masks sit in another folder, uses ${rogue.masks?.name}`);
 
+  // The Desk (design, "The Desk"): a game mesh on it, its setup edited there, shown in 3D, then put into a project.
+  console.log("\nthe Desk");
+  const deskMesh = "base\\characters\\garment\\player_equipment\\legs\\l1_012_pants__jeans_tight\\l1_012_pwa_pants__jeans_tight.mesh";
+  const deskCache = path.join(tmp, "desk_cache");
+  const desk = new core.Desk(deskCache);
+  desk.add("mesh", deskMesh);
+  desk.add("mesh", deskMesh);
+  const deskSetup = (await core.meshMaterials(bridge, deskMesh, "default"))[0].materials.find((m) => m.multilayered && m.setup).setup;
+  const deskReq = { mesh: deskMesh, appearance: "default" };
+  const drawn = async () => Buffer.from(Object.values(await core.renderMaterials(bridge, lib, deskCache, deskReq))[0].baseColor);
+  const beforeDesk = await drawn();
+  const deskOrig = await core.readSetup(bridge, { gamePath: deskSetup });
+  const deskEdit = core.applyLayerEdit(deskOrig, 0, core.patchFromWords(deskOrig, 0, { color: "red" }, lib).patch, lib).setup;
+  await desk.saveSetup(bridge, deskSetup, deskEdit);
+  check(desk.entries().length === 1 && desk.edited().length === 1 && !beforeDesk.equals(await drawn()),
+    "a mesh put on the Desk twice is one entry; its setup saved on the Desk is the one edit there, and the 3D view's colors change with it");
+  const deskProj = core.projectAt((fs.mkdirSync(path.join(tmp, "desk_project", "source", "archive"), { recursive: true }), path.join(tmp, "desk_project")));
+  const deskTarget = core.newPathFor(deskSetup, "desk_project");
+  t3 = Date.now();
+  const added = await desk.toProject(bridge, deskProj, "desk_project");
+  const deskBack = await core.readSetup(bridge, { file: path.join(deskProj.archive, deskTarget) });
+  const deskPointed = await core.meshUses(bridge, deskProj.archive, deskMesh, [deskTarget]);
+  check(core.sameSetup(deskBack, deskEdit) && deskPointed.inProject && deskPointed.materials.length === 1 && added.written.length === 2 && !added.notes.length,
+    `the Desk added to a project in ${Date.now() - t3} ms: the edited setup as ${deskTarget.split("\\").pop()}, and the mesh copied in and pointed at it`);
+  const addedAgain = await desk.toProject(bridge, deskProj, "desk_project");
+  desk.remove({ kind: "mesh", path: deskMesh });
+  const orphan = await desk.toProject(bridge, deskProj, "desk_project");
+  desk.clear();
+  check(addedAgain.written.length === 1 && addedAgain.setups[0]?.meshes.length === 1 && orphan.written.length === 0 && orphan.notes.length === 1 && !desk.entries().length && !desk.edited().length,
+    "added again: only the setup is written, the mesh still pointed; with the mesh off the Desk, its setup's edit stays on the Desk; Clear empties it");
+
   // Generate's first slice: a texture from a PNG, a textured .mi on metal_base, and one material of a mesh pointed at it.
   const genTex = "edgemat\\smoke\\uv_test_pattern_d01.xbm", mi = "edgemat\\smoke\\uv_test.mi";
   const slim = "base\\characters\\garment\\player_equipment\\legs\\l1_012_pants__jeans_tight\\l1_012_pma_pants__jeans_tight.mesh";

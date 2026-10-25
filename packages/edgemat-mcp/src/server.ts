@@ -16,7 +16,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
 import {
-  applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
+  applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, generateImage, imageAsPng, listModels, makeMaterial, materialSlug, texturePrompt, Services,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
@@ -40,6 +40,7 @@ const settings: SettingsReader = (key) =>
   : key === "edgemat.bridgePath" ? arg("--bridge") ?? env("REDBRIDGE_EXE") ?? fromVsCode(key)
   : fromVsCode(key);
 const cacheDir = arg("--cache") ?? env("EDGEMAT_CACHE") ?? defaultCacheDir();
+const desk = new Desk(cacheDir);
 
 let bridge: BridgeClient | undefined;
 
@@ -267,12 +268,13 @@ server.registerTool(
       "Use mat_find to find a garment's setup and mat_describe to see its layers first. Edits are checked: a layer can only use its surface's own presets. " +
       "save 'new' (the default) writes the setup beside the original under a new name and copies every mesh that uses it into the project, pointed at the new setup: it shows in the game with no other mod, once the project is packed and installed (REDcode: Pack and Try). " +
       "save 'inPlace' writes it at its own game path, which replaces the game's setup and shows in the game only with the Material Texture Override mod. " +
+      "save 'desk' saves it on EDGEmat's Desk (see mat_desk) instead of a project, and puts it there; a setup edited on the Desk is read from there next time. " +
       "preview true describes the result without writing anything. project: the project folder, its .cpmodproj, or its source\\archive folder.",
     inputSchema: {
       setup: z.string().describe("A game path (base\\...\\x.mlsetup), or a file on disk"),
       edits: z.array(LayerEditSchema).min(1),
       project: z.string().optional(),
-      save: z.enum(["new", "inPlace"]).default("new"),
+      save: z.enum(["new", "inPlace", "desk"]).default("new"),
       target: z.string().optional().describe("The game path for the new setup; default: beside the original, named with the project's name"),
       mask: z.string().optional(),
       preview: z.boolean().default(false),
@@ -282,7 +284,9 @@ server.registerTool(
     try {
       const b = await getBridge();
       const lib = await library();
-      const source = isFilePath(setup) ? { file: setup, gamePath: gamePathInProject(setup) } : { gamePath: setup };
+      // On the Desk, its copy there once edited.
+      const deskCopy = save === "desk" && !isFilePath(setup) ? desk.copyOf(setup) : undefined;
+      const source = isFilePath(setup) ? { file: setup, gamePath: gamePathInProject(setup) } : deskCopy ? { file: deskCopy, gamePath: setup } : { gamePath: setup };
       const o = await openSetup(b, lib, cacheDir, source, mask);
       let edited = o.setup;
       const notes: string[] = [];
@@ -297,6 +301,12 @@ server.registerTool(
       const changed = [...new Set(edits.map((e) => e.layer))].map((i) => layerOut(after.info.layers[i]));
       const result = { layers: changed, colorMap: after.composite?.file, warnings: after.info.warnings.length ? after.info.warnings : undefined };
       if (preview) return text({ preview: true, ...result, notes: notes.length ? notes : undefined });
+      if (save === "desk") {
+        if (!source.gamePath) return failure(new Error("The Desk keeps setups by game path, and this file has none: open it from the game or from a project's source\\archive."));
+        const file = await desk.saveSetup(b, source.gamePath, edited);
+        if (!desk.find(source.gamePath)) desk.add("setup", source.gamePath);
+        return text({ saved: { desk: file }, next: "mat_desk with action 'to_project' puts the Desk into a project; EDGEmat's Desk view shows it.", ...result, notes: notes.length ? notes : undefined });
+      }
 
       if (!project) return failure(new Error("Pass project: the WolvenKit project folder to save into (or preview: true to only see the result)."));
       const p = projectAt(project);
@@ -510,6 +520,50 @@ server.registerTool(
       const written: string[] = [];
       for (const t of targets) for (const f of await applyMaterial(b, p.archive, t.mesh, t.material, mi)) if (!written.includes(f)) written.push(f);
       return text({ saved: { project: p.dir, mi, targets, files: written }, next: "Pack the project and install it (REDcode: Pack and Try), then look in the game." });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+server.registerTool(
+  "mat_desk",
+  {
+    description:
+      "EDGEmat's Desk: the meshes and setups a modder works on before they go into a project, kept across restarts and shown in the extension's Desk view. " +
+      "action 'list' shows what is on it and which setups were edited there. 'add' puts a mesh (.mesh) or a setup (.mlsetup) on it: a game path, or a file in a project's source\\archive. " +
+      "'remove' takes one off (a setup's edits on the Desk go with it). 'clear' empties it, edits included. " +
+      "'to_project' puts it all in a WolvenKit project: each edited setup is saved as a new setup with the Desk's meshes that use it copied in and pointed at it (no other mod needed), the other meshes as they are. " +
+      "To edit a setup on the Desk, use mat_edit with save 'desk'; mat_find lists a mesh's materials and their setups.",
+    inputSchema: {
+      action: z.enum(["list", "add", "remove", "clear", "to_project"]),
+      path: z.string().optional().describe("For add and remove: a game path or a file"),
+      project: z.string().optional().describe("For to_project: the project folder, its .cpmodproj, or its source\\archive folder"),
+    },
+  },
+  async ({ action, path: p, project }) => {
+    try {
+      const list = () => ({ entries: desk.entries().map(({ kind, path, root }) => ({ kind, path, ...(root ? { project: root } : {}) })), edited: desk.edited(), folder: desk.dir });
+      if (action === "list") return text(list());
+      if (action === "clear") {
+        desk.clear();
+        return text(list());
+      }
+      if (action === "add" || action === "remove") {
+        if (!p) return failure(new Error("Pass path: a mesh or setup, as a game path or a file."));
+        const kind = /\.mesh$/i.test(p) ? "mesh" : /\.mlsetup$/i.test(p) ? "setup" : undefined;
+        if (!kind) return failure(new Error("The Desk holds meshes (.mesh) and setups (.mlsetup)."));
+        if (action === "add") desk.add(kind, p);
+        else {
+          const e = desk.find(p, kind);
+          if (!e) return failure(new Error(`${p} is not on the Desk.`));
+          desk.remove(e);
+        }
+        return text(list());
+      }
+      const pr = projectFor(project);
+      const r = await desk.toProject(await getBridge(), pr, suffixFor(pr.name));
+      return text({ saved: { project: pr.dir, written: r.written, setups: r.setups }, notes: r.notes.length ? r.notes : undefined, next: "Pack the project and install it (REDcode: Pack and Try), then look in the game. The Desk is left as it was: mat_desk 'clear' empties it." });
     } catch (e) {
       return failure(e);
     }

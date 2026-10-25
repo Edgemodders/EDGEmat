@@ -2,7 +2,7 @@
 
 What has been done on EDGEmat, what was decided and why, and what is open. Newest first within each section. Read this to catch up without asking. The [design](design.html) and the [behavior spec](design/behavior.html) hold the full detail.
 
-Last updated 2026-10-24.
+Last updated 2026-10-25.
 
 ## At a glance
 
@@ -10,9 +10,9 @@ Last updated 2026-10-24.
 |---|---|
 | Phase | **M3 Edit done 2026-10-20**, with Generate's first slice, and **0.3.0 released** the same day: the first preview, on the VS Code Marketplace, Open VSX and GitHub. Next: M4 Make |
 | Extension | 0.3.1: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
-| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply` |
+| MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply`, `mat_desk` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your hand tests of Open Mesh in EDGEmat and Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
+| Next up | Your hand tests of the Desk, Open Mesh in EDGEmat (from step 3) and Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
 | Roadmap | M3 Edit with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
@@ -35,11 +35,19 @@ Last updated 2026-10-24.
 | [REDcode #7](https://github.com/Edgemodders/REDcode/issues/7) | "Pack and try" (hot load) and "Edit in Blender" | **Shipped** in REDcode 0.10.0, 2026-10-16, hand-tested. Without Red Hot Tools, Pack and Try falls back to Pack and Install; the hot path is untested |
 | [REDbridge #5](https://github.com/Edgemodders/REDbridge/issues/5) | Mesh import for a new asset, from a GLB | **Shipped** in REDbridge 0.9.0, 2026-10-16. A GLB is imported over a template mesh (WolvenKit cannot make one from a GLB alone). The result names the GLB's materials per submesh but does not apply them: assigning materials is EDGEmat's Looks editor (M4). Not yet loaded in the game |
 | [REDcode #13](https://github.com/Edgemodders/REDcode/issues/13) | The mesh viewer's **Open in EDGEmat** button: runs `edgemat.openMesh` with `{ mesh, appearance }`; optionally a `.mesh` kind in the Project view | Open, filed 2026-10-23. EDGEmat's side is built (`50b38bc`) |
+| [REDcode #15](https://github.com/Edgemodders/REDcode/issues/15) | Kinds on Game Assets files (`assetFile.mesh`, `.mlsetup`, `.mltemplate`), and a `.mesh` kind in the Project view, so **Open in EDGEmat** shows only where it applies | Open, filed 2026-10-25. Until then the entry shows on every non-texture game file and says what it takes. #13 was told the mesh now goes on the Desk (same arguments) |
 | [REDbridge #8](https://github.com/Edgemodders/REDbridge/issues/8) | `project.import` takes a texture setup (color, normal, grayscale) for a new `.xbm` | **Built** on REDbridge's main, closed 2026-10-23; not in a release yet (0.10.0 is the latest). Not blocking: EDGEmat copies a game texture of the right kind to the target first |
 | [EDGEbuilder #1](https://github.com/Edgemodders/EDGEbuilder/issues/1) | Index the user's mod archives, so custom objects can be placed | Open. Planned as EDGEbuilder's phase B2c, its plan to be agreed |
 | [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open, mostly shipped: REDnode 0.26.0 and later swap archives into the running game through RED Hot Tools (`archives.reload`, MCP `archives_reload`), and since 0.26.20 the clothing V wears shows the new version at once (unverified for a material change). A world object may keep the old look until the game loads it again |
 
 ## Log
+
+### 2026-10-25
+
+| What | Detail |
+|---|---|
+| **The Desk** | Asked for by the owner: **Open in EDGEmat** on a `.mesh` in REDcode's Game Assets and Project views puts it on a new **Desk** view above the Library, revealed and open, and the Desk keeps meshes and edited setups across restarts until **+** puts them in a project (with a confirm). Core `desk.ts` (no VS Code): `desk.json` and a project-shaped `desk\source\archive` in EDGEmat's folder, so the edited setups are read like a project's copies; the 3D render reads them after a project's own. A setup opened from the Desk saves there with Ctrl+S; `toProject` saves each edited setup as a new setup with the Desk's meshes that use it pointed at it, and copies the other meshes. The Desk view is the Find view's tree with Desk entries at the top (`deskView.ts`); `edgemat.openMesh` (REDcode #13's command) now lands there instead of Find. MCP `mat_desk`, and `mat_edit` with `save: "desk"`. REDcode's Game Assets gives no file kinds but textures, so the entry shows on every other game file for now: [REDcode #15](https://github.com/Edgemodders/REDcode/issues/15). Also fixed: a material of a project's mesh opened the game's setup even when the project held its own copy. Type check, build, smoke (three new Desk checks) and an stdio probe of `mat_desk` pass; the hand test is next |
+| Stray control characters | Three spots in `docs/testing.md` and two comments in `findView.ts` held a BEL character where `source\archive` was meant (a `\a` turned into BEL by a shell edit on 2026-10-23/24). Fixed |
 
 ### 2026-10-24
 

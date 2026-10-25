@@ -18,10 +18,11 @@ export { describeSetup, layerDefault, parseSetup, LayerFields, PathFields, type 
 export {
   applyLayerEdit, patchFromWords, presetNames, sameSetup, setupToJson, templateOf, DefaultMicroblend, PresetWhat, type EditResult, type LayerPatch, type LayerWords,
 } from "./edit";
-export { isGameFile, meshesToPoint, meshesUsing, newPathFor, projectArchive, projectAt, saveToProject, suffixFor, type MeshSearch, type MeshUse, type Project, type SaveRequest, type SaveResult } from "./project";
+export { isGameFile, meshesToPoint, meshesUsing, meshUses, newPathFor, projectArchive, projectAt, saveToProject, suffixFor, type MeshSearch, type MeshUse, type Project, type SaveRequest, type SaveResult } from "./project";
 export { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, MaskSize, PickSize, type Composite, type MaskSet, type MaskSource } from "./masks";
 export { gamePathInProject, openSetup, readSetup, withSetup, type OpenedSetup, type SetupSource } from "./openSetup";
 export { isFilePath, itemMaterials, loadItems, meshMaterials, namedMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook } from "./find";
+export { Desk, type DeskEntry, type DeskResult } from "./desk";
 export { renderMaterials, type RenderedMaterial, type RenderRequest } from "./render";
 export { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, seamScore, squareCrop, writePng, type Image } from "./maps";
 export { errorText, generateImage, listModels, texturePrompt, ImageServiceError, Services, type CallOptions, type DetailSize, type GeneratedImage, type ImageModel, type Quality, type ServiceId, type ServiceInfo } from "./imageServices";

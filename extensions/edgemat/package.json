@@ -37,6 +37,8 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onView:edgemat.library",
+    "onView:edgemat.desk",
+    "onCommand:edgemat.deskToProject",
     "onCommand:edgemat.rebuildLibrary",
     "onCommand:edgemat.setGameFolder",
     "onCommand:edgemat.searchLibrary",
@@ -66,6 +68,10 @@
     "views": {
       "edgemat": [
         {
+          "id": "edgemat.desk",
+          "name": "Desk"
+        },
+        {
           "id": "edgemat.library",
           "name": "Library"
         },
@@ -76,6 +82,10 @@
       ]
     },
     "viewsWelcome": [
+      {
+        "view": "edgemat.desk",
+        "contents": "The Desk holds the meshes and setups you are working on before they go into a project, and keeps them across restarts.\nRight-click a mesh in REDcode's Game Assets or Project view and pick Open in EDGEmat: it lands here with its looks and materials. A setup you open from here saves on the Desk; + puts the whole Desk into a project."
+      },
       {
         "view": "edgemat.find",
         "contents": "Find a garment by its in-game name, such as punk jeans or Sunny Ammo, or a mesh by part of its path. Then open its materials: each multilayered one opens in the setup editor with its own mask set.\n[Find...](command:edgemat.find)"
@@ -234,13 +244,41 @@
       },
       {
         "command": "edgemat.openMesh",
-        "title": "Open Mesh in EDGEmat",
+        "title": "Open in EDGEmat",
         "category": "EDGEmat",
         "icon": "$(symbol-color)"
+      },
+      {
+        "command": "edgemat.deskToProject",
+        "title": "Add the Desk to Project...",
+        "category": "EDGEmat",
+        "icon": "$(add)"
+      },
+      {
+        "command": "edgemat.clearDesk",
+        "title": "Clear the Desk...",
+        "category": "EDGEmat",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "edgemat.removeFromDesk",
+        "title": "Take Off the Desk",
+        "category": "EDGEmat",
+        "icon": "$(close)"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "edgemat.deskToProject",
+          "when": "view == edgemat.desk",
+          "group": "navigation@1"
+        },
+        {
+          "command": "edgemat.clearDesk",
+          "when": "view == edgemat.desk && !edgemat.deskEmpty",
+          "group": "navigation@2"
+        },
         {
           "command": "edgemat.newMaterial",
           "when": "view == edgemat.library",
@@ -294,39 +332,59 @@
       ],
       "view/item/context": [
         {
+          "command": "edgemat.openMesh",
+          "when": "view == redcode.assets && viewItem =~ /^assetFile(\\.(model|mesh|mlsetup|mltemplate))?$/",
+          "group": "2_open@8"
+        },
+        {
+          "command": "edgemat.openMesh",
+          "when": "view == redcode.project && viewItem =~ /^projectFile\\.model/",
+          "group": "2_open@8"
+        },
+        {
           "command": "edgemat.openMaterial",
           "when": "view == redcode.project && viewItem =~ /^projectFile\\.mlsetup/",
           "group": "navigation@1"
         },
         {
           "command": "edgemat.viewIn3D",
-          "when": "view == edgemat.find && viewItem == edgemat.mesh",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /^edgemat\\.mesh/",
           "group": "inline"
         },
         {
           "command": "edgemat.viewIn3D",
-          "when": "view == edgemat.find && viewItem == edgemat.mesh",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /^edgemat\\.mesh/",
           "group": "view@1"
         },
         {
           "command": "edgemat.copyGamePath",
-          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)( |$)/",
+          "when": "view =~ /^edgemat\\.(library|find|desk)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)( |$)/",
           "group": "inline"
         },
         {
           "command": "edgemat.copyGamePath",
-          "when": "view =~ /^edgemat\\.(library|find)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)( |$)/",
+          "when": "view =~ /^edgemat\\.(library|find|desk)$/ && viewItem =~ /^edgemat\\.(gamePath|mesh)( |$)/",
           "group": "copy@1"
         },
         {
           "command": "edgemat.newMaterialHere",
-          "when": "view == edgemat.find && viewItem =~ /edgemat\\.material$/",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.material$/",
           "group": "inline"
         },
         {
           "command": "edgemat.newMaterialHere",
-          "when": "view == edgemat.find && viewItem =~ /edgemat\\.material$/",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.material$/",
           "group": "make@1"
+        },
+        {
+          "command": "edgemat.removeFromDesk",
+          "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
+          "group": "inline@9"
+        },
+        {
+          "command": "edgemat.removeFromDesk",
+          "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
+          "group": "desk@1"
         }
       ],
       "commandPalette": [
@@ -368,6 +426,10 @@
         },
         {
           "command": "edgemat.newMaterialHere",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.removeFromDesk",
           "when": "false"
         }
       ],

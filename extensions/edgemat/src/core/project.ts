@@ -125,6 +125,12 @@ async function usesIn(bridge: BridgeClient, archive: string | undefined, root: J
   return { materials, masks: [...masks] };
 }
 
+/** The materials of one mesh (the project's copy first) that name one of `setups`. */
+export async function meshUses(bridge: BridgeClient, archive: string | undefined, mesh: string, setups: string[]): Promise<MeshUse> {
+  const { json, fromProject } = await readJson(bridge, archive, mesh);
+  return { mesh, ...(await usesIn(bridge, archive, json.Data.RootChunk, setups)), inProject: fromProject };
+}
+
 /**
  * The meshes that use a setup: every mesh in the project, wherever it sits (a mesh added from another
  * folder often uses a setup kept with another garment), first; then the game's meshes in the garment's

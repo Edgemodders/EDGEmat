@@ -45,6 +45,7 @@ The material library is built from your own game the first time, and kept in `%L
 | `mat_generate` | A material from words, through Google Gemini or OpenAI with your key |
 | `mat_from_image` | A material from an image file, no key |
 | `mat_apply` | Put a material on a garment's mesh materials |
+| `mat_desk` | EDGEmat's Desk: meshes and edited setups kept outside a project until you add them to one |
 
 It sends no telemetry. Its only network calls are `mat_generate`'s, to the image service whose key you gave it.
 
