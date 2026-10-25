@@ -28,7 +28,7 @@ The source of EDGEmat's Nexus Mods page lives here, so updates are edits in the 
 
 ## Screenshots
 
-The description has eight placeholders, cyan italic lines starting `» Screenshot N:` that say what each picture should show. For each:
+Since 2026-10-25 the description shows the nine screenshots the owner uploaded on Nexus (`staticdelivery.nexusmods.com` links), and the placeholders are gone. The table below is the original plan, kept for new shots: a Desk shot, the New Material page and the worn leather in the game have none yet. To add one, put a placeholder or a picture where it fits:
 
 1. Save the picture as WebP or PNG in `images/`, named by number and subject (for example `01-overview.webp`), and push.
 2. Replace its placeholder line with `[img]https://raw.githubusercontent.com/Edgemodders/EDGEmat/main/nexus/images/<name>[/img]` and a one-line caption under it.
