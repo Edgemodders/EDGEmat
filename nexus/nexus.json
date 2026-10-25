@@ -1,0 +1,18 @@
+{
+  "page": 35422,
+  "upload": {
+    "name": "EDGEmat",
+    "category": "main",
+    "primary": false,
+    "modManager": false,
+    "archivePrevious": true,
+    "description": "EDGEmat {version}, the VS Code extension and its MCP server. A preview: recolors and makes materials. Extract, then in VS Code: Extensions view, ..., Install from VSIX. Not a game mod: no Vortex."
+  },
+  "mod": "14315126032990",
+  "file": 8202453,
+  "pulled": {
+    "sha256": "d89d5b739cb3b99c89cd0c4fe401ba1362aefe17102b5edb9952d5ca81ef5c11",
+    "at": "2026-10-25T21:14:52.615Z",
+    "version": "0.3.0"
+  }
+}

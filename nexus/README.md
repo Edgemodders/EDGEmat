@@ -2,12 +2,13 @@
 
 The source of EDGEmat's Nexus Mods page lives here, so updates are edits in the repo, not in Nexus's text box. The same way as REDnode's and REDcode's.
 
-**Not posted yet.** Prepared on 2026-10-19, and updated for 0.3.0 on 2026-10-20 (editing, Save to Project, New Material, two tutorials). The design plans the Nexus page for M7 (Ship); the owner decides whether the preview goes up before that.
+**Live:** https://www.nexusmods.com/cyberpunk2077/mods/35422 (posted by the owner at 0.3.0). Since 2026-10-25 the page is kept through Nexus's v3 API, as REDnode's and REDagent's are: `tools/nexus/` (copied from REDnode; keep the copies the same) and `nexus.json` (the page, the main file, and how a release uploads: Mod Manager Download off, the old version archived). The release workflow's **Update Nexus Mods** box uploads the Nexus zip, adds the changelog and pushes `description.bbcode`.
 
 | File | What it is |
 |---|---|
 | `description.bbcode` | The page's description, in Nexus's BBCode. Paste the whole file into the description field (the editor's source mode, or switch to BBCode) |
 | `README.md` | This page: the other fields of the Nexus form, the download, the screenshots, and how to update |
+| `nexus.json` | The page (35422), its internal mod id and main file, how a release uploads, and the hash of the description last pulled |
 | `images/` | The screenshots the description shows, once they exist |
 
 ## The Nexus form
@@ -71,10 +72,12 @@ By hand, after `npm run edgemat:package` and `npm run mcp:build`: `npm run relea
 
 ## Updating the page
 
-1. Edit `description.bbcode` here, commit, push.
-2. Check it: `node tools/check-bbcode.mjs nexus/description.bbcode`.
-3. Paste the whole file into the description field on Nexus and save.
-4. For a new version: upload the release's Nexus zip as the main file with the version from `extensions/edgemat/package.json`, Mod Manager Download off. Archive the old file. In the page's changelog for that version, paste the lines from `npm run release:notes -- --nexus`, one entry per line.
+1. Edit `description.bbcode` here, check it with `node tools/check-bbcode.mjs nexus/description.bbcode`, commit, push.
+2. With a release: tick **Update Nexus Mods** beside **Make a release**. After the GitHub release the workflow uploads `EDGEmat-<version>-nexus.zip` as the main file's new version (the old one archived, Mod Manager Download off), adds the version's changelog (`npm run release:notes -- --nexus`) and pushes `description.bbcode` when it differs from the live one.
+3. The push never overwrites an edit made on Nexus: if the live description is neither the one last pulled nor the one the previous release pushed, the run stops before it builds. Then `npm run nexus:pull`, merge with `git diff`, commit, and run again. `npm run nexus:status` shows the page's version, files and whether its description matches.
+4. Screenshots uploaded on Nexus show in the description as `staticdelivery.nexusmods.com` links; keep them when editing.
+
+The key: in CI the organisation secret `NEXUS_KEY`; on the dev PC the DPAPI file `%APPDATA%\Edgemodders\nexus-key.txt` (`tools/nexus/api.mjs`). Never print it or pass it on a command line.
 
 Keep these in step with the extension (its README and `docs/changelog.md`):
 

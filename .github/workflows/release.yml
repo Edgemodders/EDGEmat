@@ -13,8 +13,21 @@
 #                                               tools/version.mjs), if it is not run on main, or if
 #                                               docs/changelog.md has no section for the version (the
 #                                               release notes, tools/release/notes.mjs)
+#   ... and "Update Nexus Mods" ticked          also, after the GitHub release, uploads the Nexus zip
+#                                               to the page as the main file's new version (the old
+#                                               one archived, Mod Manager Download off: an extension,
+#                                               not a game mod), adds its changelog and pushes
+#                                               nexus/description.bbcode (tools/nexus/nexus.mjs,
+#                                               copied from REDnode; NEXUS_KEY). It checks the page
+#                                               first and stops before building if the description
+#                                               changed on Nexus since the last pull (npm run
+#                                               nexus:pull, merge, commit, run again). If the upload
+#                                               fails after the GitHub release, run
+#                                               tools/nexus/nexus.mjs release on the dev PC with the
+#                                               release's zip: it skips what is already done.
 #
-# The three tokens are Edgemodders organisation secrets, shared with REDcode's and EDGEdeck's workflows.
+# The tokens are Edgemodders organisation secrets, shared with REDcode's and EDGEdeck's workflows
+# (NEXUS_KEY with REDnode's and REDagent's).
 # Release gate: make a release only after every test of the builds since the last release has passed
 # (docs/testing.md). Untested or failed means no release.
 name: Release
@@ -24,6 +37,10 @@ on:
     inputs:
       release:
         description: Make a release (tags this commit v<version>, publishes to the Marketplace, Open VSX and npm). Only after every test has passed
+        type: boolean
+        default: false
+      nexus:
+        description: Update Nexus Mods (with Make a release) - upload the Nexus zip, its changelog and the page's description
         type: boolean
         default: false
 
@@ -38,6 +55,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the tags: the Nexus check compares with the previous release's description
 
       - uses: actions/setup-node@v5
         with:
@@ -70,7 +89,15 @@ jobs:
 
       - name: Release notes from docs/changelog.md
         if: inputs.release
-        run: node tools/release/notes.mjs "${VERSION}" --out "${RUNNER_TEMP}/notes.md"
+        run: |
+          node tools/release/notes.mjs "${VERSION}" --out "${RUNNER_TEMP}/notes.md"
+          node tools/release/notes.mjs "${VERSION}" --nexus --out "${RUNNER_TEMP}/nexus-notes.txt"
+
+      - name: Nexus Mods can take this release
+        if: inputs.release && inputs.nexus
+        env:
+          NEXUS_KEY: ${{ secrets.NEXUS_KEY }}
+        run: node tools/nexus/nexus.mjs check --version "${VERSION}"
 
       - run: npm ci
 
@@ -117,11 +144,18 @@ jobs:
           node_modules/.bin/ovsx publish "${VSIX}" --pat "${OVSX_PAT}"
 
       - name: GitHub release
+        id: github
         if: ${{ inputs.release && !cancelled() && steps.package.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "v${VERSION}" "${VSIX}" "${MCP}" "dist/EDGEmat-${VERSION}-nexus.zip" dist/THIRD-PARTY-NOTICES.txt --target "${GITHUB_SHA}" --title "EDGEmat ${VERSION}" --notes-file "${RUNNER_TEMP}/notes.md"
+
+      - name: Nexus Mods
+        if: ${{ inputs.release && inputs.nexus && !cancelled() && steps.github.outcome == 'success' }}
+        env:
+          NEXUS_KEY: ${{ secrets.NEXUS_KEY }}
+        run: node tools/nexus/nexus.mjs release --version "${VERSION}" --zip "dist/EDGEmat-${VERSION}-nexus.zip" --notes "${RUNNER_TEMP}/nexus-notes.txt"
 
   npm:
     needs: build

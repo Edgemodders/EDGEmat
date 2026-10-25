@@ -16,6 +16,8 @@
     "mcp:start": "node packages/edgemat-mcp/dist/server.cjs",
     "release:notes": "node tools/release/notes.mjs",
     "release:nexus": "node tools/release/nexus-zip.mjs",
+    "nexus:pull": "node tools/nexus/nexus.mjs pull",
+    "nexus:status": "node tools/nexus/nexus.mjs status",
     "release": "gh workflow run release.yml --ref main -f release=true"
   },
   "devDependencies": {
