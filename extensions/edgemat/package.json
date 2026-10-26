@@ -84,7 +84,7 @@
     "viewsWelcome": [
       {
         "view": "edgemat.desk",
-        "contents": "The Desk holds the meshes and setups you are working on before they go into a project, and keeps them across restarts.\nRight-click a mesh in REDcode's Game Assets or Project view and pick Open in EDGEmat: it lands here with its looks and materials. A setup you open from here saves on the Desk; + puts the whole Desk into a project."
+        "contents": "The Desk holds the meshes and setups you are working on before they go into a project, and keeps them across restarts.\nRight-click a mesh in REDcode's Game Assets or Project view and pick Open in EDGEmat: it lands here with its looks and materials. A setup you open from here saves on the Desk; + on a line puts that one into a project, + in the title bar the whole Desk. Open the same mesh again after editing it to start a new variation."
       },
       {
         "view": "edgemat.find",
@@ -265,6 +265,17 @@
         "title": "Take Off the Desk",
         "category": "EDGEmat",
         "icon": "$(close)"
+      },
+      {
+        "command": "edgemat.deskEntryToProject",
+        "title": "Add to Project...",
+        "category": "EDGEmat",
+        "icon": "$(add)"
+      },
+      {
+        "command": "edgemat.renameDeskEntry",
+        "title": "Rename...",
+        "category": "EDGEmat"
       }
     ],
     "menus": {
@@ -377,14 +388,29 @@
           "group": "make@1"
         },
         {
+          "command": "edgemat.deskEntryToProject",
+          "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
+          "group": "inline@8"
+        },
+        {
           "command": "edgemat.removeFromDesk",
           "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
           "group": "inline@9"
         },
         {
-          "command": "edgemat.removeFromDesk",
+          "command": "edgemat.deskEntryToProject",
           "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
           "group": "desk@1"
+        },
+        {
+          "command": "edgemat.renameDeskEntry",
+          "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
+          "group": "desk@2"
+        },
+        {
+          "command": "edgemat.removeFromDesk",
+          "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
+          "group": "desk@3"
         }
       ],
       "commandPalette": [
@@ -430,6 +456,14 @@
         },
         {
           "command": "edgemat.removeFromDesk",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.deskEntryToProject",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.renameDeskEntry",
           "when": "false"
         }
       ],

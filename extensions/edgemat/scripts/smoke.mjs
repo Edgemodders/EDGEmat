@@ -197,46 +197,64 @@ try {
   const deskMesh = "base\\characters\\garment\\player_equipment\\legs\\l1_012_pants__jeans_tight\\l1_012_pwa_pants__jeans_tight.mesh";
   const deskCache = path.join(tmp, "desk_cache");
   const desk = new core.Desk(deskCache);
-  desk.add("mesh", deskMesh);
-  desk.add("mesh", deskMesh);
+  const deskFirst = desk.open("mesh", deskMesh).entry;
+  const deskAgain = desk.open("mesh", deskMesh);
   const deskMaterial = (await core.meshMaterials(bridge, deskMesh, "default"))[0].materials.find((m) => m.multilayered && m.setup);
   const deskSetup = deskMaterial.setup;
-  const deskFile = await desk.meshFile(bridge, deskMesh);
-  desk.add("mesh", deskFile);
+  const deskFile = await desk.meshFile(bridge, deskFirst);
+  const viaCopy = desk.open("mesh", deskFile);
   const drawn = async (mesh) => Buffer.from(Object.values(await core.renderMaterials(bridge, lib, deskCache, { mesh, appearance: "default" }))[0].baseColor);
   const beforeDesk = await drawn(deskFile);
   const deskOrig = await core.readSetup(bridge, { gamePath: deskSetup });
   const deskEdit = core.applyLayerEdit(deskOrig, 0, core.patchFromWords(deskOrig, 0, { color: "red" }, lib).patch, lib).setup;
-  await desk.saveSetup(bridge, deskSetup, deskEdit);
-  check(desk.entries().length === 1 && desk.edited().length === 1 && !beforeDesk.equals(await drawn(deskFile)) && beforeDesk.equals(await drawn(deskMesh)),
-    "a mesh put on the Desk three times (twice by game path, once as its Desk copy) is one entry; its setup saved on the Desk is the one edit there; the Desk's copy of the mesh shows it in 3D, the game's mesh keeps the game's colors");
+  await desk.saveSetup(bridge, deskFirst, deskSetup, deskEdit);
+  check(!deskAgain.created && deskAgain.entry.id === deskFirst.id && viaCopy.entry.id === deskFirst.id && desk.entries().length === 1 && desk.edited(deskFirst).length === 1
+    && !beforeDesk.equals(await drawn(deskFile)) && beforeDesk.equals(await drawn(deskMesh)),
+    "a mesh opened on the Desk again with no edits, or through its Desk copy, is the same entry; its setup saved there is its one edit; the entry's copy of the mesh shows it in 3D, the game's mesh keeps the game's colors");
+  // Opened again once edited: a fresh variation, with the game's look and no edits of its own.
+  const deskSecond = desk.open("mesh", deskMesh);
+  const secondFile = await desk.meshFile(bridge, deskSecond.entry);
+  const deskBlue = core.applyLayerEdit(deskOrig, 0, core.patchFromWords(deskOrig, 0, { color: "blue" }, lib).patch, lib).setup;
+  const freshLook = beforeDesk.equals(await drawn(secondFile));
+  await desk.saveSetup(bridge, deskSecond.entry, deskSetup, deskBlue);
+  const twoLooks = !(await drawn(secondFile)).equals(await drawn(deskFile));
+  check(deskSecond.created && deskSecond.entry.variation === 2 && core.deskLabel(deskSecond.entry).endsWith("variation 2") && freshLook && twoLooks && desk.duplicates().length === 1,
+    "the mesh opened again once edited: a new entry, variation 2, with the game's look; edited blue, it shows blue while the first stays red");
   const deskProj = core.projectAt((fs.mkdirSync(path.join(tmp, "desk_project", "source", "archive"), { recursive: true }), path.join(tmp, "desk_project")));
   const deskTarget = core.newPathFor(deskSetup, "desk_project");
+  const deskBoth = await desk.toProject(bridge, deskProj, "desk_project").then(() => "", (e) => e.message);
   t3 = Date.now();
-  const added = await desk.toProject(bridge, deskProj, "desk_project");
+  const added = await desk.toProject(bridge, deskProj, "desk_project", { ids: [deskFirst.id] });
   const deskBack = await core.readSetup(bridge, { file: path.join(deskProj.archive, deskTarget) });
   const deskPointed = await core.meshUses(bridge, deskProj.archive, deskMesh, [deskTarget]);
-  check(core.sameSetup(deskBack, deskEdit) && deskPointed.inProject && deskPointed.materials.length === 1 && added.written.length === 2 && !added.notes.length,
-    `the Desk added to a project in ${Date.now() - t3} ms: the edited setup as ${deskTarget.split("\\").pop()}, and the mesh copied in and pointed at it`);
-  const addedAgain = await desk.toProject(bridge, deskProj, "desk_project");
+  check(deskBoth.includes("variation 2") && core.sameSetup(deskBack, deskEdit) && deskPointed.inProject && deskPointed.materials.length === 1 && added.written.length === 2 && !added.notes.length && added.added[0] === deskFirst.id,
+    `both variations at once are refused; the first added to a project in ${Date.now() - t3} ms: its setup as ${deskTarget.split("\\").pop()}, and the mesh copied in and pointed at it`);
+  const addedAgain = await desk.toProject(bridge, deskProj, "desk_project", { ids: [deskFirst.id] });
   check(addedAgain.written.length === 1 && addedAgain.setups[0]?.meshes.length === 1,
     "added again: only the setup is written, the mesh still pointed");
   // The project's copy pointed at another material (as a New Material does): a conflict.
   await core.applyMaterial(bridge, deskProj.archive, deskMesh, deskMaterial.name, "edgemat\\smoke\\other.mi");
-  const conflicts = await desk.conflicts(bridge, deskProj, "desk_project");
-  const keep = await desk.toProject(bridge, deskProj, "desk_project", { replace: false });
-  desk.clear(keep.kept);
-  const keptOnDesk = desk.entries().length === 1 && desk.edited().length === 1;
-  const replaced = await desk.toProject(bridge, deskProj, "desk_project", { replace: true });
+  const conflicts = await desk.conflicts(bridge, deskProj, "desk_project", [deskFirst.id]);
+  const keep = await desk.toProject(bridge, deskProj, "desk_project", { replace: false, ids: [deskFirst.id] });
+  desk.remove(keep.added.filter((x) => !keep.kept.includes(x)));
+  const keptOnDesk = !!desk.get(deskFirst.id) && desk.edited(deskFirst).length === 1;
+  const replaced = await desk.toProject(bridge, deskProj, "desk_project", { replace: true, ids: [deskSecond.entry.id] });
   const deskRepointed = await core.meshUses(bridge, deskProj.archive, deskMesh, [deskTarget]);
-  check(conflicts.length === 1 && conflicts[0].setups.length === 1 && !keep.written.length && keep.kept.setups.length === 1 && keptOnDesk
-    && replaced.written.includes(deskMesh) && deskRepointed.materials.length === 1,
-    "the project's copy pointed elsewhere is a conflict: kept, nothing is written and Add and Clear leaves the mesh and its edit on the Desk; replaced, the Desk's mesh goes in pointed at the edit");
-  desk.remove({ kind: "mesh", path: deskMesh });
-  const orphan = await desk.toProject(bridge, deskProj, "desk_project");
+  const nowBlue = core.sameSetup(await core.readSetup(bridge, { file: path.join(deskProj.archive, deskTarget) }), deskBlue);
+  check(conflicts.length === 1 && conflicts[0].setups.length === 1 && !keep.written.length && keep.kept[0] === deskFirst.id && keptOnDesk
+    && replaced.written.includes(deskMesh) && deskRepointed.materials.length === 1 && nowBlue,
+    "the project's copy pointed elsewhere is a conflict: kept, nothing is written and Add and Clear leaves the entry and its edit on the Desk; variation 2 with replace: its mesh goes in, pointed at its blue setup");
+  desk.remove([deskSecond.entry.id]);
+  const deskGone = !fs.existsSync(secondFile) && desk.entries().length === 1;
   desk.clear();
-  check(orphan.written.length === 0 && orphan.notes.length === 1 && !desk.entries().length && !desk.edited().length && !fs.existsSync(deskFile),
-    "with the mesh off the Desk, its setup's edit stays on the Desk; Clear empties it");
+  // A Desk from before entries had folders: one shared edit, copied into each entry.
+  fs.mkdirSync(path.join(deskCache, "desk", "source", "archive", path.dirname(deskSetup)), { recursive: true });
+  fs.copyFileSync(path.join(deskProj.archive, deskTarget), path.join(deskCache, "desk", "source", "archive", deskSetup));
+  fs.writeFileSync(path.join(deskCache, "desk", "desk.json"), JSON.stringify({ entries: [{ kind: "mesh", path: deskMesh, added: "2026-10-25T00:00:00Z" }] }));
+  const deskOld = new core.Desk(deskCache).entries();
+  check(deskGone && deskOld.length === 1 && deskOld[0].id && deskOld[0].variation === 1 && desk.edited(deskOld[0]).length === 1 && !fs.existsSync(path.join(deskCache, "desk", "source")),
+    "taking an entry off deletes its folder; a Desk from before entries had folders gets ids, and its shared edit is copied into the entry");
+  desk.clear();
 
   // Generate's first slice: a texture from a PNG, a textured .mi on metal_base, and one material of a mesh pointed at it.
   const genTex = "edgemat\\smoke\\uv_test_pattern_d01.xbm", mi = "edgemat\\smoke\\uv_test.mi";

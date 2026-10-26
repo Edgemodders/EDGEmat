@@ -16,7 +16,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
 import {
-  applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
+  applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, generateImage, imageAsPng, listModels, makeMaterial, materialSlug, texturePrompt, Services,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
@@ -268,7 +268,7 @@ server.registerTool(
       "Use mat_find to find a garment's setup and mat_describe to see its layers first. Edits are checked: a layer can only use its surface's own presets. " +
       "save 'new' (the default) writes the setup beside the original under a new name and copies every mesh that uses it into the project, pointed at the new setup: it shows in the game with no other mod, once the project is packed and installed (REDcode: Pack and Try). " +
       "save 'inPlace' writes it at its own game path, which replaces the game's setup and shows in the game only with the Material Texture Override mod. " +
-      "save 'desk' saves it on EDGEmat's Desk (see mat_desk) instead of a project, and puts it there; a setup edited on the Desk is read from there next time. " +
+      "save 'desk' saves it on EDGEmat's Desk (see mat_desk) instead of a project: in the Desk entry desk_id (a mesh on the Desk whose material uses this setup, or a setup entry), else in a setup entry of its own; a setup edited on an entry is read from there next time. " +
       "preview true describes the result without writing anything. project: the project folder, its .cpmodproj, or its source\\archive folder.",
     inputSchema: {
       setup: z.string().describe("A game path (base\\...\\x.mlsetup), or a file on disk"),
@@ -278,14 +278,17 @@ server.registerTool(
       target: z.string().optional().describe("The game path for the new setup; default: beside the original, named with the project's name"),
       mask: z.string().optional(),
       preview: z.boolean().default(false),
+      desk_id: z.string().optional().describe("For save 'desk': the Desk entry to save in, from mat_desk's list"),
     },
   },
-  async ({ setup, edits, project, save, target, mask, preview }) => {
+  async ({ setup, edits, project, save, target, mask, preview, desk_id }) => {
     try {
       const b = await getBridge();
       const lib = await library();
-      // On the Desk, its copy there once edited.
-      const deskCopy = save === "desk" && !isFilePath(setup) ? desk.copyOf(setup) : undefined;
+      // On the Desk: the entry asked for, or the setup's own entry; its copy there once edited.
+      const entry = save !== "desk" || isFilePath(setup) ? undefined : desk_id ? desk.get(desk_id) : desk.matching(setup, "setup")[0];
+      if (save === "desk" && desk_id && !entry) return failure(new Error(`No Desk entry ${desk_id}: mat_desk 'list' shows the ids.`));
+      const deskCopy = entry ? desk.copyOf(entry, setup) : undefined;
       const source = isFilePath(setup) ? { file: setup, gamePath: gamePathInProject(setup) } : deskCopy ? { file: deskCopy, gamePath: setup } : { gamePath: setup };
       const o = await openSetup(b, lib, cacheDir, source, mask);
       let edited = o.setup;
@@ -303,9 +306,9 @@ server.registerTool(
       if (preview) return text({ preview: true, ...result, notes: notes.length ? notes : undefined });
       if (save === "desk") {
         if (!source.gamePath) return failure(new Error("The Desk keeps setups by game path, and this file has none: open it from the game or from a project's source\\archive."));
-        const file = await desk.saveSetup(b, source.gamePath, edited);
-        if (!desk.find(source.gamePath)) desk.add("setup", source.gamePath);
-        return text({ saved: { desk: file }, next: "mat_desk with action 'to_project' puts the Desk into a project; EDGEmat's Desk view shows it.", ...result, notes: notes.length ? notes : undefined });
+        const into = entry ?? desk.open("setup", source.gamePath).entry;
+        const file = await desk.saveSetup(b, into, source.gamePath, edited);
+        return text({ saved: { desk: file, desk_id: into.id, entry: deskLabel(into) }, next: "mat_desk with action 'to_project' (ids [desk_id]) puts it into a project; EDGEmat's Desk view shows it.", ...result, notes: notes.length ? notes : undefined });
       }
 
       if (!project) return failure(new Error("Pass project: the WolvenKit project folder to save into (or preview: true to only see the result)."));
@@ -531,59 +534,80 @@ server.registerTool(
   {
     description:
       "EDGEmat's Desk: the meshes and setups a modder works on before they go into a project, kept across restarts and shown in the extension's Desk view. " +
-      "action 'list' shows what is on it and which setups were edited there. 'add' puts a mesh (.mesh) or a setup (.mlsetup) on it: a game path, or a file in a project's source\\archive. " +
-      "'remove' takes one off (a setup's edits on the Desk go with it). 'clear' empties it, edits included. " +
-      "'to_project' puts it all in a WolvenKit project: each edited setup is saved as a new setup with the Desk's meshes that use it copied in and pointed at it (no other mod needed), the other meshes as they are. " +
-      "When the project already has its own copy of a Desk mesh that no longer uses a setup edited on the Desk, to_project writes nothing and lists the conflicts: ask the modder, then call again with replace true (the project's copy becomes the Desk's mesh) or false (the project keeps its copy; those edits stay on the Desk). " +
-      "clear true with to_project then takes off the Desk only what went into the project. " +
-      "To edit a setup on the Desk, use mat_edit with save 'desk'; mat_find lists a mesh's materials and their setups.",
+      "Each entry has an id and its own edits, so one mesh can be on the Desk more than once as variations (variation 2, 3, or a name). " +
+      "action 'list' shows the entries with their ids and edited setups. 'add' puts a mesh (.mesh) or a setup (.mlsetup) on it: a game path, or a file in a project's source\\archive; a copy there with no edits is reused, else a new variation starts. " +
+      "'remove' takes entries off (ids), with their edits. 'rename' names an entry (id, name). 'clear' empties the Desk, edits included. " +
+      "'to_project' puts entries (ids, else all) in a WolvenKit project: each setup edited on a mesh entry is saved as a new setup with that mesh copied in and pointed at it (no other mod needed), the other meshes as they are. " +
+      "One variation of each file can go in: with several and no ids, to_project writes nothing and lists them; ask the modder which, then pass ids. " +
+      "When the project already has its own copy of a mesh that no longer uses a setup edited on its entry, to_project writes nothing and lists the conflicts: ask the modder, then call again with replace true (the project's copy becomes the Desk's mesh) or false (the project keeps its copy; that entry stays on the Desk). " +
+      "clear true with to_project then takes off the Desk what went into the project. " +
+      "To edit a setup on the Desk, use mat_edit with save 'desk' and desk_id; mat_find lists a mesh's materials and their setups.",
     inputSchema: {
-      action: z.enum(["list", "add", "remove", "clear", "to_project"]),
-      path: z.string().optional().describe("For add and remove: a game path or a file"),
+      action: z.enum(["list", "add", "remove", "rename", "clear", "to_project"]),
+      path: z.string().optional().describe("For add: a game path or a file"),
+      ids: z.array(z.string()).optional().describe("For remove and to_project: entry ids from 'list'"),
+      id: z.string().optional().describe("For rename: the entry id"),
+      name: z.string().optional().describe("For rename: the name; empty clears it"),
       project: z.string().optional().describe("For to_project: the project folder, its .cpmodproj, or its source\\archive folder"),
       replace: z.boolean().optional().describe("For to_project, when it reported conflicts: true replaces the project's copies with the Desk's meshes, false keeps them"),
       clear: z.boolean().optional().describe("For to_project: afterwards, take off the Desk what went into the project"),
     },
   },
-  async ({ action, path: p, project, replace, clear }) => {
+  async ({ action, path: p, ids, id, name, project, replace, clear }) => {
     try {
-      const list = () => ({ entries: desk.entries().map(({ kind, path, root }) => ({ kind, path, ...(root ? { project: root } : {}) })), edited: desk.edited(), folder: desk.dir });
+      const list = () => ({
+        entries: desk.entries().map((e) => ({ id: e.id, kind: e.kind, path: e.path, label: deskLabel(e), ...(e.root ? { project: e.root } : {}), edited: desk.edited(e) })),
+        folder: desk.dir,
+      });
       if (action === "list") return text(list());
       if (action === "clear") {
         desk.clear();
         return text(list());
       }
-      if (action === "add" || action === "remove") {
+      if (action === "add") {
         if (!p) return failure(new Error("Pass path: a mesh or setup, as a game path or a file."));
         const kind = /\.mesh$/i.test(p) ? "mesh" : /\.mlsetup$/i.test(p) ? "setup" : undefined;
         if (!kind) return failure(new Error("The Desk holds meshes (.mesh) and setups (.mlsetup)."));
-        if (action === "add") desk.add(kind, p);
-        else {
-          const e = desk.find(p, kind);
-          if (!e) return failure(new Error(`${p} is not on the Desk.`));
-          desk.remove(e);
-        }
+        const { entry, created } = desk.open(kind, p);
+        return text({ added: { id: entry.id, label: deskLabel(entry), new: created }, ...list() });
+      }
+      if (action === "remove") {
+        if (!ids?.length) return failure(new Error("Pass ids: the entries to take off, from 'list'."));
+        const unknown = ids.filter((x) => !desk.get(x));
+        if (unknown.length) return failure(new Error(`Not on the Desk: ${unknown.join(", ")}.`));
+        desk.remove(ids);
+        return text(list());
+      }
+      if (action === "rename") {
+        if (!id || !desk.get(id)) return failure(new Error("Pass id: an entry from 'list'."));
+        desk.rename(id, name);
         return text(list());
       }
       const pr = projectFor(project);
       const b = await getBridge();
+      const twice = desk.duplicates(ids);
+      if (twice.length)
+        return text({
+          written: [],
+          variations: twice.map((g) => g.map((e) => ({ id: e.id, label: deskLabel(e), edited: desk.edited(e) }))),
+          next: "Nothing written. In the game one mesh wears one variation: ask the modder which of each goes in, then call to_project with ids (the chosen ones, plus the other entries to add).",
+        });
       if (replace === undefined) {
-        const conflicts = await desk.conflicts(b, pr, suffixFor(pr.name));
+        const conflicts = await desk.conflicts(b, pr, suffixFor(pr.name), ids);
         if (conflicts.length)
           return text({
             written: [],
             conflicts,
-            next: "Nothing written. The project already has its own copy of these Desk meshes, and it no longer uses the setups edited on the Desk. Ask the modder: replace the project's copies with the Desk's (replace true; what the copies had is lost), or keep them (replace false; those edits stay on the Desk). Then call to_project again.",
+            next: "Nothing written. The project already has its own copy of these Desk meshes, and it no longer uses the setups edited on their entries. Ask the modder: replace the project's copies with the Desk's (replace true; what the copies had is lost), or keep them (replace false; those entries stay on the Desk). Then call to_project again.",
           });
       }
-      const r = await desk.toProject(b, pr, suffixFor(pr.name), { replace });
-      if (clear) desk.clear(r.kept);
-      const kept = r.kept.setups.length ? r.kept : undefined;
+      const r = await desk.toProject(b, pr, suffixFor(pr.name), { replace, ids });
+      if (clear) desk.remove(r.added.filter((x) => !r.kept.includes(x)));
       return text({
         saved: { project: pr.dir, written: r.written, setups: r.setups },
-        kept,
+        kept: r.kept.length ? r.kept : undefined,
         notes: r.notes.length ? r.notes : undefined,
-        next: `Pack the project and install it (REDcode: Pack and Try), then look in the game. ${clear ? (kept ? "The Desk now holds only what stayed out." : "The Desk is empty.") : "The Desk is left as it was: to_project with clear true, or 'clear', empties it."}`,
+        next: `Pack the project and install it (REDcode: Pack and Try), then look in the game. ${clear ? "What went in is off the Desk." : "The Desk is left as it was: to_project with clear true, or 'remove', takes entries off."}`,
       });
     } catch (e) {
       return failure(e);

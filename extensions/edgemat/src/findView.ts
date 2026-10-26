@@ -6,7 +6,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { itemMaterials, loadItems, meshMaterials, searchItems, type BridgeClient, type Desk, type DeskEntry, type ItemEntry, type ItemLook, type MaterialTarget, type MaterialUse, type MeshLook } from "./core";
+import { deskLabel, deskProjectName, itemMaterials, loadItems, meshMaterials, searchItems, type BridgeClient, type Desk, type DeskEntry, type ItemEntry, type ItemLook, type MaterialTarget, type MaterialUse, type MeshLook } from "./core";
 import { gameUri, optionsQuery, SetupEditor } from "./setupEditor";
 
 export type Node =
@@ -18,11 +18,14 @@ export type Node =
   // time a mesh is put on the Desk, for fresh tree ids, so VS Code opens it instead of keeping an earlier state.
   | { kind: "meshFile"; path: string; root?: string; appearance?: string; open?: number; entry?: DeskEntry }
   | { kind: "setupFile"; entry: DeskEntry }
-  | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance"; looks?: ItemLook[]; open?: number; root?: string; onDesk?: boolean }
-  | { kind: "material"; use: MaterialUse; via: string; mesh: string; targets: MaterialTarget[]; root?: string; onDesk?: boolean }
+  // `desk`: the id of the Desk entry a mesh or material is under; its setups open and save in that entry.
+  | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance"; looks?: ItemLook[]; open?: number; root?: string; desk?: string }
+  | { kind: "material"; use: MaterialUse; via: string; mesh: string; targets: MaterialTarget[]; root?: string; desk?: string }
   | { kind: "message"; text: string };
 
 const file = (p: string) => p.split("\\").pop() ?? p;
+/** Where a project file on the Desk comes from: its project by name, or that the project is gone. */
+const fromProject = (root: string) => `from ${deskProjectName(root)}${fs.existsSync(root) ? "" : ", not found"}`;
 const Limit = 200;
 
 export class FindView implements vscode.TreeDataProvider<Node> {
@@ -115,8 +118,7 @@ export class FindView implements vscode.TreeDataProvider<Node> {
           const looks = await meshMaterials(bridge, node.path, undefined, node.root);
           // Just put on the Desk: the look asked for opens, else the first.
           const want = node.open ? (node.appearance ?? looks[0]?.appearance)?.toLowerCase() : undefined;
-          const onDesk = !!node.entry;
-          return looks.map((mesh): Node => ({ kind: "mesh", mesh, via: `${file(node.path)}, ${mesh.appearance}`, label: "appearance", open: want && mesh.appearance.toLowerCase() === want ? node.open : undefined, root: node.root, onDesk }));
+          return looks.map((mesh): Node => ({ kind: "mesh", mesh, via: `${file(node.path)}, ${mesh.appearance}`, label: "appearance", open: want && mesh.appearance.toLowerCase() === want ? node.open : undefined, root: node.root, desk: node.entry?.id }));
         } catch (e) {
           return [{ kind: "message", text: e instanceof Error ? e.message : String(e) }];
         }
@@ -127,7 +129,7 @@ export class FindView implements vscode.TreeDataProvider<Node> {
           const targets: MaterialTarget[] = [];
           for (const look of node.looks ?? []) for (const m of look.meshes) if (m.materials.some((x) => x.name === use.name) && !targets.some((t) => t.mesh === m.mesh)) targets.push({ mesh: m.mesh, material: use.name });
           if (!targets.some((t) => t.mesh === node.mesh.mesh)) targets.unshift({ mesh: node.mesh.mesh, material: use.name });
-          return { kind: "material", use, via: node.via, mesh: node.mesh.mesh, targets, root: node.root, onDesk: node.onDesk };
+          return { kind: "material", use, via: node.via, mesh: node.mesh.mesh, targets, root: node.root, desk: node.desk };
         });
       default:
         return [];
@@ -158,22 +160,27 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         return t;
       }
       case "meshFile": {
-        const t = new vscode.TreeItem(file(node.path), node.open ? vscode.TreeItemCollapsibleState.Expanded : Closed);
-        t.description = node.root ? "the project's copy" : node.path.slice(0, node.path.lastIndexOf("\\"));
-        t.tooltip = node.root ? `${node.path}\nThe project's copy, in ${node.root}` : node.path;
-        if (node.open) t.id = `open${node.open}:${node.root ?? ""}:${node.path}`;
+        const e = node.entry;
+        const t = new vscode.TreeItem(e ? deskLabel(e) : file(node.path), node.open ? vscode.TreeItemCollapsibleState.Expanded : Closed);
+        const folder = node.path.slice(0, node.path.lastIndexOf("\\"));
+        const edits = e && this.desk ? this.desk.edited(e).length : 0;
+        t.description = e ? [edits ? "edited on the Desk" : "", e.root ? fromProject(e.root) : folder].filter(Boolean).join(" · ") : node.root ? "the project's copy" : folder;
+        t.tooltip = `${node.path}${node.root ? `\n${e ? "A file of the project" : "The project's copy, in"} ${node.root}` : ""}${edits ? `\n${edits} setup${edits === 1 ? "" : "s"} edited on this Desk entry: + puts them in a project.` : ""}`;
+        if (e) t.id = `desk:${e.id}:${node.open ?? 0}`;
+        else if (node.open) t.id = `open${node.open}:${node.root ?? ""}:${node.path}`;
         t.iconPath = new vscode.ThemeIcon("symbol-structure");
         t.contextValue = node.entry ? "edgemat.mesh edgemat.deskEntry" : "edgemat.mesh";
         return t;
       }
       case "setupFile": {
         const e = node.entry;
-        const edited = !e.root && !!this.desk?.copyOf(e.path);
-        const t = new vscode.TreeItem(file(e.path), None);
-        t.description = e.root ? "the project's copy" : edited ? "edited on the Desk" : "as in the game";
-        t.tooltip = `${e.path}${e.root ? `\nThe project's copy, in ${e.root}` : edited ? "\nEdited on the Desk: Add to Project puts it in a project." : ""}`;
+        const edited = !e.root && !!this.desk?.copyOf(e, e.path);
+        const t = new vscode.TreeItem(deskLabel(e), None);
+        t.description = e.root ? fromProject(e.root) : edited ? "edited on the Desk" : "as in the game";
+        t.tooltip = `${e.path}${e.root ? `\nA file of the project ${e.root}` : edited ? "\nEdited on the Desk: + puts it in a project." : ""}`;
+        t.id = `desk:${e.id}`;
         t.iconPath = new vscode.ThemeIcon("layers");
-        t.command = { command: "edgemat.openFoundSetup", title: "Open Setup", arguments: [e.path, undefined, "the Desk", e.root, true] };
+        t.command = { command: "edgemat.openFoundSetup", title: "Open Setup", arguments: [e.path, undefined, "the Desk", e.root, e.id] };
         t.contextValue = "edgemat.gamePath edgemat.deskEntry";
         return t;
       }
@@ -193,12 +200,12 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         const md = new vscode.MarkdownString();
         md.appendMarkdown(`**${u.name}**${u.chunks > 1 ? ` (${u.chunks} chunks across LODs)` : ""}\n\n`);
         if (u.multilayered) {
-          const edited = node.onDesk && !!u.setup && !(node.root && fs.existsSync(path.join(node.root, u.setup))) && !!this.desk?.copyOf(u.setup);
+          const edited = !!node.desk && !!u.setup && !(node.root && fs.existsSync(path.join(node.root, u.setup))) && !!this.desk?.copyOf({ id: node.desk }, u.setup);
           t.description = `${edited ? "edited on the Desk · " : ""}multilayered · ${file(u.setup ?? "no setup")}`;
           t.iconPath = new vscode.ThemeIcon("layers");
-          md.appendMarkdown(`Multilayered. Click to open its setup with the mask set this material names.${node.onDesk ? " Ctrl+S in the setup editor saves it on the Desk." : ""}\n\n`);
+          md.appendMarkdown(`Multilayered. Click to open its setup with the mask set this material names.${node.desk ? " Ctrl+S in the setup editor saves it on the Desk." : ""}\n\n`);
           md.appendCodeblock(`setup ${u.setup ?? "(none)"}\nmask  ${u.mask ?? "(none)"}${u.globalNormal ? `\nnormal ${u.globalNormal}` : ""}`, "text");
-          if (u.setup) t.command = { command: "edgemat.openFoundSetup", title: "Open Setup", arguments: [u.setup, u.mask, node.via, node.root, node.onDesk] };
+          if (u.setup) t.command = { command: "edgemat.openFoundSetup", title: "Open Setup", arguments: [u.setup, u.mask, node.via, node.root, node.desk] };
           t.contextValue = "edgemat.gamePath edgemat.material";
         } else {
           t.description = file(u.base || "unknown material");
@@ -239,10 +246,10 @@ export class FindView implements vscode.TreeDataProvider<Node> {
     return n?.kind === "meshFile" ? { mesh: at(n.path, n.root), appearance: n.appearance } : n?.kind === "mesh" ? { mesh: at(n.mesh.mesh, n.root), appearance: n.mesh.appearance } : undefined;
   }
 
-  /** Whether a mesh node is on the Desk: its 3D view then opens the Desk's copy, with the Desk's edits. */
-  static onDesk(node: unknown): boolean {
+  /** The Desk entry a mesh node is under, by id: its 3D view then opens the entry's copy, with the entry's edits. */
+  static deskOf(node: unknown): string | undefined {
     const n = node as Node | undefined;
-    return n?.kind === "meshFile" ? !!n.entry : n?.kind === "mesh" ? !!n.onDesk : false;
+    return n?.kind === "meshFile" ? n.entry?.id : n?.kind === "mesh" ? n.desk : undefined;
   }
 }
 
@@ -250,7 +257,7 @@ export class FindView implements vscode.TreeDataProvider<Node> {
  * Opens a setup found through Find or on the Desk, with the mask set its material names: the project's copy
  * when a project mesh's `root` holds one, else the game's (from the Desk, `desk`: its Desk copy once edited).
  */
-export function openFoundSetup(setup: string, mask?: string, via?: string, root?: string, desk?: boolean): Thenable<unknown> {
+export function openFoundSetup(setup: string, mask?: string, via?: string, root?: string, desk?: string): Thenable<unknown> {
   const local = root ? path.join(root, setup) : undefined;
   const uri = local && fs.existsSync(local) ? vscode.Uri.file(local).with({ query: optionsQuery({ mask, via }) }) : gameUri(setup, { mask, via, desk });
   return vscode.commands.executeCommand("vscode.openWith", uri, SetupEditor.viewType);
