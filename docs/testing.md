@@ -322,7 +322,7 @@ Added 2026-10-23: from a mesh in 3D to its materials in EDGEmat, and the 3D view
 
 | Step | Do | Expect |
 |---|---|---|
-| 1 | VS Code's Explorer: right-click the project's `.mesh` › **Open in EDGEmat** | Since 2026-10-25: EDGEmat's Desk opens with the mesh on it, "the project's copy", its looks listed under it (was: the Find view) |
+| 1 | VS Code's Explorer: right-click the project's `.mesh` › **Open in EDGEmat** | Since 2026-10-25: EDGEmat's Desk opens with the mesh on it, "from <project>" (since 2026-10-26), its looks listed under it (was: the Find view) |
 | 2 | Open a look › hover a multilayered material (layers icon) | Its setup and mask in the tooltip; a click opens the setup editor |
 | 3 | Open the mesh in REDcode (click it in REDcode's Project view), switch to its 3D view, keep the tab open | The mesh in 3D with EDGEmat's colors |
 | 4 | In the setup editor from step 2, change a layer's color, then **Save to Project** › **As a new setup** (recommended) › accept the game path › keep the project's mesh ticked › Enter | Saved, and the project's mesh pointed at the new setup. Within a few seconds the 3D view from step 3 draws its materials again with the new color. Unverified: how REDcode's open tab takes its mesh file changing on disk (redraws, asks to reload, or keeps its copy). *In place of the game's setup* needs the Material Texture Override mod in the game; *At a game path you choose* changes no mesh, so the 3D view would not change |
