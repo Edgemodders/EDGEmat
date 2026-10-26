@@ -151,6 +151,8 @@ This is the least known part and the heart of the M5 preview. MlsetupBuilder doe
 
 Observed on 2026-10-14 and 15, for M5: a microblend texture (`fine_filth.xbm`) holds a normal in red and green and a mask in alpha; a microblend can also be a graphic atlas used as a print (`graphics_logos_004.xbm` at a low `mbTile`, cutting a layer like a stencil); `ratio` changes the microblend mapping (section 2); the template diffuse sampled is near-grey; `colorMaskLevels` has no place in the hypothesis yet.
 
+**Measured 2026-10-26** on the Comfy rocker slim-fits' `leather.mlsetup` against the owner's in-game screenshot: the masks are painted for a threshold. The piping layer's mask sits near 0.65 with `default.xbm` (its alpha a flat 0.41) and shows solid black; the denim layer's sits near 0.55 with `lint_01.xbm` (alpha black but for specks) at `microblendContrast` 0 and hardly shows; the base covers the rest. Both fit "a layer shows where its mask plus the microblend's alpha is over 1", which EDGEmat's color map uses since then, with a soft band of 0.05 above 1 and the microblend tiled by `mbTile` and offset. Not used yet, unverified: `microblendContrast` (layers at 0 and at 0.56 both behave as the rule says), `ratio`, and a layer with no microblend (drawn by its mask alone).
+
 M5 tests this against in-game screenshots, template by template, and records how close it gets.
 
 ## 6. The JSON form and saving

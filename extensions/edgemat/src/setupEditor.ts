@@ -10,7 +10,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  addToInventory, applyLayerEdit, Desk, deskLabel, describeSurface, gamePathInProject, isGameFile, itemsWearing, meshesToPoint, meshesUsing, newPathFor, openSetup, projectArchive, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
+  addToInventory, applyLayerEdit, Desk, deskLabel, describeSurface, gamePathInProject, isGameFile, itemsWearing, loadMicroblends, meshesToPoint, meshesUsing, newPathFor, openSetup, projectArchive, readMicroblend, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
   type BridgeClient, type LayerPatch, type Library, type MeshSearch, type OpenedSetup, type Project, type Setup, type SetupSource, type WornBy,
 } from "./core";
 import type { SetupPageData, SurfaceChoices } from "./webview/setup";
@@ -363,6 +363,19 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
         this.changedLive();
       },
     });
+    this.refresh(doc);
+    this.changedLive();
+    if (patch.microblend) void this.loadMicroblend(doc, patch.microblend);
+  }
+
+  /** A microblend new to the cache cuts its layer once exported; until then the layer shows uncut. */
+  private async loadMicroblend(doc: SetupDocument, gamePath: string): Promise<void> {
+    const dir = this.host.cacheDir();
+    if (readMicroblend(dir, gamePath)) return;
+    const bridge = await this.host.bridge();
+    if (!bridge) return;
+    await loadMicroblends(bridge, dir, [gamePath]);
+    if (!readMicroblend(dir, gamePath)) return;
     this.refresh(doc);
     this.changedLive();
   }

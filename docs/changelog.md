@@ -20,6 +20,8 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **Changed**
 
+- Colors in the setup editor and in REDcode's 3D view come closer to the game: a layer's microblend now cuts its mask, as in the game, so a layer painted to show only through its microblend (such as lint or dirt specks) no longer tints the whole garment. On the Comfy rocker slim-fits' leather look, a dark denim layer had turned the whole pair maroon; now the leather's own color shows, with solid black piping. A layer's share of the texture in the setup editor follows. Still flat colors: no grain, shine or game lighting yet.
+- The Desk opens a mesh on the first look an item in the game wears (the slim-fits open on **leather**, not **default**), and marks each look **worn by 1 item**, or **no item** for a look only NPCs wear, so an edit goes on a look you can give V. The look you found it under in Find still opens first.
 - REDcode's 3D view draws the materials again after you save a setup or put a new material on a mesh, so the change shows without reopening it.
 - A live preview in REDcode's 3D view: while a setup is open in EDGEmat's setup editor, the 3D view shows it as edited, before you save, and follows each edit, undo and redo. Close the editor without saving and the 3D view goes back to the saved setup. It shows on meshes from the same place as the setup: opened from the Desk, on the Desk's meshes; a project's file, on that project's; a game file, on the game's.
 - **View in 3D** on a mesh in your project opens the project's copy.

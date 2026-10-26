@@ -8,6 +8,7 @@ import * as path from "node:path";
 import type { BridgeClient } from "./bridgeClient";
 import type { Library } from "./library";
 import { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, type MaskSet, type MaskSource } from "./masks";
+import { loadMicroblends, readMicroblend } from "./microblend";
 import { meshesUsing, projectArchive } from "./project";
 import { describeSetup, parseSetup, type Setup, type SetupInfo } from "./setup";
 
@@ -97,13 +98,15 @@ export async function openSetup(bridge: BridgeClient | undefined, lib: Library |
     maskError = "No mask set found beside this setup or named by a mesh that uses it. Choose one to see where each layer shows.";
   }
 
+  if (masks && bridge) await loadMicroblends(bridge, dir, setup.layers.map((l) => l.microblend));
   const maskFrom = masks ? (mask ? "given" : named ? "material" : "beside") : undefined;
   return withSetup({ source, setup, info: describeSetup(setup, lib), masks, maskFrom, maskChoices, maskError }, setup, lib, dir);
 }
 
 /**
  * An opened setup with `setup` in place of what it held: described again and its color map redrawn,
- * with the same masks. The setup editor calls it after each edit; openSetup after reading.
+ * with the same masks. The setup editor calls it after each edit; openSetup after reading. A microblend
+ * not cached yet (loadMicroblends) leaves its layer uncut.
  */
 export function withSetup(o: OpenedSetup, setup: Setup, lib: Library | undefined, dir: string): OpenedSetup {
   const { masks, source } = o;
@@ -113,8 +116,14 @@ export function withSetup(o: OpenedSetup, setup: Setup, lib: Library | undefined
   if (masks) {
     const stamp = "file" in source && fs.existsSync(source.file) ? fs.statSync(source.file).mtimeMs : "";
     const id = "file" in source ? source.file : source.gamePath;
-    const layers = info.layers.map((l) => ({ shown: l.shown, hex: l.color?.hex ?? "#808080", opacity: l.raw.opacity }));
-    const key = crypto.createHash("sha1").update(JSON.stringify([id, stamp, masks.files[0], layers])).digest("hex").slice(0, 20);
+    const plain = info.layers.map((l) => ({ shown: l.shown, hex: l.color?.hex ?? "#808080", opacity: l.raw.opacity }));
+    const layers = plain.map((l, i) => {
+      const r = setup.layers[i];
+      const mask = l.shown ? readMicroblend(dir, r.microblend) : undefined;
+      return { ...l, microblend: mask && { mask, tile: r.mbTile, offsetU: r.microblendOffsetU, offsetV: r.microblendOffsetV } };
+    });
+    const cuts = layers.map((l, i) => (l.microblend ? [setup.layers[i].microblend, l.microblend.tile, l.microblend.offsetU, l.microblend.offsetV] : null));
+    const key = crypto.createHash("sha1").update(JSON.stringify([id, stamp, masks.files[0], plain, "cut1", cuts])).digest("hex").slice(0, 20);
     const file = path.join(dir, "setups", `${key}.png`);
     const c = compositeSetup(masks, layers, file);
     composite = { file, pick: c.pick };

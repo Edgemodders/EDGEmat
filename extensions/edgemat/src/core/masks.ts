@@ -8,6 +8,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { PNG } from "pngjs";
 import type { BridgeClient } from "./bridgeClient";
+import type { MicroblendMask } from "./microblend";
 import { writeThumbnail } from "./thumbnail";
 
 export const MaskSize = 512;
@@ -96,6 +97,31 @@ export interface CompositeLayer {
   /** #rrggbb */
   hex: string;
   opacity: number;
+  /** The layer's microblend, when its mask is cached: it cuts the layer's mask (microblend.ts). */
+  microblend?: { mask: MicroblendMask; tile: number; offsetU: number; offsetV: number };
+}
+
+/** How soft a cut is: the mask and the microblend's mask add up to this much over 1 before the layer shows whole. */
+const CutSoftness = 0.05;
+const cut = (sum: number) => Math.min(1, Math.max(0, (sum - 1) / CutSoftness));
+
+/** A layer's coverage at map pixel p with mask value m, cut by its microblend tiled over the texture. */
+function microblendCut(mb: NonNullable<CompositeLayer["microblend"]>): (p: number, m: number) => number {
+  const { size, alpha } = mb.mask;
+  if (size === 1) return (_p, m) => cut(m + alpha[0] / 255);
+  // Several samples per pixel when the microblend is finer than the map, so its specks are not lost.
+  const k = Math.min(4, Math.max(1, Math.ceil((mb.tile * size) / MaskSize)));
+  return (p, m) => {
+    const y = Math.floor(p / MaskSize), x = p % MaskSize;
+    let sum = 0;
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) {
+      const u = ((x + (i + 0.5) / k) / MaskSize) * mb.tile + mb.offsetU;
+      const v = ((y + (j + 0.5) / k) / MaskSize) * mb.tile + mb.offsetV;
+      const tx = Math.min(size - 1, Math.floor((u - Math.floor(u)) * size)), ty = Math.min(size - 1, Math.floor((v - Math.floor(v)) * size));
+      sum += cut(m + alpha[ty * size + tx] / 255);
+    }
+    return sum / (k * k);
+  };
 }
 
 export interface Composite {
@@ -106,8 +132,9 @@ export interface Composite {
 }
 
 /**
- * Lays each shown layer's color over the ones below through its mask (opacity up to 1) and writes the
- * result to `outFile`: flat colors in texture space, not the game's look. Layers without a mask are left out.
+ * Lays each shown layer's color over the ones below through its mask, cut by its microblend when given
+ * (opacity up to 1), and writes the result to `outFile`: flat colors in texture space, not the game's look.
+ * Layers without a mask are left out.
  */
 export function compositeSetup(masks: MaskSet, layers: CompositeLayer[], outFile: string): Composite {
   const n = MaskSize * MaskSize;
@@ -132,9 +159,12 @@ export function compositeSetup(masks: MaskSet, layers: CompositeLayer[], outFile
     const o = Math.min(1, Math.max(0, layers[i].opacity));
     const hex = layers[i].hex;
     const c = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16) / 255);
+    const mb = layers[i].microblend;
+    const cover = mb ? microblendCut(mb) : (_p: number, v: number) => v;
     let sum = 0;
     for (let p = 0; p < n; p++) {
-      const w = m[p] * o * remain[p];
+      if (m[p] <= 0) continue;
+      const w = cover(p, m[p]) * o * remain[p];
       if (w <= 0) continue;
       remain[p] -= w;
       sum += w;

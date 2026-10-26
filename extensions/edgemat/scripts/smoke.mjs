@@ -266,6 +266,18 @@ try {
     && core.addToInventory("Items.Pants_01_basic_01") === 'Game.AddToInventory("Items.Pants_01_basic_01", 1)',
     `the slim-fits' leather look is worn by Items.Pants_01_basic_01 (feminine); ${wornAll.length} of its looks are worn by items; index built in ${wornMs} ms`);
 
+  // Microblends cut the masks (owner's in-game check, 2026-10-26): the denim layer (mask near 0.55, lint_01)
+  // hardly shows in the game, the piping (near 0.65, default) shows solid, the leather base covers the rest.
+  console.log("\nmicroblends in the color map");
+  const leatherDir = "base\\characters\\garment\\citizen_casual\\legs\\l1_012_pants__jeans_tight\\textures\\";
+  const cutCache = path.join(tmp, "cut_cache");
+  t3 = Date.now();
+  const leatherCut = await core.openSetup(bridge, lib, cutCache, { gamePath: leatherDir + "leather.mlsetup" }, leatherDir + "ml_l1_012_wa_pants__jeans_tight.mlmask");
+  const cutMs = Date.now() - t3;
+  const share = (i) => leatherCut.info.layers[i].share ?? 0;
+  check(share(0) > 0.75 && share(5) < 0.02 && share(6) > 0.03 && !!core.readMicroblend(cutCache, "base\\surfaces\\microblends\\lint_01.xbm"),
+    `the slim-fits' leather: base ${(share(0) * 100).toFixed(1)}%, denim with lint ${(share(5) * 100).toFixed(1)}%, piping ${(share(6) * 100).toFixed(1)}%; opened with its microblends in ${cutMs} ms`);
+
   // Generate's first slice: a texture from a PNG, a textured .mi on metal_base, and one material of a mesh pointed at it.
   const genTex = "edgemat\\smoke\\uv_test_pattern_d01.xbm", mi = "edgemat\\smoke\\uv_test.mi";
   const slim = "base\\characters\\garment\\player_equipment\\legs\\l1_012_pants__jeans_tight\\l1_012_pma_pants__jeans_tight.mesh";

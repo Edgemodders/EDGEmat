@@ -9,7 +9,7 @@ Last updated 2026-10-26.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
-| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's six checks (entries, variations, the move from the old Desk), and the items that wear a mesh look (2026-10-26: the slim-fits' leather look, `Items.Pants_01_basic_01`; index in 11 s) |
+| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's six checks (entries, variations, the move from the old Desk), and the items that wear a mesh look (2026-10-26: the slim-fits' leather look, `Items.Pants_01_basic_01`; index in 11 s), and microblends in the color map (the slim-fits' leather: base 87.1%, denim with lint 0.5%, piping 6.7%) |
 | [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache. 2026-10-26: `mat_desk` add twice reuses the unedited entry (same id); remove of an unknown id is refused. `mat_find` with the slim-fits mesh and look `leather`: `worn_by` `Items.Pants_01_basic_01` (feminine) with its `cet` command; with item `Items.Pants_01_basic_01`, `cet` |
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
@@ -23,6 +23,7 @@ Last updated 2026-10-26.
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
 | [The Desk](#the-desk) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-26 | **Partly run by the owner after the rework, 2026-10-26: steps 1 to 3, 5 to 11, 13, 14, 16, 17 and the first part of 21 pass.** Still to run: 3b (new: Add to Desk in Find), 4, 12, 15, 18 to 20, the rest of 21, and 22 to 24. Earlier runs: 2026-10-25, two failures. Step 12 said "0 files written" in a project that already had its own slim-fits (pointed at other materials), and the edit stayed on the Desk with only a log line; Add and Clear would have deleted it. After the add, the game's mesh in Game Assets showed the Desk's edit in 3D. Both fixed 2026-10-26. A second run the same day: a second pair of slim-fits from Game Assets showed the first pair's edit (the Desk kept one edit per setup for all entries), and a project file kept reading "the project's copy" after the project was closed. Reworked 2026-10-26 into entries with their own edits, variations and a **+** per entry, with new steps |
+| [Microblends and worn looks](#microblends-and-worn-looks) | By hand, F5, with REDcode | After 0.3.1 | | Not run yet. Built 2026-10-26; the smoke test checks the slim-fits' leather shares (base 87%, denim with lint 0.5%, piping 6.7%) |
 | [Which item: In the game](#which-item-in-the-game) | By hand, F5, then in the game with CET | After 0.3.1 | | Not run yet. Built 2026-10-26; the smoke test checks the lookup on the slim-fits, and `mat_find` over stdio returns `worn_by` |
 | [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day. Since 2026-10-25 the mesh goes on the Desk: run [The Desk](#the-desk) first, then this test from step 3 |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
@@ -294,7 +295,7 @@ Added 2026-10-25: the Desk view, Open in EDGEmat from REDcode's views, saving on
 |---|---|---|
 | 1 | Click EDGEmat's icon in the activity bar (left edge); if the Desk has entries, hover its title bar › **Clear the Desk...** | Three views: **Desk** at the top, then Library and Find. The Desk is empty and says how to put something on it |
 | 2 | Click REDcode's icon in the activity bar › **Game Assets** view › search or browse to the slim-fits `.mesh` › right-click it | **Open in EDGEmat** in the menu, beside Open in Editor |
-| 3 | Choose **Open in EDGEmat** | EDGEmat's activity bar opens on the Desk. The mesh is there, selected and open: its looks, with the first one open on its materials |
+| 3 | Choose **Open in EDGEmat** | EDGEmat's activity bar opens on the Desk. The mesh is there, selected and open: its looks, with the first look an item wears open on its materials (since 2026-10-26; on the slim-fits, **leather**) |
 | 3b | EDGEmat's **Find** view: search `comfy rocker`, open the item and its body, right-click the slim-fits mesh › **Add to Desk** | The Desk comes forward with the mesh selected, its look **leather** open on its materials. The same line as step 3 when it has no edits yet (no second one) |
 | 4 | Right-click a `.ent` or `.app` in Game Assets › **Open in EDGEmat** | The entry is there for now (REDcode #15); a message says it takes a mesh, a setup or a surface. Nothing goes on the Desk |
 | 5 | **Open in EDGEmat** on the slim-fits again | The same line is selected; no second one (it has no edits yet) |
@@ -317,6 +318,19 @@ Added 2026-10-25: the Desk view, Open in EDGEmat from REDcode's views, saving on
 | 22 | Hover a line › the × icon (Take Off the Desk) | It asks first if the line has edits, then it comes off; the other lines stay |
 | 23 | Hover the Desk's title bar › **Clear the Desk...** › **Clear the Desk** | The Desk is empty. The project keeps its files |
 | 24 | Optional, with Claude Code connected: ask "put the slim-fits on EDGEmat's Desk, then list the Desk" | `mat_desk` adds it with an id, and the Desk view shows it within a second or two |
+
+### Microblends and worn looks
+
+Added 2026-10-26, after the owner's in-game check of a leather recolor on the slim-fits: the color map drew the leather maroon (a denim layer the game hides through its lint microblend), and the Desk opened the **default** look, which no item wears. In the development host (F5), with REDcode. Take the slim-fits off the Desk first (hover its line › ×), so it comes on fresh.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | REDcode's **Game Assets** view: search `l1_012_pwa`, right-click `l1_012_pwa_pants__jeans_tight.mesh` › **Open in EDGEmat** | The Desk opens with the mesh. The first time builds the item index (about ten seconds): the looks show at once, then again with marks. Its look **leather** is open, not **default** |
+| 2 | Read the looks' descriptions on the Desk | **leather**: "worn by 2 items" (the Comfy rocker and a test item). **default**, **disco**, **npc_mama_welles**: "no item". Close and open the Desk's mesh line again: the marks show at once |
+| 3 | Under **leather**, click its material **leather** | The setup editor: the color map at the right is mostly the leather's red, with solid black piping and waistband; no maroon cast. Layer 5 (denim clean, "cool dark grey") shows under 1% of the texture |
+| 4 | Hover the mesh line › the eye (**View in 3D**) | The pants mostly the leather's red with black piping, close to the game's color under its lighting. The lower left leg still shows a seam until REDcode #16 |
+| 5 | In the setup editor, click layer 5 › **Microblend** › pick `default` | Within a second or two its share stays near 0 (its mask is under the default's threshold). Ctrl+Z puts lint back |
+| 6 | EDGEmat's **Find** view: search `comfy rocker`, open the item and its body, right-click the slim-fits › **Add to Desk** | It opens on **leather** (the look it was found under), as before |
 
 ### Which item: In the game
 

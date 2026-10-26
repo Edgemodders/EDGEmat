@@ -19,7 +19,8 @@ export type Node =
   | { kind: "meshFile"; path: string; root?: string; appearance?: string; open?: number; entry?: DeskEntry }
   | { kind: "setupFile"; entry: DeskEntry }
   // `desk`: the id of the Desk entry a mesh or material is under; its setups open and save in that entry.
-  | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance"; looks?: ItemLook[]; open?: number; root?: string; desk?: string }
+  // `worn`: how many of the game's items wear this look, once known (a mesh file's looks only).
+  | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance"; looks?: ItemLook[]; open?: number; root?: string; desk?: string; worn?: number }
   | { kind: "material"; use: MaterialUse; via: string; mesh: string; look: string; targets: MaterialTarget[]; root?: string; desk?: string }
   | { kind: "message"; text: string };
 
@@ -116,9 +117,13 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         if (!bridge) return [{ kind: "message", text: "REDbridge is not available." }];
         try {
           const looks = await meshMaterials(bridge, node.path, undefined, node.root);
-          // Just put on the Desk: the look asked for opens, else the first.
-          const want = node.open ? (node.appearance ?? looks[0]?.appearance)?.toLowerCase() : undefined;
-          return looks.map((mesh): Node => ({ kind: "mesh", mesh, via: `${file(node.path)}, ${mesh.appearance}`, label: "appearance", open: want && mesh.appearance.toLowerCase() === want ? node.open : undefined, root: node.root, desk: node.entry?.id }));
+          const worn = await this.wornLooks(bridge, node.path);
+          // Just put on the Desk: the look asked for opens, else the first an item wears, else the first.
+          const want = node.open ? (node.appearance ?? (looks.find((l) => worn?.get(l.appearance.toLowerCase())) ?? looks[0])?.appearance)?.toLowerCase() : undefined;
+          return looks.map((mesh): Node => ({
+            kind: "mesh", mesh, via: `${file(node.path)}, ${mesh.appearance}`, label: "appearance", open: want && mesh.appearance.toLowerCase() === want ? node.open : undefined,
+            root: node.root, desk: node.entry?.id, worn: worn ? worn.get(mesh.appearance.toLowerCase()) ?? 0 : undefined,
+          }));
         } catch (e) {
           return [{ kind: "message", text: e instanceof Error ? e.message : String(e) }];
         }
@@ -145,6 +150,17 @@ export class FindView implements vscode.TreeDataProvider<Node> {
     const said = worn.length ? ["Worn in the game by:", ...lines, "Right-click › Copy CET Command gives V one."] : ["No clothing item in the game wears this look."];
     item.tooltip = [item.tooltip, "", ...said].join("\n");
     return item;
+  }
+
+  /**
+   * How many of the game's items wear each look of a mesh, by lowercase look name. The first time builds
+   * the index (about ten seconds): the looks show without it, and again with it once it is built.
+   */
+  private async wornLooks(bridge: BridgeClient, mesh: string): Promise<Map<string, number> | undefined> {
+    const all = itemsWearing(bridge, this.cacheDir(), mesh).then((looks) => new Map(looks.map((l) => [l.appearance.toLowerCase(), new Set(l.items.map((w) => w.id)).size])));
+    const quick = await Promise.race([all.catch(() => undefined), new Promise<undefined>((r) => setTimeout(() => r(undefined), 1500))]);
+    if (!quick) void all.then(() => this.changed.fire(), () => undefined);
+    return quick;
   }
 
   /** The game's items that wear a mesh look; every look of the mesh when `appearance` is not given. */
@@ -207,7 +223,8 @@ export class FindView implements vscode.TreeDataProvider<Node> {
       case "mesh": {
         const t = new vscode.TreeItem(node.label === "file" ? file(node.mesh.mesh) : node.mesh.appearance, node.label === "file" || node.open ? vscode.TreeItemCollapsibleState.Expanded : Closed);
         const ml = node.mesh.materials.filter((m) => m.multilayered).length;
-        t.description = `${node.label === "file" ? `look ${node.mesh.appearance} · ` : ""}${ml} multilayered of ${node.mesh.materials.length}`;
+        const worn = node.worn === undefined ? "" : node.worn ? `worn by ${node.worn} item${node.worn > 1 ? "s" : ""} · ` : "no item · ";
+        t.description = `${node.label === "file" ? `look ${node.mesh.appearance} · ` : worn}${ml} multilayered of ${node.mesh.materials.length}`;
         t.tooltip = `${node.mesh.mesh}\nmesh appearance ${node.mesh.appearance}${node.mesh.component ? `\ncomponent ${node.mesh.component}` : ""}`;
         if (node.open) t.id = `open${node.open}:${node.mesh.mesh}:${node.mesh.appearance}`;
         t.iconPath = new vscode.ThemeIcon(node.label === "file" ? "symbol-structure" : "symbol-color");

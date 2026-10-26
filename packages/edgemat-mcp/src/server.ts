@@ -17,7 +17,7 @@ import * as path from "node:path";
 import { z } from "zod";
 import {
   addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
-  saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
+  saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, generateImage, imageAsPng, listModels, makeMaterial, materialSlug, texturePrompt, Services,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
@@ -300,6 +300,7 @@ server.registerTool(
         edited = r.setup;
         notes.push(...w.notes, ...r.notes.map((n) => `Layer ${layer}: ${n}`));
       }
+      if (b && o.masks) await loadMicroblends(b, cacheDir, edited.layers.map((l) => l.microblend));
       const after = withSetup(o, edited, lib, cacheDir);
       const changed = [...new Set(edits.map((e) => e.layer))].map((i) => layerOut(after.info.layers[i]));
       const result = { layers: changed, colorMap: after.composite?.file, warnings: after.info.warnings.length ? after.info.warnings : undefined };
