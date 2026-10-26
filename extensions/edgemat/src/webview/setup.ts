@@ -39,7 +39,7 @@ export type SetupPageData =
       edit: { dirty: boolean; notice?: string; saves: "file" | "desk" | "project" };
     };
 
-interface State { selected?: number; raw?: boolean; hideUnused?: boolean; view?: "all" | "layer"; colorFilter?: string }
+interface State { selected?: number; raw?: boolean; hideUnused?: boolean; view?: "all" | "layer"; colorFilter?: string; wornOpen?: boolean }
 
 declare function acquireVsCodeApi(): { postMessage(m: unknown): void; getState(): State | undefined; setState(s: State): void };
 const vscode = acquireVsCodeApi();
@@ -74,7 +74,11 @@ function header(title: string, origin: string, path?: string): HTMLElement {
 function wornBy(w: NonNullable<Extract<SetupPageData, { kind: "setup" }>["worn"]>): HTMLElement {
   const file = w.mesh.split("\\").pop();
   const look = `${file}${w.look ? `, look ${w.look}` : ""}`;
-  const box = el("section", { class: "worn" }, el("h2", {}, "In the game"));
+  // Folded until opened; the page keeps it open or shut across edits.
+  const count = w.items ? ` (${w.items.length})` : "";
+  const box = el("details", { class: "worn" }, el("summary", {}, el("h2", {}, `In the game${count}`)));
+  (box as HTMLDetailsElement).open = !!state.wornOpen;
+  box.addEventListener("toggle", () => { state.wornOpen = (box as HTMLDetailsElement).open; save(); });
   if (!w.items) box.append(el("div", { class: "note" }, `Finding the items that wear ${look}... (the first time reads every clothing item: about ten seconds)`));
   else if (!w.items.length) box.append(el("div", { class: "note" }, `No clothing item in the game wears ${look}. It may be worn by an NPC, or added by a mod.`));
   else {

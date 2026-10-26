@@ -323,8 +323,8 @@ Added 2026-10-26 (owner's ask): after changing a mesh's material, which game ite
 
 | Step | Do | Expect |
 |---|---|---|
-| 1 | Put the slim-fits on the Desk (REDcode's Game Assets › right-click the `.mesh` › **Open in EDGEmat**). On the Desk, open the look **leather** and click its multilayered material | The setup editor opens. Under the header, **In the game**: first "Finding the items that wear ... (about ten seconds)" the first time, then "Comfy rocker aramid-weave slim-fits", `Game.AddToInventory("Items.Pants_01_basic_01", 1)`, "feminine body", and **Copy** |
-| 2 | Click **Copy**, and paste in any text box | The command, exactly as shown |
+| 1 | Put the slim-fits on the Desk (REDcode's Game Assets › right-click the `.mesh` › **Open in EDGEmat**). On the Desk, open the look **leather** and click its multilayered material | The setup editor opens. Under the header, **In the game**, folded (▸). Click it: first "Finding the items that wear ... (about ten seconds)" the first time, then **In the game (1)** and "Comfy rocker aramid-weave slim-fits", `Game.AddToInventory("Items.Pants_01_basic_01", 1)`, "feminine body", and **Copy** |
+| 2 | Click **Copy**, and paste in any text box. Then change a layer's color, and close and reopen the setup | The command, exactly as shown. The section stays open after the edit; a setup opened later starts folded again |
 | 3 | On the Desk, hover the look **leather** | The tooltip ends with "Worn in the game by:" and the item with its id. Hover **default**: "No clothing item in the game wears this look" |
 | 4 | Right-click the look **leather** › **Copy CET Command** | Copied straight away (one item); the status bar says so. On the mesh line itself: a pick of the items for every look |
 | 5 | In Find, search `slim-fits`, right-click an item › **Copy CET Command** | That item's command |

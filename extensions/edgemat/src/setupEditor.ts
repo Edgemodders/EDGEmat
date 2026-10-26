@@ -819,6 +819,12 @@ button.link { background: none; border: none; color: var(--accent); padding: 0; 
 .editbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--vscode-descriptionForeground); }
 .dirty { color: var(--warn); font-weight: 600; }
 .worn { margin: 0 0 16px; font-size: 12px; }
+.worn summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; }
+.worn summary::-webkit-details-marker { display: none; }
+.worn summary::before { content: "▸"; color: var(--accent); }
+.worn[open] summary::before { content: "▾"; }
+.worn summary h2 { margin: 0; }
+.worn[open] summary { margin-bottom: 6px; }
 .worn .item { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 2px 0; }
 .worn .item code { user-select: all; }
 .layout { display: grid; grid-template-columns: minmax(240px, 420px) minmax(0, 1fr); gap: 24px; align-items: start; }
