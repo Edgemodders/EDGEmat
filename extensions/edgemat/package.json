@@ -197,6 +197,12 @@
         "icon": "$(copy)"
       },
       {
+        "command": "edgemat.addToDesk",
+        "title": "Add to Desk",
+        "category": "EDGEmat",
+        "icon": "$(layers)"
+      },
+      {
         "command": "edgemat.copyCetCommand",
         "title": "Copy CET Command",
         "category": "EDGEmat",
@@ -389,6 +395,11 @@
           "group": "copy@2"
         },
         {
+          "command": "edgemat.addToDesk",
+          "when": "view == edgemat.find && viewItem =~ /^edgemat\\.mesh/",
+          "group": "view@0"
+        },
+        {
           "command": "edgemat.newMaterialHere",
           "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.material$/",
           "group": "inline"
@@ -439,6 +450,10 @@
         },
         {
           "command": "edgemat.copyCetCommand",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.addToDesk",
           "when": "false"
         },
         {

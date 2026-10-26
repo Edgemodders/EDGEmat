@@ -405,6 +405,11 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       if (created && there) vscode.window.setStatusBarMessage(`$(layers) EDGEmat: the Desk had this one edited already; this is a fresh copy, ${deskLabel(entry)}`, 10000);
       if (node?.kind === "setupFile") await openFoundSetup(entry.path, undefined, "the Desk", entry.root, entry.id);
     }),
+    // A mesh found in Find onto the Desk, with the look it was found in open: as Open in EDGEmat from REDcode.
+    vscode.commands.registerCommand("edgemat.addToDesk", (node) => {
+      const target = FindView.meshOf(node);
+      if (target) return vscode.commands.executeCommand("edgemat.openMesh", target);
+    }),
     deskTree,
     deskWatcher,
     vscode.commands.registerCommand("edgemat.removeFromDesk", async (node) => {
