@@ -2,7 +2,7 @@
 
 What has been done on EDGEmat, what was decided and why, and what is open. Newest first within each section. Read this to catch up without asking. The [design](design.html) and the [behavior spec](design/behavior.html) hold the full detail.
 
-Last updated 2026-10-25.
+Last updated 2026-10-26.
 
 ## At a glance
 
@@ -12,7 +12,7 @@ Last updated 2026-10-25.
 | Extension | 0.3.1: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply`, `mat_desk` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your hand tests of the Desk, Open Mesh in EDGEmat (from step 3) and Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
+| Next up | Your hand tests of the Desk (from step 7: the two failures are fixed), Open Mesh in EDGEmat (from step 3) and Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
 | Roadmap | M3 Edit with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
@@ -41,6 +41,12 @@ Last updated 2026-10-25.
 | [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open, mostly shipped: REDnode 0.26.0 and later swap archives into the running game through RED Hot Tools (`archives.reload`, MCP `archives_reload`), and since 0.26.20 the clothing V wears shows the new version at once (unverified for a material change). A world object may keep the old look until the game loads it again |
 
 ## Log
+
+### 2026-10-26
+
+| What | Detail |
+|---|---|
+| **The Desk: two fixes from the owner's test** | (1) **+** said "0 files written" in a project that already had its own slim-fits pointed at other materials: the edit was "left on the Desk" with only a log line, the mesh skipped as already there, and **Add and Clear the Desk** would have deleted the edit. Now `Desk.conflicts` finds such meshes first and the modder picks **Replace with the Desk's** or **Keep the Project's**; the result says what stayed on the Desk (`kept`), the toast says "nothing new to write" or how many edits stayed, and Add and Clear takes off only what went in (`clear(kept)`). MCP `mat_desk` `to_project` writes nothing and lists the conflicts until `replace` is given, and takes `clear`. (2) After the add, the game's mesh in Game Assets showed the Desk's edit in 3D: the render read the Desk's copy of a setup for any mesh. Now **View in 3D** on the Desk opens the Desk's own copy of the mesh (`Desk.meshFile`, extracted into `desk\source\archive`), only that copy (or a project file on the Desk) reads the Desk's edits, and the live preview matches an editor to meshes from the same place (Desk, project, game). Type check, build and the smoke test pass (two new Desk checks: the game's mesh keeps its colors; keep, clear and replace on a conflicting project). Not yet seen by hand: REDcode's 3D view opening the Desk's mesh copy |
 
 ### 2026-10-25
 

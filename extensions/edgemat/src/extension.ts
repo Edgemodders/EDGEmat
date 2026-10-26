@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 import type { EdgematApi } from "./api";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import { BridgeClient, buildLibrary, defaultCacheDir, Desk, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, suffixFor, type GameChoice, type Library, type Project } from "./core";
+import { BridgeClient, buildLibrary, defaultCacheDir, Desk, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, suffixFor, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
 import { DeskView } from "./deskView";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
@@ -438,7 +438,13 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       const p = LibraryView.gamePathOf(node) ?? FindView.gamePathOf(node);
       if (p) await vscode.env.clipboard.writeText(p);
     }),
-    vscode.commands.registerCommand("edgemat.viewIn3D", (node) => viewIn3D(FindView.meshOf(node))),
+    vscode.commands.registerCommand("edgemat.viewIn3D", async (node) => {
+      const target = FindView.meshOf(node);
+      // A game mesh on the Desk opens as the Desk's copy, which shows the Desk's edits; the game's keeps its look.
+      const bridge = target && FindView.onDesk(node) && !isFilePath(target.mesh) ? await bridgeNow() : undefined;
+      if (target && bridge) target.mesh = await desk.meshFile(bridge, target.mesh);
+      await viewIn3D(target);
+    }),
     vscode.commands.registerCommand("edgemat.newMaterial", () => materialPage.open()),
     vscode.commands.registerCommand("edgemat.newMaterialHere", (node) => materialPage.open(FindView.targetsOf(node))),
     vscode.commands.registerCommand("edgemat.setImageKey", () => materialPage.setKey()),
@@ -475,36 +481,66 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     }
     const project = await chooseProject(context, "Add the Desk to Project");
     if (!project) return;
+    const suffix = suffixFor(project.name);
+    const plural = (k: number, w: string) => `${k} ${w}${k === 1 ? "" : "s"}`;
+    const base = (p: string) => p.split("\\").pop();
+    // Meshes the project already has with other materials: replace them with the Desk's, or keep them and leave those edits on the Desk.
+    let conflicts: DeskConflict[];
+    try {
+      conflicts = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Comparing the Desk with ${project.name}` }, () => desk.conflicts(bridge, project, suffix));
+    } catch (e) {
+      void vscode.window.showErrorMessage(`Could not compare the Desk with ${project.name}: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    let replace = false;
+    if (conflicts.length) {
+      const which = await vscode.window.showWarningMessage(
+        `${project.name} already has its own ${conflicts.length === 1 ? base(conflicts[0].mesh) : plural(conflicts.length, "mesh")} from the Desk, with other materials.`,
+        {
+          modal: true,
+          detail:
+            `${conflicts.map((c) => `${base(c.mesh)} no longer uses ${c.setups.map(base).join(", ")}, which you edited on the Desk.`).join("\n")}\n\n` +
+            "Replace: the project's copy becomes the Desk's mesh, with your Desk edits; what the project's copy had is lost. " +
+            "Keep: the project's copy stays as it is, and those edits stay on the Desk.",
+        },
+        "Replace with the Desk's",
+        "Keep the Project's",
+      );
+      if (!which) return;
+      replace = which === "Replace with the Desk's";
+    }
     const meshes = entries.filter((e) => e.kind === "mesh").length;
     const edited = desk.edited().length;
-    const plural = (k: number, w: string) => `${k} ${w}${k === 1 ? "" : "s"}`;
     const go = await vscode.window.showWarningMessage(
       `Add the Desk to ${project.name}?`,
       {
         modal: true,
         detail:
           `${plural(meshes, "mesh")} and ${plural(edited, "setup")} edited on the Desk go into ${project.archive}. ` +
-          `Each edited setup is saved as a new setup (named with _${suffixFor(project.name)}), and the Desk's meshes that use it are copied in and pointed at it; the other meshes are copied as they are. ` +
-          "Meshes already in the project are kept, and changed only to point at the new setups.",
+          `Each edited setup is saved as a new setup (named with _${suffix}), and the Desk's meshes that use it are copied in and pointed at it; the other meshes are copied as they are. ` +
+          `Meshes already in the project are kept, and changed only to point at the new setups${conflicts.length ? (replace ? ", except the ones you chose to replace" : "; edits the kept ones do not use stay on the Desk") : ""}. ` +
+          "Add and Clear takes off the Desk only what went into the project.",
       },
       "Add to Project",
       "Add and Clear the Desk",
     );
     if (!go) return;
     try {
-      const r = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Adding the Desk to ${project.name}` }, () => desk.toProject(bridge, project, suffixFor(project.name)));
+      const r = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Adding the Desk to ${project.name}` }, () => desk.toProject(bridge, project, suffix, { replace }));
       log(`Desk added to ${project.archive}: ${r.written.join(", ") || "nothing written"}`);
       for (const s of r.setups) log(`  ${s.from} saved as ${s.to}${s.meshes.length ? `, pointed at by ${s.meshes.join(", ")}` : ""}`);
       for (const n of r.notes) log(`  ${n}`);
       if (go === "Add and Clear the Desk") {
-        desk.clear();
+        desk.clear(r.kept);
         deskView.load();
       }
       materialsChanged.fire({ materials: [] });
       const pack = packAndTryFor(project);
+      const kept = r.kept.setups.length ? ` ${plural(r.kept.setups.length, "edited setup")} stayed on the Desk, since the project keeps its own mesh.` : "";
+      const what = r.written.length ? `${plural(r.written.length, "file")} written` : "nothing new to write: the project has it all already";
       const choice = await vscode.window.showInformationMessage(
-        `Added the Desk to ${project.name}: ${plural(r.written.length, "file")} written${r.notes.length ? `, ${plural(r.notes.length, "note")} in the EDGEmat log` : ""}.`,
-        ...(pack ? ["Pack and Try"] : []),
+        `Added the Desk to ${project.name}: ${what}.${kept}${r.notes.length ? ` Details in the EDGEmat log.` : ""}`,
+        ...(pack && r.written.length ? ["Pack and Try"] : []),
         ...(r.notes.length ? ["Show Log"] : []),
       );
       if (choice === "Pack and Try" && pack) await pack();
@@ -526,7 +562,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       // Layer colors come from the library: wait for a first build.
       if (!view.current && building) await building;
       const started = Date.now();
-      const maps = await renderMaterials(bridge, library(), cacheDir, req, log, (setup) => setupEditor.liveColorMap(setup));
+      const maps = await renderMaterials(bridge, library(), cacheDir, req, log, (setup, where) => setupEditor.liveColorMap(setup, where));
       log(`3D view: ${Object.keys(maps).length} of ${req.materials?.length ?? "the"} materials for ${req.mesh}${req.appearance ? `, look ${req.appearance}` : ""}, in ${Date.now() - started} ms`);
       return maps;
     },

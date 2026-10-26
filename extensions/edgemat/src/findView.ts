@@ -238,6 +238,12 @@ export class FindView implements vscode.TreeDataProvider<Node> {
     const at = (p: string, root?: string) => (root ? path.join(root, p) : p);
     return n?.kind === "meshFile" ? { mesh: at(n.path, n.root), appearance: n.appearance } : n?.kind === "mesh" ? { mesh: at(n.mesh.mesh, n.root), appearance: n.mesh.appearance } : undefined;
   }
+
+  /** Whether a mesh node is on the Desk: its 3D view then opens the Desk's copy, with the Desk's edits. */
+  static onDesk(node: unknown): boolean {
+    const n = node as Node | undefined;
+    return n?.kind === "meshFile" ? !!n.entry : n?.kind === "mesh" ? !!n.onDesk : false;
+  }
 }
 
 /**

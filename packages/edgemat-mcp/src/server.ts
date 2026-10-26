@@ -534,14 +534,18 @@ server.registerTool(
       "action 'list' shows what is on it and which setups were edited there. 'add' puts a mesh (.mesh) or a setup (.mlsetup) on it: a game path, or a file in a project's source\\archive. " +
       "'remove' takes one off (a setup's edits on the Desk go with it). 'clear' empties it, edits included. " +
       "'to_project' puts it all in a WolvenKit project: each edited setup is saved as a new setup with the Desk's meshes that use it copied in and pointed at it (no other mod needed), the other meshes as they are. " +
+      "When the project already has its own copy of a Desk mesh that no longer uses a setup edited on the Desk, to_project writes nothing and lists the conflicts: ask the modder, then call again with replace true (the project's copy becomes the Desk's mesh) or false (the project keeps its copy; those edits stay on the Desk). " +
+      "clear true with to_project then takes off the Desk only what went into the project. " +
       "To edit a setup on the Desk, use mat_edit with save 'desk'; mat_find lists a mesh's materials and their setups.",
     inputSchema: {
       action: z.enum(["list", "add", "remove", "clear", "to_project"]),
       path: z.string().optional().describe("For add and remove: a game path or a file"),
       project: z.string().optional().describe("For to_project: the project folder, its .cpmodproj, or its source\\archive folder"),
+      replace: z.boolean().optional().describe("For to_project, when it reported conflicts: true replaces the project's copies with the Desk's meshes, false keeps them"),
+      clear: z.boolean().optional().describe("For to_project: afterwards, take off the Desk what went into the project"),
     },
   },
-  async ({ action, path: p, project }) => {
+  async ({ action, path: p, project, replace, clear }) => {
     try {
       const list = () => ({ entries: desk.entries().map(({ kind, path, root }) => ({ kind, path, ...(root ? { project: root } : {}) })), edited: desk.edited(), folder: desk.dir });
       if (action === "list") return text(list());
@@ -562,8 +566,25 @@ server.registerTool(
         return text(list());
       }
       const pr = projectFor(project);
-      const r = await desk.toProject(await getBridge(), pr, suffixFor(pr.name));
-      return text({ saved: { project: pr.dir, written: r.written, setups: r.setups }, notes: r.notes.length ? r.notes : undefined, next: "Pack the project and install it (REDcode: Pack and Try), then look in the game. The Desk is left as it was: mat_desk 'clear' empties it." });
+      const b = await getBridge();
+      if (replace === undefined) {
+        const conflicts = await desk.conflicts(b, pr, suffixFor(pr.name));
+        if (conflicts.length)
+          return text({
+            written: [],
+            conflicts,
+            next: "Nothing written. The project already has its own copy of these Desk meshes, and it no longer uses the setups edited on the Desk. Ask the modder: replace the project's copies with the Desk's (replace true; what the copies had is lost), or keep them (replace false; those edits stay on the Desk). Then call to_project again.",
+          });
+      }
+      const r = await desk.toProject(b, pr, suffixFor(pr.name), { replace });
+      if (clear) desk.clear(r.kept);
+      const kept = r.kept.setups.length ? r.kept : undefined;
+      return text({
+        saved: { project: pr.dir, written: r.written, setups: r.setups },
+        kept,
+        notes: r.notes.length ? r.notes : undefined,
+        next: `Pack the project and install it (REDcode: Pack and Try), then look in the game. ${clear ? (kept ? "The Desk now holds only what stayed out." : "The Desk is empty.") : "The Desk is left as it was: to_project with clear true, or 'clear', empties it."}`,
+      });
     } catch (e) {
       return failure(e);
     }

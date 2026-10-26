@@ -35,20 +35,23 @@ export interface RenderRequest {
  * Renders a mesh's materials, by name. A material with nothing to show (no setup, no mask set, no
  * color texture) is left out, so the viewer keeps its flat color for it. Problems go to `log`.
  * `live`: the color map of a setup open in an editor, by the game path a material names, so a 3D view shows
- * edits not saved yet; undefined when no editor has it open.
+ * edits not saved yet; undefined when no editor has it open. `where` says which editors count: the mesh's
+ * project folder (undefined for a game mesh), and whether the mesh is the Desk's.
  */
-export async function renderMaterials(bridge: BridgeClient, lib: Library | undefined, dir: string, req: RenderRequest, log: (line: string) => void = () => {}, live?: (setup: string) => string | undefined): Promise<Record<string, RenderedMaterial>> {
+export async function renderMaterials(bridge: BridgeClient, lib: Library | undefined, dir: string, req: RenderRequest, log: (line: string) => void = () => {}, live?: (setup: string, where: { root?: string; desk: boolean }) => string | undefined): Promise<Record<string, RenderedMaterial>> {
   const root = isFilePath(req.mesh) ? projectArchive(req.mesh) : undefined;
   const uses = req.materials?.length
     ? await namedMaterials(bridge, req.mesh, req.materials, root)
     : (await meshMaterials(bridge, req.mesh, req.appearance ?? "default", root))[0]?.materials ?? [];
-  // A game path, or the project's copy at that path when there is one, else the Desk's (an edited setup).
+  // A game path, or the project's copy at that path when there is one. The Desk's edited setups only for a
+  // mesh on the Desk (its Desk copy, or a project's file put there): a game mesh keeps the game's look.
   const desk = new Desk(dir);
-  const local = (p: string) => (root && fs.existsSync(path.join(root, p)) ? path.join(root, p) : desk.copyOf(p));
+  const onDesk = isFilePath(req.mesh) && desk.shows(req.mesh);
+  const local = (p: string) => (root && fs.existsSync(path.join(root, p)) ? path.join(root, p) : onDesk ? desk.copyOf(p) : undefined);
   const out: Record<string, RenderedMaterial> = {};
   for (const use of uses) {
     try {
-      const png = (use.multilayered && use.setup ? live?.(use.setup) : undefined) ?? (await colorMap(bridge, lib, dir, use, local));
+      const png = (use.multilayered && use.setup ? live?.(use.setup, { root, desk: onDesk }) : undefined) ?? (await colorMap(bridge, lib, dir, use, local));
       if (png) out[use.name] = { baseColor: fs.readFileSync(png), fidelity: "approximate" };
     } catch (e) {
       log(`3D view, ${use.name}: ${e instanceof Error ? e.message : String(e)}`);

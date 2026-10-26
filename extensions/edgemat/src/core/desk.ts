@@ -29,7 +29,16 @@ export interface DeskResult {
   written: string[];
   /** Each edited setup: where it went and the meshes pointed at it. */
   setups: { from: string; to: string; meshes: string[] }[];
+  /** What stayed out of the project and stays on the Desk: meshes the project keeps its own of, and their edited setups. */
+  kept: { meshes: string[]; setups: string[] };
   notes: string[];
+}
+
+/** A Desk mesh the project already holds its own copy of, with other materials than the Desk's edited setups. */
+export interface DeskConflict {
+  mesh: string;
+  /** The Desk's edited setups the Desk's mesh uses and the project's copy does not. */
+  setups: string[];
 }
 
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -75,27 +84,61 @@ export class Desk {
   add(kind: DeskEntry["kind"], p: string): DeskEntry {
     const found = this.find(p, kind);
     if (found) return found;
-    const entry: DeskEntry = { kind, ...where(p), added: new Date().toISOString() };
+    const entry: DeskEntry = { kind, ...this.where(p), added: new Date().toISOString() };
     this.write([...this.entries(), entry]);
     return entry;
   }
 
+  /** where(), with the Desk's own copies (such as the mesh file View in 3D opens) as their game paths. */
+  private where(p: string): { path: string; root?: string } {
+    const w = where(p);
+    return w.root && same(path.resolve(w.root), path.resolve(this.archive)) ? { path: w.path } : w;
+  }
+
   /** The entry for a game path or a file, when it is on the Desk. */
   find(p: string, kind?: DeskEntry["kind"]): DeskEntry | undefined {
-    const w = where(p);
+    const w = this.where(p);
     return this.entries().find((e) => (!kind || e.kind === kind) && same(e.path, w.path) && same(e.root ?? "", w.root ?? ""));
   }
 
   /** Takes an entry off the Desk. A setup's edits go with it; a mesh's setups keep theirs. */
   remove(entry: Pick<DeskEntry, "kind" | "path" | "root">): void {
     this.write(this.entries().filter((e) => !(e.kind === entry.kind && same(e.path, entry.path) && same(e.root ?? "", entry.root ?? ""))));
-    if (entry.kind === "setup" && !entry.root) fs.rmSync(path.join(this.archive, entry.path), { force: true });
+    if (!entry.root) fs.rmSync(path.join(this.archive, entry.path), { force: true });
   }
 
-  /** Everything off the Desk, edits included. */
-  clear(): void {
-    fs.rmSync(this.archive, { recursive: true, force: true });
-    this.write([]);
+  /**
+   * Everything off the Desk, edits included; with `keep`, all but those meshes and setups (what Add to
+   * Project left out), so clearing after an add never loses an edit that did not go in.
+   */
+  clear(keep?: DeskResult["kept"]): void {
+    const meshes = new Set((keep?.meshes ?? []).map((m) => m.toLowerCase()));
+    const setups = new Set((keep?.setups ?? []).map((s) => s.toLowerCase()));
+    if (!meshes.size && !setups.size) {
+      fs.rmSync(this.archive, { recursive: true, force: true });
+      this.write([]);
+      return;
+    }
+    this.write(this.entries().filter((e) => (e.kind === "mesh" ? meshes : setups).has(e.path.toLowerCase())));
+    for (const f of this.files()) if (!meshes.has(f.toLowerCase()) && !setups.has(f.toLowerCase())) fs.rmSync(path.join(this.archive, f), { force: true });
+  }
+
+  /**
+   * The Desk's own copy of a game mesh, extracted on first use. REDcode's 3D view opens it for a mesh on the
+   * Desk, so the Desk's edited setups show there and the game's mesh keeps the game's look.
+   */
+  async meshFile(bridge: BridgeClient, gamePath: string): Promise<string> {
+    const f = path.join(this.archive, gamePath);
+    if (!fs.existsSync(f)) {
+      fs.mkdirSync(path.dirname(f), { recursive: true });
+      await bridge.extract(gamePath, f);
+    }
+    return f;
+  }
+
+  /** Whether a mesh file is the Desk's copy of a game mesh, or a project's file that is on the Desk: the Desk's edits apply to it. */
+  shows(meshFile: string): boolean {
+    return this.holds(meshFile) || !!this.find(meshFile, "mesh");
   }
 
   /** The Desk's edited copy of a setup, by its game path, when there is one. */
@@ -113,13 +156,18 @@ export class Desk {
 
   /** The game paths of the setups edited on the Desk. */
   edited(): string[] {
+    return this.files().filter((f) => /\.mlsetup$/i.test(f));
+  }
+
+  /** Every file the Desk holds (edited setups, mesh copies), by game path. */
+  private files(): string[] {
     const out: string[] = [];
     const walk = (d: string) => {
       if (!fs.existsSync(d)) return;
       for (const f of fs.readdirSync(d, { withFileTypes: true })) {
         const full = path.join(d, f.name);
         if (f.isDirectory()) walk(full);
-        else if (/\.mlsetup$/i.test(f.name)) out.push(path.relative(this.archive, full));
+        else out.push(path.relative(this.archive, full));
       }
     };
     walk(this.archive);
@@ -135,28 +183,74 @@ export class Desk {
   }
 
   /**
+   * The Desk's meshes the project already holds its own copy of, where that copy no longer uses an edited
+   * setup the Desk's mesh uses (it was pointed at another material, such as a new one). Adding the Desk then
+   * either replaces the project's copy with the Desk's or keeps it, and the edit stays on the Desk.
+   */
+  async conflicts(bridge: BridgeClient, project: Pick<Project, "archive">, suffix: string): Promise<DeskConflict[]> {
+    const out: DeskConflict[] = [];
+    const edited = this.edited();
+    if (!edited.length) return out;
+    for (const e of this.entries().filter((x) => x.kind === "mesh" && !isFilePath(x.path))) {
+      if (e.root && same(path.resolve(e.root), path.resolve(project.archive))) continue;
+      if (!fs.existsSync(path.join(project.archive, e.path))) continue;
+      const setups: string[] = [];
+      for (const s of edited) {
+        try {
+          const desk = await meshUses(bridge, e.root, e.path, [s]);
+          if (!desk.materials.length) continue;
+          const there = await meshUses(bridge, project.archive, e.path, [s, newPathFor(s, suffix)]);
+          if (!there.materials.length) setups.push(s);
+        } catch {
+          // An unreadable mesh is reported by toProject.
+        }
+      }
+      if (setups.length) out.push({ mesh: e.path, setups });
+    }
+    return out;
+  }
+
+  /**
    * Puts the Desk in a project. Each edited setup that a mesh on the Desk uses is saved as a new setup
    * (newPathFor with `suffix`) with those meshes copied in and pointed at it, so it shows in the game with no
    * other mod; an edited setup put on the Desk alone is saved at its own path (over the game's, which needs
-   * Material Texture Override). Every other mesh is copied in as it is. The Desk is left as it was.
+   * Material Texture Override). Every other mesh is copied in as it is; one the project already has is kept.
+   * A conflict (see conflicts) is replaced by the Desk's mesh with `replace`, else the project's copy is kept
+   * and the edit stays out (`kept`). The Desk is left as it was.
    */
-  async toProject(bridge: BridgeClient, project: Pick<Project, "archive">, suffix: string): Promise<DeskResult> {
-    const result: DeskResult = { written: [], setups: [], notes: [] };
+  async toProject(bridge: BridgeClient, project: Pick<Project, "archive">, suffix: string, opts: { replace?: boolean } = {}): Promise<DeskResult> {
+    const result: DeskResult = { written: [], setups: [], kept: { meshes: [], setups: [] }, notes: [] };
     const entries = this.entries();
     const into = (gamePath: string) => path.join(project.archive, gamePath);
-    // Meshes from another project come over first, so the pointing below changes the copy in this one.
+    const conflicts = await this.conflicts(bridge, project, suffix);
+    const conflicted = new Set(conflicts.map((c) => c.mesh.toLowerCase()));
+    // Meshes from another project (or replacing the project's own) come over first, so the pointing below changes the copy in this one.
     const meshes: string[] = [];
     for (const e of entries.filter((x) => x.kind === "mesh")) {
       if (isFilePath(e.path)) {
         result.notes.push(`${e.path} is not in a project's source\\archive, so its game path is unknown: left out.`);
         continue;
       }
-      if (e.root && !same(path.resolve(e.root), path.resolve(project.archive)) && !fs.existsSync(into(e.path))) {
+      const ownProject = !!e.root && same(path.resolve(e.root), path.resolve(project.archive));
+      const replace = opts.replace && conflicted.has(e.path.toLowerCase());
+      if (!ownProject && (replace || !fs.existsSync(into(e.path)))) {
         fs.mkdirSync(path.dirname(into(e.path)), { recursive: true });
-        fs.copyFileSync(path.join(e.root, e.path), into(e.path));
-        result.written.push(e.path);
+        if (e.root) fs.copyFileSync(path.join(e.root, e.path), into(e.path));
+        else if (replace) await bridge.extract(e.path, into(e.path));
+        // A game mesh not yet in the project is extracted below, unless the pointing writes it.
+        if (e.root || replace) result.written.push(e.path);
+        if (replace) result.notes.push(`${e.path}: the project's own copy, with other materials, was replaced by the Desk's.`);
+      } else if (!ownProject && !conflicted.has(e.path.toLowerCase())) {
+        result.notes.push(`${e.path} is in the project already: kept as it is.`);
       }
       meshes.push(e.path);
+    }
+    if (!opts.replace) {
+      for (const c of conflicts) {
+        result.kept.meshes.push(c.mesh);
+        for (const s of c.setups) if (!result.kept.setups.includes(s)) result.kept.setups.push(s);
+        result.notes.push(`${c.mesh}: the project keeps its own copy, which uses other materials, so the Desk's edits to ${c.setups.join(", ")} stay on the Desk.`);
+      }
     }
     const alone = entries.filter((x) => x.kind === "setup").map((x) => x.path.toLowerCase());
     const pointed = new Set<string>();
@@ -172,7 +266,7 @@ export class Desk {
         }
       }
       if (!users.length && !alone.includes(gamePath.toLowerCase())) {
-        result.notes.push(`${gamePath} was edited on the Desk, but nothing on the Desk uses it now: left on the Desk.`);
+        if (!result.kept.setups.some((s) => same(s, gamePath))) result.notes.push(`${gamePath} was edited on the Desk, but nothing on the Desk uses it now: left on the Desk.`);
         continue;
       }
       const setup = await readSetup(bridge, { file: path.join(this.archive, gamePath), gamePath });

@@ -2,14 +2,14 @@
 
 Every test run on EDGEmat so far: how to run it again, what to expect, and what it showed. Each phase ends with a test on the dev PC ([design, "Phases"](design.html#phases)); new tests are added here when they are first run.
 
-Last updated 2026-10-25.
+Last updated 2026-10-26.
 
 ## At a glance
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
-| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-25 | Pass, with the Desk's three checks |
+| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's five checks |
 | [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache |
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
@@ -22,7 +22,7 @@ Last updated 2026-10-25.
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
-| [The Desk](#the-desk) | By hand, F5, with REDcode | After 0.3.1 | | Not run yet. Type check, build and the smoke test's Desk checks pass (2026-10-25); `mat_desk` answers over stdio |
+| [The Desk](#the-desk) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-25 | **Run by the owner: two failures.** Step 12 said "0 files written" in a project that already had its own slim-fits (pointed at other materials), and the edit stayed on the Desk with only a log line; Add and Clear would have deleted it. After the add, the game's mesh in Game Assets showed the Desk's edit in 3D. Both fixed 2026-10-26 (steps 7, 7b and 12b to 12d are new); rerun from step 7 |
 | [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day. Since 2026-10-25 the mesh goes on the Desk: run [The Desk](#the-desk) first, then this test from step 3 |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
@@ -297,12 +297,16 @@ Added 2026-10-25: the Desk view, Open in EDGEmat from REDcode's views, saving on
 | 4 | Right-click a `.ent` or `.app` in Game Assets › **Open in EDGEmat** | The entry is there for now (REDcode #15); a message says it takes a mesh, a setup or a surface. Nothing goes on the Desk |
 | 5 | On the Desk, click a multilayered material (layers icon) under the open look | The setup editor opens. Under the title: "Ctrl+S saves it on the Desk" |
 | 6 | Change a layer's color (click a layer in the list, then a swatch), then press **Ctrl+S** | Saved with no question. The tab's unsaved dot goes. On the Desk the material now reads "edited on the Desk" |
-| 7 | Open the mesh in REDcode's 3D view (on the Desk, hover the mesh row › the eye icon, **View in 3D**) | The pants show the new color |
+| 7 | Open the mesh in REDcode's 3D view (on the Desk, hover the mesh row › the eye icon, **View in 3D**) | The pants show the new color. The tab is the Desk's copy of the mesh (its path runs through `EDGEmat\desk\source\archive`) |
+| 7b | REDcode's **Game Assets** view: open the same slim-fits `.mesh` (double-click), and its 3D view | The game's look: the Desk's edit does **not** show here. Also with the setup editor still open and edited, not saved |
 | 8 | Close the setup editor, then click the same material on the Desk again | It opens with your color: from the Desk's copy, not the game's |
 | 9 | Close VS Code's development host and press F5 again; open EDGEmat | The mesh is still on the Desk, the material still "edited on the Desk" |
 | 10 | Hover the Desk's title bar (the word DESK) | A **+** (Add the Desk to Project...) and a clear-all icon (Clear the Desk...) on the right |
 | 11 | Click **+** | If REDcode has a project open, that one; else pick one. A dialog: "Add the Desk to <project>?", saying 1 mesh and 1 setup, with **Add to Project** and **Add and Clear the Desk** |
 | 12 | Choose **Add to Project** | "Added the Desk to <project>: 2 files written", with Pack and Try. In REDcode's Project view: the setup beside the game's as `..._<project>.mlsetup` (under `citizen_casual\legs\...\textures`), and the slim-fits `.mesh` under `player_equipment\legs`. The Desk is unchanged |
+| 12b | Make the project's copy different: Find › the project's slim-fits › a material › **New Material Here**, make one from a photo and put it on (or use a project whose slim-fits already wears a new material, such as the M3 test's). Then on the Desk click **+** again | Before the confirm, a question: "<project> already has its own l1_012_pwa_pants__jeans_tight.mesh from the Desk, with other materials", with **Replace with the Desk's** and **Keep the Project's** |
+| 12c | Choose **Keep the Project's**, then **Add and Clear the Desk** | "nothing new to write ... 1 edited setup stayed on the Desk, since the project keeps its own mesh". The Desk still shows the mesh and its "edited on the Desk" material; the project's slim-fits still wears the new material |
+| 12d | **+** again › **Replace with the Desk's** › **Add to Project** | The mesh is written again and the log says the project's copy was replaced. The project's slim-fits wears your Desk color in its 3D view |
 | 13 | **Pack and Try** (or Pack and Install), then look at V in the slim-fits in the game | The pants in your color, with no other mod |
 | 14 | REDcode's Project view: right-click the project's `.mesh` › **Open in EDGEmat** | It goes on the Desk as a second entry, marked "the project's copy" |
 | 15 | On the Desk, hover the project mesh's row › the × icon (Take Off the Desk) | It comes off; the game mesh stays |

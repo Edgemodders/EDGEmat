@@ -10,7 +10,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  applyLayerEdit, Desk, describeSurface, gamePathInProject, isGameFile, meshesToPoint, meshesUsing, newPathFor, openSetup, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
+  applyLayerEdit, Desk, describeSurface, gamePathInProject, isGameFile, meshesToPoint, meshesUsing, newPathFor, openSetup, projectArchive, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
   type BridgeClient, type LayerPatch, type Library, type MeshSearch, type OpenedSetup, type Project, type Setup, type SetupSource,
 } from "./core";
 import type { SetupPageData, SurfaceChoices } from "./webview/setup";
@@ -153,11 +153,18 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   /**
    * The color map of a setup as an open editor has it now, unsaved edits included, by the game path a mesh's
    * material names: the setup's own path, or where Save to Project wrote it. REDcode's 3D view draws it.
+   * Only for a mesh from the same place as the editor's setup (`where`): a setup opened from the Desk shows on
+   * the Desk's meshes, a project's file on that project's meshes, a game file on the game's.
    */
-  liveColorMap(setup: string): string | undefined {
+  liveColorMap(setup: string, where: { root?: string; desk: boolean }): string | undefined {
     const want = setup.toLowerCase();
+    const same = (a?: string, b?: string) => (a ? path.resolve(a).toLowerCase() : "") === (b ? path.resolve(b).toLowerCase() : "");
     for (const doc of this.open) {
-      if (doc.gamePath?.toLowerCase() === want || doc.savedTo?.toLowerCase() === want) return doc.view?.composite?.file;
+      if (doc.savedTo?.toLowerCase() === want) return doc.view?.composite?.file;
+      if (doc.gamePath?.toLowerCase() !== want) continue;
+      const file = "file" in doc.source ? doc.source.file : undefined;
+      const here = doc.onDesk ? where.desk : same(file ? projectArchive(file) : undefined, where.root);
+      if (here) return doc.view?.composite?.file;
     }
     return undefined;
   }

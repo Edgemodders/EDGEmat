@@ -22,7 +22,7 @@ export { isGameFile, meshesToPoint, meshesUsing, meshUses, newPathFor, projectAr
 export { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, MaskSize, PickSize, type Composite, type MaskSet, type MaskSource } from "./masks";
 export { gamePathInProject, openSetup, readSetup, withSetup, type OpenedSetup, type SetupSource } from "./openSetup";
 export { isFilePath, itemMaterials, loadItems, meshMaterials, namedMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook } from "./find";
-export { Desk, type DeskEntry, type DeskResult } from "./desk";
+export { Desk, type DeskConflict, type DeskEntry, type DeskResult } from "./desk";
 export { renderMaterials, type RenderedMaterial, type RenderRequest } from "./render";
 export { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, seamScore, squareCrop, writePng, type Image } from "./maps";
 export { errorText, generateImage, listModels, texturePrompt, ImageServiceError, Services, type CallOptions, type DetailSize, type GeneratedImage, type ImageModel, type Quality, type ServiceId, type ServiceInfo } from "./imageServices";

@@ -13,14 +13,14 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **New**
 
-- **The Desk**, a new view above the Library: the meshes and setups you are working on before they go into a project. It keeps them, and your edits, across restarts. A setup opened from the Desk saves on the Desk with Ctrl+S, and REDcode's 3D view shows it. The **+** in the Desk's title bar puts everything on it into a project after you confirm: each edited setup as a new setup, with the Desk's meshes that use it copied in and pointed at it, and the other meshes as they are. An × takes one thing off; **Clear the Desk** empties it. Assistants get `mat_desk`, and `mat_edit` can save on the Desk.
+- **The Desk**, a new view above the Library: the meshes and setups you are working on before they go into a project. It keeps them, and your edits, across restarts. A setup opened from the Desk saves on the Desk with Ctrl+S, and **View in 3D** on the Desk shows it; the game's own mesh keeps the game's look. The **+** in the Desk's title bar puts everything on it into a project after you confirm: each edited setup as a new setup, with the Desk's meshes that use it copied in and pointed at it, and the other meshes as they are. When your project already has its own copy of a Desk mesh with other materials, it asks first: replace it with the Desk's, or keep it and leave those edits on the Desk. **Add and Clear the Desk** takes off only what went in. An × takes one thing off; **Clear the Desk** empties it. Assistants get `mat_desk`, and `mat_edit` can save on the Desk.
 - **Open Material in EDGEmat...** on a right-click: on a `.mlsetup`, `.mlsetup.json` or `.mltemplate` in the Explorer or on its editor tab, and on a `.mlsetup` in REDcode's Project view (with REDcode 0.10.3 or later). A setup opens in EDGEmat's setup editor, a surface on its page.
 - **Open in EDGEmat** on a right-click on a `.mesh` in REDcode's Game Assets and Project views, in the Explorer and on its editor tab, and from REDcode's 3D view once REDcode adds its button: the mesh goes on the Desk with a look open, and each material opens its setup or offers **New Material Here**. A mesh in your project shows the project's copy. On a game `.mlsetup` in Game Assets it puts the setup on the Desk and opens it; on a `.mltemplate`, its surface page. Until REDcode marks file kinds in Game Assets, the entry shows on every game file there except textures, and says what it takes.
 
 **Changed**
 
 - REDcode's 3D view draws the materials again after you save a setup or put a new material on a mesh, so the change shows without reopening it.
-- A live preview in REDcode's 3D view: while a setup is open in EDGEmat's setup editor, the 3D view shows it as edited, before you save, and follows each edit, undo and redo. Close the editor without saving and the 3D view goes back to the saved setup.
+- A live preview in REDcode's 3D view: while a setup is open in EDGEmat's setup editor, the 3D view shows it as edited, before you save, and follows each edit, undo and redo. Close the editor without saving and the 3D view goes back to the saved setup. It shows on meshes from the same place as the setup: opened from the Desk, on the Desk's meshes; a project's file, on that project's; a game file, on the game's.
 - **View in 3D** on a mesh in your project opens the project's copy.
 
 **Fixed**
