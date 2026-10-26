@@ -33,6 +33,8 @@ export type SetupPageData =
       maskError?: string;
       map?: { image: string; pick: number[] };
       surfaces: Record<string, SurfaceChoices>;
+      /** The mesh look it was opened under and the game's items that wear it (undefined while being found), each with its CET command. */
+      worn?: { mesh: string; look?: string; items?: { id: string; name: string | null; body: string; command: string }[] };
       /** dirty: edits not saved yet; saves: where Ctrl+S goes, the file itself or into a project. */
       edit: { dirty: boolean; notice?: string; saves: "file" | "desk" | "project" };
     };
@@ -66,6 +68,21 @@ function header(title: string, origin: string, path?: string): HTMLElement {
   const h = el("header", {}, el("div", { class: "crumb" }, `Setup · ${origin}`), el("div", { class: "title-row" }, el("h1", {}, title)));
   if (path) h.append(el("div", { class: "path" }, el("code", {}, path), copy(path, "Copy path")));
   return h;
+}
+
+/** The game's items that wear the mesh look, so the modder can give V one in CET once the project is installed. */
+function wornBy(w: NonNullable<Extract<SetupPageData, { kind: "setup" }>["worn"]>): HTMLElement {
+  const file = w.mesh.split("\\").pop();
+  const look = `${file}${w.look ? `, look ${w.look}` : ""}`;
+  const box = el("section", { class: "worn" }, el("h2", {}, "In the game"));
+  if (!w.items) box.append(el("div", { class: "note" }, `Finding the items that wear ${look}... (the first time reads every clothing item: about ten seconds)`));
+  else if (!w.items.length) box.append(el("div", { class: "note" }, `No clothing item in the game wears ${look}. It may be worn by an NPC, or added by a mod.`));
+  else {
+    box.append(el("div", { class: "note" }, `Worn by ${w.items.length === 1 ? "this item" : "these items"} (${look}). Once the project is installed, give V one in the CET console:`));
+    for (const i of w.items)
+      box.append(el("div", { class: "item" }, el("span", {}, i.name ?? "(no in-game name)"), el("code", {}, i.command), i.body !== "any" ? el("span", { class: "note" }, `${i.body} body`) : undefined, copy(i.command, "Copy")));
+  }
+  return box;
 }
 
 function show(data: SetupPageData): void {
@@ -112,6 +129,7 @@ function render(d: Extract<SetupPageData, { kind: "setup" }>): void {
       : d.edit.saves === "desk" ? "Ctrl+S saves it on the Desk; Save to Project, or + on the Desk, puts it in a project. Ctrl+Z undoes."
       : "Ctrl+S or Save to Project saves it into a project; the original is never changed. Ctrl+Z undoes."));
   document.body.append(head);
+  if (d.worn) document.body.append(wornBy(d.worn));
   if (d.edit.notice) document.body.append(el("div", { class: "notice" }, d.edit.notice));
   if (info.warnings.length) document.body.append(el("div", { class: "warnings" }, ...info.warnings.map((w) => el("div", {}, w))));
 

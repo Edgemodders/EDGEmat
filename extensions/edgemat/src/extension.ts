@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 import type { EdgematApi } from "./api";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import { BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, deskProjectName, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, suffixFor, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
+import { addToInventory, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, deskProjectName, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, suffixFor, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
 import { DeskView } from "./deskView";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
@@ -450,7 +450,29 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       findTree.message = undefined;
       void vscode.commands.executeCommand("setContext", "edgemat.findActive", false);
     }),
-    vscode.commands.registerCommand("edgemat.openFoundSetup", (setup: string, mask?: string, via?: string, root?: string, deskId?: string) => openFoundSetup(setup, mask, via, root, deskId)),
+    vscode.commands.registerCommand("edgemat.openFoundSetup", (setup: string, mask?: string, via?: string, root?: string, deskId?: string, mesh?: string, look?: string) =>
+      openFoundSetup(setup, mask, via, root, deskId, mesh, look)),
+    // CET's command that gives V the item wearing a mesh look: what to type in the game after installing the project.
+    vscode.commands.registerCommand("edgemat.copyCetCommand", async (node) => {
+      const of = FindView.wornOf(node);
+      if (!of) return;
+      let id: string | undefined;
+      if ("item" in of) id = of.item.id;
+      else {
+        const worn = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "Finding the items that wear this mesh..." }, () => find.wornBy(of.mesh, of.appearance));
+        if (!worn.length) {
+          void vscode.window.showInformationMessage(`No clothing item in the game wears ${of.mesh.split("\\").pop()}${of.appearance ? `, look ${of.appearance}` : ""}. It may be worn by an NPC, or added by a mod.`);
+          return;
+        }
+        id = worn.length === 1 ? worn[0].id : (await vscode.window.showQuickPick(
+          worn.map((w) => ({ label: w.name ?? "(no in-game name)", description: w.id, detail: w.body === "any" ? undefined : `${w.body} body`, id: w.id })),
+          { title: "Which item? The command gives V that item", placeHolder: "Items that wear this mesh look" },
+        ))?.id;
+      }
+      if (!id) return;
+      await vscode.env.clipboard.writeText(addToInventory(id));
+      vscode.window.setStatusBarMessage(`Copied ${addToInventory(id)}: paste it in CET's console once the project is installed`, 5000);
+    }),
     vscode.commands.registerCommand("edgemat.copyGamePath", async (node) => {
       const p = LibraryView.gamePathOf(node) ?? FindView.gamePathOf(node);
       if (p) await vscode.env.clipboard.writeText(p);

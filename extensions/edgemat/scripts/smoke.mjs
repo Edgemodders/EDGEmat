@@ -256,6 +256,16 @@ try {
     "taking an entry off deletes its folder; a Desk from before entries had folders gets ids, and its shared edit is copied into the entry");
   desk.clear();
 
+  // The items that wear a mesh look, for CET's Game.AddToInventory once a project changes the mesh.
+  console.log("\nitems wearing a mesh");
+  t3 = Date.now();
+  const wornLeather = await core.itemsWearing(bridge, path.join(tmp, "worn_cache"), deskMesh, "leather");
+  const wornMs = Date.now() - t3;
+  const wornAll = await core.itemsWearing(bridge, path.join(tmp, "worn_cache"), deskMesh);
+  check(wornLeather[0]?.items[0]?.id === "Items.Pants_01_basic_01" && wornLeather[0].items[0].body === "feminine" && wornAll.length > 5 && !wornAll.some((l) => l.appearance === "default")
+    && core.addToInventory("Items.Pants_01_basic_01") === 'Game.AddToInventory("Items.Pants_01_basic_01", 1)',
+    `the slim-fits' leather look is worn by Items.Pants_01_basic_01 (feminine); ${wornAll.length} of its looks are worn by items; index built in ${wornMs} ms`);
+
   // Generate's first slice: a texture from a PNG, a textured .mi on metal_base, and one material of a mesh pointed at it.
   const genTex = "edgemat\\smoke\\uv_test_pattern_d01.xbm", mi = "edgemat\\smoke\\uv_test.mi";
   const slim = "base\\characters\\garment\\player_equipment\\legs\\l1_012_pants__jeans_tight\\l1_012_pma_pants__jeans_tight.mesh";

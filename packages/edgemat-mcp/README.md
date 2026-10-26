@@ -39,7 +39,7 @@ The material library is built from your own game the first time, and kept in `%L
 | `mat_library` | Whether the library is built and current; builds it |
 | `mat_templates`, `mat_microblends` | Search the game's surfaces and detail textures |
 | `mat_colors` | A surface's colors in plain words, and the closest to one you name |
-| `mat_find` | A garment or mesh, down to its looks per body, meshes and materials |
+| `mat_find` | A garment or mesh, down to its looks per body, meshes and materials; for a mesh, the items that wear each look, with the CET command that gives V one |
 | `mat_describe` | A setup's layers in plain words |
 | `mat_edit` | Recolor a setup's layers in words, and save it into a project |
 | `mat_generate` | A material from words, through Google Gemini or OpenAI with your key |

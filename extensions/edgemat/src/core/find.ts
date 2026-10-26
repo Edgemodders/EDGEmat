@@ -243,34 +243,54 @@ async function appMeshes(read: Reader, app: Json): Promise<{ component: string; 
   return out;
 }
 
+const ClothingCsv = "base\\gameplay\\factories\\items\\clothing.csv";
+
+/** clothing.csv: each item entity name's root entity. */
+async function clothingRoots(read: Reader): Promise<Map<string, string>> {
+  const csv = (await read.json(ClothingCsv)).Data.RootChunk;
+  return new Map((csv.data as unknown[]).map((r: any) => (r.elements ?? r) as string[]).map((r) => [r[0], r[1]]));
+}
+
+/**
+ * The root entity's appearance rows for an item. A row is the item's appearance name with tags: &Male or
+ * &Female for the body, and on jackets and other outer wear &TPP or &FPP (third and first person).
+ */
+function appearanceRows(ent: Json, appearanceName: string): { row: Json; tags: string[]; body: ItemLook["body"] }[] {
+  const tagsOf = (n: string) => (n === appearanceName ? [] : n.startsWith(`${appearanceName}&`) ? n.slice(appearanceName.length + 1).split("&") : undefined);
+  const bodyOf = (tags: string[]): ItemLook["body"] => (tags.includes("Male") ? "masculine" : tags.includes("Female") ? "feminine" : "any");
+  const out: { row: Json; tags: string[]; body: ItemLook["body"] }[] = [];
+  for (const row of (ent.appearances ?? []) as Json[]) {
+    const tags = tagsOf(v(row.name));
+    if (tags) out.push({ row, tags, body: bodyOf(tags) });
+  }
+  return out;
+}
+
+/** An .app file's appearance by name. */
+async function appAppearance(read: Reader, appPath: string, name: string): Promise<Json | undefined> {
+  const app = (await read.json(appPath)).Data.RootChunk;
+  return ((app.appearances ?? []) as Json[]).map((x) => x.Data ?? x).find((x) => v(x.name) === name);
+}
+
 /** Walks from a clothing item to its meshes and materials, for each body type it has. */
 export async function itemMaterials(bridge: BridgeClient, item: ItemEntry): Promise<ItemMaterials> {
   const read = new Reader(bridge);
   const warnings: string[] = [];
-  const csv = (await read.json("base\\gameplay\\factories\\items\\clothing.csv")).Data.RootChunk;
-  const row = (csv.data as unknown[]).map((r: any) => (r.elements ?? r) as string[]).find((r) => r[0] === item.entityName);
-  if (!row) throw new Error(`${item.entityName} is not in clothing.csv: the item may come from a mod (ArchiveXL), which M2 does not follow yet.`);
-  const root = row[1];
+  const root = (await clothingRoots(read)).get(item.entityName);
+  if (!root) throw new Error(`${item.entityName} is not in clothing.csv: the item may come from a mod (ArchiveXL), which M2 does not follow yet.`);
   const ent = (await read.json(root)).Data.RootChunk;
-  // A row is the item's appearance name with tags: &Male or &Female for the body, and on jackets and
-  // other outer wear &TPP or &FPP (third and first person). One row per body: third person when both exist.
-  const base = item.appearanceName;
-  const tagsOf = (n: string) => (n === base ? [] : n.startsWith(`${base}&`) ? n.slice(base.length + 1).split("&") : undefined);
-  const bodyOf = (tags: string[]): ItemLook["body"] => (tags.includes("Male") ? "masculine" : tags.includes("Female") ? "feminine" : "any");
+  // One row per body: third person when both exist.
   const perBody = new Map<ItemLook["body"], { row: Json; tags: string[] }>();
-  for (const row of ent.appearances as Json[]) {
-    const tags = tagsOf(v(row.name));
-    if (!tags) continue;
-    const had = perBody.get(bodyOf(tags));
-    if (!had || (had.tags.includes("FPP") && !tags.includes("FPP"))) perBody.set(bodyOf(tags), { row, tags });
+  for (const { row, tags, body } of appearanceRows(ent, item.appearanceName)) {
+    const had = perBody.get(body);
+    if (!had || (had.tags.includes("FPP") && !tags.includes("FPP"))) perBody.set(body, { row, tags });
   }
   if (!perBody.size) warnings.push(`No appearance named ${item.appearanceName} in ${root}.`);
   const looks: ItemLook[] = [];
   for (const [body, { row: r }] of perBody) {
     const appPath = v(r.appearanceResource) as string;
     const appName = v(r.appearanceName) as string;
-    const app = (await read.json(appPath)).Data.RootChunk;
-    const appearance = (app.appearances as Json[]).map((x) => x.Data ?? x).find((x) => v(x.name) === appName);
+    const appearance = await appAppearance(read, appPath, appName);
     if (!appearance) {
       warnings.push(`No appearance ${appName} in ${appPath}.`);
       continue;
@@ -287,4 +307,83 @@ export async function itemMaterials(bridge: BridgeClient, item: ItemEntry): Prom
   }
   looks.sort((a, b) => a.body.localeCompare(b.body));
   return { item, root, looks, warnings };
+}
+
+/** An item that wears a mesh look in the game. */
+export interface WornBy {
+  /** The TweakDB record, for CET's Game.AddToInventory. */
+  id: string;
+  name: string | null;
+  slot: string;
+  body: ItemLook["body"];
+}
+
+/** The mesh looks the game's clothing items wear: mesh path, then mesh appearance (both lower case), then the items. */
+type WornIndex = Record<string, Record<string, WornBy[]>>;
+const WornFile = "worn.json";
+const wornBuilds = new Map<string, Promise<WornIndex>>();
+
+/** The CET console command that gives V an item. */
+export const addToInventory = (id: string) => `Game.AddToInventory("${id}", 1)`;
+
+/**
+ * Every clothing item's meshes and mesh appearances, both bodies, first and third person: the walk of
+ * itemMaterials without the materials. About ten seconds on the 2.31 game (1,997 items, 193 .app files),
+ * once per game version; cached in `dir` beside the item list.
+ */
+async function wornIndex(bridge: BridgeClient, dir: string): Promise<WornIndex> {
+  const key = await gameKey(bridge);
+  const file = path.join(dir, WornFile);
+  try {
+    const cached = JSON.parse(fs.readFileSync(file, "utf8")) as { key: string; meshes: WornIndex };
+    if (cached.key === key) return cached.meshes;
+  } catch {
+    // No cache yet.
+  }
+  const items = await loadItems(bridge, dir);
+  const read = new Reader(bridge);
+  const roots = await clothingRoots(read);
+  const meshes: WornIndex = {};
+  const add = (mesh: string, appearance: string, w: WornBy) => {
+    const looks = (meshes[mesh.toLowerCase()] ??= {});
+    const list = (looks[appearance.toLowerCase()] ??= []);
+    if (!list.some((x) => x.id === w.id && x.body === w.body)) list.push(w);
+  };
+  await Promise.all(
+    items.map(async (item) => {
+      const root = roots.get(item.entityName);
+      if (!root) return;
+      try {
+        const ent = (await read.json(root)).Data.RootChunk;
+        for (const { row, body } of appearanceRows(ent, item.appearanceName)) {
+          const appearance = await appAppearance(read, v(row.appearanceResource), v(row.appearanceName));
+          if (!appearance) continue;
+          for (const m of await appMeshes(read, appearance)) if (!isShadow(m.mesh)) add(m.mesh, m.appearance, { id: item.id, name: item.name, slot: item.slot, body });
+        }
+      } catch {
+        // A file the game lacks: that item is left out.
+      }
+    }),
+  );
+  // The game's own records first, then crafting copies, then test and other records.
+  const rank = (w: WornBy) => (!w.id.startsWith("Items.") ? 2 : /_crafting$/i.test(w.id) ? 1 : 0);
+  for (const looks of Object.values(meshes)) for (const list of Object.values(looks)) list.sort((a, b) => rank(a) - rank(b) || a.id.localeCompare(b.id) || a.body.localeCompare(b.body));
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ key, meshes }));
+  return meshes;
+}
+
+/**
+ * The game's items that wear a mesh (a game path), by mesh appearance: in `appearance` only, else in each
+ * of its looks. A mesh a project or the Desk changes shows on these items, so CET can give V one of them.
+ */
+export async function itemsWearing(bridge: BridgeClient, dir: string, mesh: string, appearance?: string): Promise<{ appearance: string; items: WornBy[] }[]> {
+  const k = dir.toLowerCase();
+  if (!wornBuilds.has(k)) wornBuilds.set(k, wornIndex(bridge, dir).catch((e) => (wornBuilds.delete(k), Promise.reject(e))));
+  const looks = (await wornBuilds.get(k)!)[mesh.toLowerCase()] ?? {};
+  if (appearance) {
+    const items = looks[appearance.toLowerCase()];
+    return items ? [{ appearance, items }] : [];
+  }
+  return Object.entries(looks).map(([a, items]) => ({ appearance: a, items }));
 }

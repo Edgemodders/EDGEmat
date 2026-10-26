@@ -9,8 +9,8 @@ Last updated 2026-10-26.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
-| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's six checks (entries, variations, the move from the old Desk) |
-| [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache. 2026-10-26: `mat_desk` add twice reuses the unedited entry (same id); remove of an unknown id is refused |
+| [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's six checks (entries, variations, the move from the old Desk), and the items that wear a mesh look (2026-10-26: the slim-fits' leather look, `Items.Pants_01_basic_01`; index in 11 s) |
+| [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache. 2026-10-26: `mat_desk` add twice reuses the unedited entry (same id); remove of an unknown id is refused. `mat_find` with the slim-fits mesh and look `leather`: `worn_by` `Items.Pants_01_basic_01` (feminine) with its `cet` command; with item `Items.Pants_01_basic_01`, `cet` |
 | [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
@@ -23,6 +23,7 @@ Last updated 2026-10-26.
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
 | [The Desk](#the-desk) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-26 | **Partly run by the owner after the rework, 2026-10-26: steps 1 to 3, 5 to 11, 13, 14, 16, 17 and the first part of 21 pass.** Still to run: 4, 12, 15, 18 to 20, the rest of 21, and 22 to 24. Earlier runs: 2026-10-25, two failures. Step 12 said "0 files written" in a project that already had its own slim-fits (pointed at other materials), and the edit stayed on the Desk with only a log line; Add and Clear would have deleted it. After the add, the game's mesh in Game Assets showed the Desk's edit in 3D. Both fixed 2026-10-26. A second run the same day: a second pair of slim-fits from Game Assets showed the first pair's edit (the Desk kept one edit per setup for all entries), and a project file kept reading "the project's copy" after the project was closed. Reworked 2026-10-26 into entries with their own edits, variations and a **+** per entry, with new steps |
+| [Which item: In the game](#which-item-in-the-game) | By hand, F5, then in the game with CET | After 0.3.1 | | Not run yet. Built 2026-10-26; the smoke test checks the lookup on the slim-fits, and `mat_find` over stdio returns `worn_by` |
 | [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day. Since 2026-10-25 the mesh goes on the Desk: run [The Desk](#the-desk) first, then this test from step 3 |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
@@ -315,6 +316,19 @@ Added 2026-10-25: the Desk view, Open in EDGEmat from REDcode's views, saving on
 | 22 | Hover a line › the × icon (Take Off the Desk) | It asks first if the line has edits, then it comes off; the other lines stay |
 | 23 | Hover the Desk's title bar › **Clear the Desk...** › **Clear the Desk** | The Desk is empty. The project keeps its files |
 | 24 | Optional, with Claude Code connected: ask "put the slim-fits on EDGEmat's Desk, then list the Desk" | `mat_desk` adds it with an id, and the Desk view shows it within a second or two |
+
+### Which item: In the game
+
+Added 2026-10-26 (owner's ask): after changing a mesh's material, which game item to give V in CET to see it. In the development host (F5), with REDcode and a project open. The slim-fits mesh again: its **leather** look is the Comfy rocker aramid-weave slim-fits, `Items.Pants_01_basic_01`, worn on the feminine body.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Put the slim-fits on the Desk (REDcode's Game Assets › right-click the `.mesh` › **Open in EDGEmat**). On the Desk, open the look **leather** and click its multilayered material | The setup editor opens. Under the header, **In the game**: first "Finding the items that wear ... (about ten seconds)" the first time, then "Comfy rocker aramid-weave slim-fits", `Game.AddToInventory("Items.Pants_01_basic_01", 1)`, "feminine body", and **Copy** |
+| 2 | Click **Copy**, and paste in any text box | The command, exactly as shown |
+| 3 | On the Desk, hover the look **leather** | The tooltip ends with "Worn in the game by:" and the item with its id. Hover **default**: "No clothing item in the game wears this look" |
+| 4 | Right-click the look **leather** › **Copy CET Command** | Copied straight away (one item); the status bar says so. On the mesh line itself: a pick of the items for every look |
+| 5 | In Find, search `slim-fits`, right-click an item › **Copy CET Command** | That item's command |
+| 6 | Edit the leather look's color on the Desk, put it in the project (+), **Pack and Try**. In the game, open CET's console, paste the command, Enter, and put the pants on V (a feminine V) | V gets the slim-fits, in the Desk's color |
 
 ### Open Mesh in EDGEmat
 

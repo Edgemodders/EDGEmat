@@ -197,6 +197,12 @@
         "icon": "$(copy)"
       },
       {
+        "command": "edgemat.copyCetCommand",
+        "title": "Copy CET Command",
+        "category": "EDGEmat",
+        "icon": "$(terminal)"
+      },
+      {
         "command": "edgemat.viewIn3D",
         "title": "View in 3D",
         "category": "EDGEmat",
@@ -378,6 +384,11 @@
           "group": "copy@1"
         },
         {
+          "command": "edgemat.copyCetCommand",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.(mesh|item|material)/",
+          "group": "copy@2"
+        },
+        {
           "command": "edgemat.newMaterialHere",
           "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.material$/",
           "group": "inline"
@@ -424,6 +435,10 @@
         },
         {
           "command": "edgemat.copyGamePath",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.copyCetCommand",
           "when": "false"
         },
         {

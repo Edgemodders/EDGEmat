@@ -10,8 +10,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  applyLayerEdit, Desk, deskLabel, describeSurface, gamePathInProject, isGameFile, meshesToPoint, meshesUsing, newPathFor, openSetup, projectArchive, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
-  type BridgeClient, type LayerPatch, type Library, type MeshSearch, type OpenedSetup, type Project, type Setup, type SetupSource,
+  addToInventory, applyLayerEdit, Desk, deskLabel, describeSurface, gamePathInProject, isGameFile, itemsWearing, meshesToPoint, meshesUsing, newPathFor, openSetup, projectArchive, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
+  type BridgeClient, type LayerPatch, type Library, type MeshSearch, type OpenedSetup, type Project, type Setup, type SetupSource, type WornBy,
 } from "./core";
 import type { SetupPageData, SurfaceChoices } from "./webview/setup";
 
@@ -21,11 +21,12 @@ const RedcodeGameScheme = "redcode-game";
 /**
  * edgemat-game:/base/x.mlsetup for base\x.mlsetup. `mask`: the mask set a mesh's material names for it;
  * `via`: where it was found, such as an item's name; `desk`: the Desk entry it was opened from, so it saves
- * in that entry's folder. They ride in the query as base64 JSON, which survives VS Code decoding the URI and
- * names holding & or =.
+ * in that entry's folder; `mesh` and `look`: the mesh (a game path) and mesh appearance it was opened under,
+ * for the items that wear it. They ride in the query as base64 JSON, which survives VS Code decoding the URI
+ * and names holding & or =.
  */
-type UriOptions = { mask?: string; via?: string; desk?: string };
-export const optionsQuery = (opts: UriOptions) => (opts.mask || opts.via || opts.desk ? `o=${Buffer.from(JSON.stringify(opts)).toString("base64url")}` : "");
+type UriOptions = { mask?: string; via?: string; desk?: string; mesh?: string; look?: string };
+export const optionsQuery = (opts: UriOptions) => (Object.values(opts).some(Boolean) ? `o=${Buffer.from(JSON.stringify(opts)).toString("base64url")}` : "");
 export const gameUri = (gamePath: string, opts: UriOptions = {}) =>
   vscode.Uri.from({ scheme: GameScheme, path: "/" + gamePath.replace(/\\/g, "/"), query: optionsQuery(opts) });
 
@@ -94,11 +95,17 @@ class SetupDocument implements vscode.CustomDocument {
   /** The page's last view of the setup as edited, with its color map, for 3D views (liveColorMap). */
   view?: OpenedSetup;
   readonly panels = new Set<vscode.WebviewPanel>();
+  /** The mesh and mesh appearance it was opened under, when opened from Find or the Desk. */
+  readonly mesh?: { path: string; look?: string };
+  /** The game's items that wear that mesh look, once looked up; undefined until then. */
+  worn?: WornBy[];
+  wornAsked = false;
   /** `deskId`: the Desk entry it was opened from, so Ctrl+S saves that entry's copy. */
   constructor(readonly uri: vscode.Uri, readonly source: SetupSource, origin: string, readonly deskId?: string) {
-    const { mask, via } = uriOptions(uri);
+    const { mask, via, mesh, look } = uriOptions(uri);
     this.mask = mask;
     this.origin = via ? `${origin} · from ${via}` : origin;
+    if (mesh) this.mesh = { path: mesh, look };
   }
   /** The game path this setup stands for: a game file's own, a project file's, or the path inside a mod archive. */
   get gamePath(): string | undefined {
@@ -307,12 +314,28 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
         doc.restored = undefined;
       }
       for (const p of doc.panels) this.post(doc, p, true);
+      if (bridge && doc.mesh && !doc.wornAsked) {
+        doc.wornAsked = true;
+        void this.lookUpWorn(doc, bridge, doc.mesh);
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       this.host.log(`The setup editor could not open ${doc.uri.toString()}: ${message}`);
       const page: SetupPageData = { kind: "error", title: this.title(doc), origin: doc.origin, message };
       for (const p of doc.panels) p.webview.html = this.html(p.webview, page);
     }
+  }
+
+  /** The items that wear the mesh look the setup was opened under, shown once found (the first time builds the index: about ten seconds). */
+  private async lookUpWorn(doc: SetupDocument, bridge: BridgeClient, mesh: { path: string; look?: string }): Promise<void> {
+    try {
+      const looks = await itemsWearing(bridge, this.host.cacheDir(), mesh.path, mesh.look);
+      doc.worn = looks.flatMap((l) => l.items).filter((w, i, all) => all.findIndex((x) => x.id === w.id && x.body === w.body) === i);
+    } catch (e) {
+      this.host.log(`Items wearing ${mesh.path}: ${e instanceof Error ? e.message : String(e)}`);
+      doc.worn = [];
+    }
+    this.refresh(doc);
   }
 
   /** One change to one layer: applied, made undoable, and shown in every tab of the document. */
@@ -631,6 +654,9 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
       maskError: o.maskError,
       map: o.composite ? { image: uri(o.composite.file), pick: o.composite.pick } : undefined,
       surfaces,
+      worn: doc.mesh
+        ? { mesh: doc.mesh.path, look: doc.mesh.look, items: doc.worn?.map((w) => ({ id: w.id, name: w.name, body: w.body, command: addToInventory(w.id) })) }
+        : undefined,
       edit: {
         dirty: doc.dirty,
         notice: doc.notice,
@@ -792,6 +818,9 @@ button.link { background: none; border: none; color: var(--accent); padding: 0; 
 .notice { border-left: 2px solid var(--accent); padding: 4px 10px; margin: 0 0 14px; }
 .editbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--vscode-descriptionForeground); }
 .dirty { color: var(--warn); font-weight: 600; }
+.worn { margin: 0 0 16px; font-size: 12px; }
+.worn .item { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 2px 0; }
+.worn .item code { user-select: all; }
 .layout { display: grid; grid-template-columns: minmax(240px, 420px) minmax(0, 1fr); gap: 24px; align-items: start; }
 .layout > * { min-width: 0; }
 @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }

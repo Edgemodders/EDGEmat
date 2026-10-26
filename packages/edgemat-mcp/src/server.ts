@@ -16,7 +16,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
 import {
-  applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
+  addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, generateImage, imageAsPng, listModels, makeMaterial, materialSlug, texturePrompt, Services,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
@@ -361,13 +361,19 @@ server.registerTool(
       "Finds what to recolor. query: words that match clothing items by in-game name or record id ('punk jeans', 'Sunny Ammo', 'CasualShoes_01') and meshes by path ('s1_055'); returns both lists. " +
       "item: a clothing record id (Items.Pants_03_basic_01), or words matching one item: walks item > clothing.csv > root entity > .app appearance (one per body type: masculine, feminine) > mesh and mesh appearance > materials, " +
       "and for each multilayered material its setup (.mlsetup) and the mask set (.mlmask) it names. The two bodies can use different meshes. " +
-      "mesh (with optional appearance): a mesh's materials, in one appearance or all. Pass a found setup and its mask to mat_describe. Items from mods (ArchiveXL) are not followed yet.",
+      "mesh (with optional appearance): a mesh's materials, in one appearance or all, and for each appearance the game's clothing items that wear it (worn_by: id, name, body, and cet, the CET console command that gives V the item: " +
+      "a mesh a project changes shows on those items, so the modder can try it in the game). Pass a found setup and its mask to mat_describe. Items from mods (ArchiveXL) are not followed yet.",
     inputSchema: { query: z.string().optional(), item: z.string().optional(), mesh: z.string().optional(), appearance: z.string().optional(), limit: z.number().int().min(1).max(500).default(30) },
   },
   async ({ query, item, mesh, appearance, limit }) => {
     try {
       const b = await getBridge();
-      if (mesh) return text({ mesh, appearances: (await meshMaterials(b, mesh, appearance)).map(meshOut) });
+      if (mesh) {
+        const looks = await meshMaterials(b, mesh, appearance);
+        const worn = await itemsWearing(b, cacheDir, mesh);
+        const wornBy = (a: string) => (worn.find((w) => w.appearance.toLowerCase() === a.toLowerCase())?.items ?? []).map((w) => ({ id: w.id, name: w.name, body: w.body, cet: addToInventory(w.id) }));
+        return text({ mesh, appearances: looks.map((l) => ({ ...meshOut(l), worn_by: wornBy(l.appearance) })) });
+      }
       const items = await loadItems(b, cacheDir);
       if (item) {
         const exact = items.find((i) => i.id.toLowerCase() === item.toLowerCase());
@@ -379,7 +385,7 @@ server.registerTool(
         }
         const m = await itemMaterials(b, found[0]);
         return text({
-          item: { id: m.item.id, name: m.item.name, slot: m.item.slot },
+          item: { id: m.item.id, name: m.item.name, slot: m.item.slot, cet: addToInventory(m.item.id) },
           root: m.root,
           looks: m.looks.map((l) => ({ body: l.body, app: l.app, appearance: l.appAppearance, meshes: l.meshes.map(meshOut) })),
           warnings: m.warnings.length ? m.warnings : undefined,

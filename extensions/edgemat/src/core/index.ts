@@ -21,7 +21,7 @@ export {
 export { isGameFile, meshesToPoint, meshesUsing, meshUses, newPathFor, projectArchive, projectAt, saveToProject, suffixFor, type MeshSearch, type MeshUse, type Project, type SaveRequest, type SaveResult } from "./project";
 export { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, MaskSize, PickSize, type Composite, type MaskSet, type MaskSource } from "./masks";
 export { gamePathInProject, openSetup, readSetup, withSetup, type OpenedSetup, type SetupSource } from "./openSetup";
-export { isFilePath, itemMaterials, loadItems, meshMaterials, namedMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook } from "./find";
+export { addToInventory, isFilePath, itemMaterials, itemsWearing, loadItems, meshMaterials, namedMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook, type WornBy } from "./find";
 export { Desk, deskLabel, deskProjectName, type DeskConflict, type DeskEntry, type DeskResult } from "./desk";
 export { renderMaterials, type RenderedMaterial, type RenderRequest } from "./render";
 export { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, seamScore, squareCrop, writePng, type Image } from "./maps";
