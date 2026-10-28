@@ -2,7 +2,7 @@
 
 What has been done on EDGEmat, what was decided and why, and what is open. Newest first within each section. Read this to catch up without asking. The [design](design.html) and the [behavior spec](design/behavior.html) hold the full detail.
 
-Last updated 2026-10-26.
+Last updated 2026-10-27.
 
 ## At a glance
 
@@ -12,7 +12,7 @@ Last updated 2026-10-26.
 | Extension | 0.3.1: the EDGEmat icon in the activity bar; the Library of every surface and microblend in your game; a page for each surface with its colors as named swatches; the setup editor, editing and Save to Project; Find; View in 3D; New Material |
 | MCP server | `mat_library`, `mat_templates`, `mat_microblends`, `mat_colors`, `mat_describe`, `mat_find`, `mat_edit`, `mat_generate`, `mat_from_image`, `mat_apply`, `mat_desk` |
 | Spec | Behavior spec draft 0.2, checked against the game and in-game tests, agreed 2026-10-16 |
-| Next up | Your hand tests of Which item: In the game (new), the Desk (steps 3b, 4, 12, 15, 18 to 20, the rest of 21, 22 to 24), Open Mesh in EDGEmat (from step 3) and Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
+| Next up | Your hand tests of Microblends and worn looks (step 1 again and the new step 7), Which item: In the game, the Desk (steps 3b, 4, 12, 15, 18 to 20, the rest of 21, 22 to 24), Open Mesh in EDGEmat (from step 3) and Open Material in EDGEmat (F5), your install of 0.3.1 from the Marketplace and the Connect an Assistant test. Then M4 Make: materials for new meshes, for EDGEfab |
 | Roadmap | M3 Edit with Generate's first slice, released as the 0.3.0 preview; **M4 Make** (materials for new meshes: from a model's textures, **Generate** from words or a photo, game materials on new meshes, the Looks editor), M5 Preview, M6 Beyond mlsetup, M7 Ship. Revised 2026-10-19 so EDGEfab gets materials sooner |
 
 ## Your to-dos
@@ -42,6 +42,12 @@ Last updated 2026-10-26.
 | [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open, mostly shipped: REDnode 0.26.0 and later swap archives into the running game through RED Hot Tools (`archives.reload`, MCP `archives_reload`), and since 0.26.20 the clothing V wears shows the new version at once (unverified for a material change). A world object may keep the old look until the game loads it again |
 
 ## Log
+
+### 2026-10-27
+
+| What | Detail |
+|---|---|
+| **Microblends and worn looks: hand test; a + in Find** | The owner ran the test: steps 2 to 6 pass (the leather's color, the marks, no seam in 3D with REDcode 0.10.4, the microblend swap, Add to Desk). Step 1 opened **green**, not **leather**: green is worn by 1 item and comes first in the mesh, and the Desk took the first worn look. Now it takes the look the most items wear (leather, 2), the first of a tie. The owner's ask: a **+** on each mesh line in Find, tooltip **Add to Desk**, as the right-click entry. To rerun: step 1 and step 7 (new) |
 
 ### 2026-10-26
 

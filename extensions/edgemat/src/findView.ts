@@ -118,8 +118,10 @@ export class FindView implements vscode.TreeDataProvider<Node> {
         try {
           const looks = await meshMaterials(bridge, node.path, undefined, node.root);
           const worn = await this.wornLooks(bridge, node.path);
-          // Just put on the Desk: the look asked for opens, else the first an item wears, else the first.
-          const want = node.open ? (node.appearance ?? (looks.find((l) => worn?.get(l.appearance.toLowerCase())) ?? looks[0])?.appearance)?.toLowerCase() : undefined;
+          // Just put on the Desk: the look asked for opens, else the one most items wear (the first of a tie), else the first.
+          const wearers = (l: MeshLook) => worn?.get(l.appearance.toLowerCase()) ?? 0;
+          const most = looks.reduce<MeshLook | undefined>((best, l) => (wearers(l) > (best ? wearers(best) : 0) ? l : best), undefined);
+          const want = node.open ? (node.appearance ?? (most ?? looks[0])?.appearance)?.toLowerCase() : undefined;
           return looks.map((mesh): Node => ({
             kind: "mesh", mesh, via: `${file(node.path)}, ${mesh.appearance}`, label: "appearance", open: want && mesh.appearance.toLowerCase() === want ? node.open : undefined,
             root: node.root, desk: node.entry?.id, worn: worn ? worn.get(mesh.appearance.toLowerCase()) ?? 0 : undefined,

@@ -200,7 +200,7 @@
         "command": "edgemat.addToDesk",
         "title": "Add to Desk",
         "category": "EDGEmat",
-        "icon": "$(layers)"
+        "icon": "$(add)"
       },
       {
         "command": "edgemat.copyCetCommand",
@@ -393,6 +393,11 @@
           "command": "edgemat.copyCetCommand",
           "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.(mesh|item|material)/",
           "group": "copy@2"
+        },
+        {
+          "command": "edgemat.addToDesk",
+          "when": "view == edgemat.find && viewItem =~ /^edgemat\\.mesh/",
+          "group": "inline"
         },
         {
           "command": "edgemat.addToDesk",
