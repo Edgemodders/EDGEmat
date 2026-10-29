@@ -2,7 +2,7 @@
 
 What has been done on EDGEmat, what was decided and why, and what is open. Newest first within each section. Read this to catch up without asking. The [design](design.html) and the [behavior spec](design/behavior.html) hold the full detail.
 
-Last updated 2026-10-27.
+Last updated 2026-10-29.
 
 ## At a glance
 
@@ -40,8 +40,15 @@ Last updated 2026-10-27.
 | [REDbridge #8](https://github.com/Edgemodders/REDbridge/issues/8) | `project.import` takes a texture setup (color, normal, grayscale) for a new `.xbm` | **Built** on REDbridge's main, closed 2026-10-23; not in a release yet (0.10.0 is the latest). Not blocking: EDGEmat copies a game texture of the right kind to the target first |
 | [EDGEbuilder #1](https://github.com/Edgemodders/EDGEbuilder/issues/1) | Index the user's mod archives, so custom objects can be placed | Open. Planned as EDGEbuilder's phase B2c, its plan to be agreed |
 | [REDnode #12](https://github.com/Edgemodders/REDnode/issues/12) | Hot-load archives into the running game | Open, mostly shipped: REDnode 0.26.0 and later swap archives into the running game through RED Hot Tools (`archives.reload`, MCP `archives_reload`), and since 0.26.20 the clothing V wears shows the new version at once (unverified for a material change). A world object may keep the old look until the game loads it again |
+| [REDnode #23](https://github.com/Edgemodders/REDnode/issues/23) | Shared keys: a Keys window in REDnode's settings for the player's AI service keys (Anthropic, Gemini, OpenAI, ElevenLabs), kept where every EDGE tool can read them with REDnode closed (proposed: DPAPI files in `%APPDATA%Edgemodderskeys`), a small reader library, and in-game packages reading them only with a permission | Open, filed 2026-10-29. Then EDGEmat's MCP server reads the image keys itself, and Connect an Assistant stops putting them in Claude Code's settings |
 
 ## Log
+
+### 2026-10-29
+
+| What | Detail |
+|---|---|
+| **Shared keys: REDnode #23** | The owner's ask: one place for the player's AI service keys, set once, used by every tool. Today each tool keeps its own (REDagent in REDnode's secrets, EDGEmat and EDGEwave in VS Code's), and an MCP server run by Claude Code gets EDGEmat's key only as plain text in Claude Code's settings. Filed with the shape that would work |
 
 ### 2026-10-27
 
