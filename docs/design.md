@@ -379,7 +379,7 @@ Likely shape: one MCP call that returns the whole garment at once (`mat_item`, u
 | Piece | What it needs | State on 2026-10-15 |
 |---|---|---|
 | 1. What is being looked at | The running game names the object in view: its entity, mesh component, mesh and mesh appearance | Not built. REDnode reads and calls into the running game; a "looked-at object" query is a REDnode or EDGEbuilder request when the time comes |
-| 2. The change | Find the object's setup, pick the nearest preset in each layer's template (or a template with a better match), write the result | EDGEmat's core, M2 and M3. World props use the same multilayered setups as clothing |
+| 2. The change | Find the object's setup, pick the nearest preset in each layer's template (or a template with a better match), write the result | EDGEmat's core, M2 and M3. World props use the same multilayered setups as clothing. **REDnode 0.45.0 (E1, on REDnode's main 2026-10-29)** runs EDGEmat's MCP server (0.3.1, pinned) for in-game assistants: REDagent sees the tools as `edgemat__mat_*`, reads without asking, edits and new materials after the player's OK. No keys yet: `mat_generate` waits for [REDnode #23](https://github.com/Edgemodders/REDnode/issues/23) |
 | 3. Into the running game | The game loads `.archive` files at startup, so a changed file has to be reloaded live | Possible today: REDnode's `archives.reload` swaps a changed archive into the running game through RED Hot Tools ([Hot-loading archives](#hot-loading-archives)). What is on screen updates only when the game loads it again, except the clothing V wears |
 
 | Route | Notes |

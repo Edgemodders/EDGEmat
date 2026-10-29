@@ -48,6 +48,7 @@ Last updated 2026-10-29.
 
 | What | Detail |
 |---|---|
+| **REDnode E1: EDGEmat's tools in the game** | REDnode 0.45.0 (committed 2026-10-29, not yet a GitHub release) ships `@edgemodders/edgemat-mcp` 0.3.1, pinned, and runs it with the host's own Node for in-game assistants such as REDagent (`edgemat__mat_*`; reads without asking, `mat_edit`, `mat_apply`, `mat_generate`, `mat_from_image`, `mat_library` ask first). Desktop assistants keep EDGEmat through EDGEchat. No keys are passed: in-game `mat_generate` waits for #23. Notes for EDGEmat: a new server version (such as the Desk's `mat_desk`) reaches the game only when REDnode raises its pin; EDGEmat's server starts its own REDbridge beside REDnode's (memory not measured). #23 itself is still open, no reply yet |
 | **Shared keys: REDnode #23** | The owner's ask: one place for the player's AI service keys, set once, used by every tool. Today each tool keeps its own (REDagent in REDnode's secrets, EDGEmat and EDGEwave in VS Code's), and an MCP server run by Claude Code gets EDGEmat's key only as plain text in Claude Code's settings. Filed with the shape that would work |
 
 ### 2026-10-27
