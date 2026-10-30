@@ -87,7 +87,7 @@ const failed = (what: string, e: unknown) => {
 let bridge: Promise<BridgeClient> | undefined;
 const getBridge = () =>
   (bridge ??= kernel.bridge().then((b) => {
-    say(`REDbridge ${b.version ?? ""} from REDnode`);
+    say(b.version ? `REDbridge ${b.version}, from REDnode` : "REDbridge, from REDnode");
     return bridgeOver((method, params) => b.call(method, params));
   }));
 

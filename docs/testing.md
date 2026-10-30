@@ -28,7 +28,7 @@ Last updated 2026-10-26.
 | [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day. Since 2026-10-25 the mesh goes on the Desk: run [The Desk](#the-desk) first, then this test from step 3 |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Shared keys](#shared-keys) | By hand, F5, then Claude Code | After 0.3.1 | | Not run yet. Built 2026-10-30; the bundled store's round trip (set, read, check, remove) and `mat_generate`'s no-key answer over stdio pass against a scratch key folder, and REDnode's 30 checks of the library pass |
-| [Wardrobe Designer W0](#wardrobe-designer-w0) | By hand, in the game with REDnode and REDagent | W0 | | Not run yet. Built 2026-10-30; reading what V wears checked through REDnode's MCP tools, and EDGEmat's core over the adapter checked outside the game (V's Pants: 12 layers) |
+| [Wardrobe Designer W0](#wardrobe-designer-w0) | By hand, in the game with REDnode and REDagent | W0 | 2026-10-30 | **Passed** (owner, every step): 6 worn items read in 4.6 s (with the item index of 2,074 clothing items); V's Pants' 12 layers in 2.1 s over REDnode's REDbridge, the window over the inventory screen taking clicks; three plans in 3.0 to 6.2 s for $0.09 in all, with real presets of the right color (checked with `mat_colors`) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
@@ -388,6 +388,18 @@ Added 2026-10-30: the first build of Wardrobe Designer, a REDnode app in `apps/w
 | 4 | Click **How should it look?**, type `red leather`, press **Plan** | "Asking REDagent for a plan...", then the recipe in the log: the setup, the layers to change with their new colors, and notes, with the time and cost. The status says the plan is ready and not applied |
 | 5 | Plan again with `yellow denim`, then `yellow with black polka dots` | Denim: a new surface on the leather layers, in yellow. Polka dots: the notes say patterns are not supported yet |
 | 6 | Tell Claude it's done | Claude reads the app's log through REDnode and records the times and recipes |
+
+**Last result, 2026-10-30: passed** (the owner, every step; the log read from `red4ext\logs\rednode-mods.log`, since the game was closed by then).
+
+| Step | Result |
+|---|---|
+| 1 | Started before the permissions were allowed: "Allow Wardrobe Designer to use REDbridge in the Mod Manager first". Once allowed, REDnode restarted it and it read. The log said "REDbridge  from REDnode" with a blank where a version goes (REDnode's `kernel.bridge()` gives none); fixed in the next build |
+| 2 | 6 items, read in 4.6 s with the item index (2,074 clothing items): the PTFE helmet, the Blouie Blue infovisor, the chest holster, the netrunning suit, V's Pants, V's Sneakers. Feminine body |
+| 3 | V's Pants, look `_q001__start_w`: `l1_066_pwa_pants__rogue.mesh`, look default; its setup's 12 shown layers (black leather standard 60.5% first), in 2.1 s. `pants_stitches` is textured, not layered |
+| 4 | `red leather`: 6.2 s, $0.059. Layer 0 `1a5c5f_null` (red, #cf3030, distance 0.017 on that leather) with roughness "glossy to satin" (a real preset of it); layer 1 (the holed leather) "red" in words |
+| 5 | `yellow denim`: 4.4 s, $0.021. Layer 0 to `denim_clean_01_30` with `6c74fa_null` (light yellow on denim, #d5d53d); layer 4 (the small denim layer) the same. The holed leather (layer 1, 12.7%) stayed black leather. `yellow with black polka dots`: 3.0 s, $0.011. Layer 0 "yellow" in words; the notes say patterns are not supported yet |
+
+Findings for W1: REDagent reached EDGEmat's tools in the game (both preset names are real and right, and the context had only the black ones). Recipes mix preset names and words, which is what `mat_edit`'s word form (`layerFromWords`) takes, so W1 can apply them as they come. The brief should say that a material word ("denim") means every layer of the old material (the holed leather was left), and the recipe should name the surface whenever it uses a preset name, since preset names belong to one surface.
 
 ### Shared keys
 
