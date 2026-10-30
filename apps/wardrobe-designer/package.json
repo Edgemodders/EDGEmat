@@ -1,0 +1,12 @@
+{
+  "name": "wardrobe-designer",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Wardrobe Designer: a REDnode app for players that restyles what V wears (design, \"Wardrobe Designer\").",
+  "license": "MIT",
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

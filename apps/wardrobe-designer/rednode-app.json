@@ -1,0 +1,11 @@
+{
+  "id": "wardrobe-designer",
+  "name": "Wardrobe Designer",
+  "version": "0.0.1",
+  "author": "Edgemodders",
+  "description": "Restyle what V wears: pick a piece of clothing, say how it should look. This W0 build only reads what V wears, describes its materials and asks REDagent for a plan; it changes nothing.",
+  "main": "dist/mod.mjs",
+  "open": true,
+  "permissions": ["bridge", "agent"],
+  "requires": { "redbridge": ">=0.10" }
+}

@@ -30,3 +30,4 @@ export { errorText, generateImage, listModels, texturePrompt, ImageServiceError,
 export { imageAsPng, makeMaterial, materialSlug, type MadeBy, type MaterialResult, type MaterialTarget, type NewMaterial, type Shine } from "./material";
 export { applyMaterial, texturedMaterialJson, uvTestPattern, writeTexture, writeTexturedMaterial, MetalBase, TextureTemplates, type TexturedMaterial, type TextureKind } from "./apply";
 export { checkKey, envName, hasKey, keysDir, sharedKeys } from "./sharedKeys";
+export { bridgeOver, type BridgeCall } from "./kernelBridge";

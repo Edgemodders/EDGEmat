@@ -28,6 +28,7 @@ Last updated 2026-10-26.
 | [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day. Since 2026-10-25 the mesh goes on the Desk: run [The Desk](#the-desk) first, then this test from step 3 |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Shared keys](#shared-keys) | By hand, F5, then Claude Code | After 0.3.1 | | Not run yet. Built 2026-10-30; the bundled store's round trip (set, read, check, remove) and `mat_generate`'s no-key answer over stdio pass against a scratch key folder, and REDnode's 30 checks of the library pass |
+| [Wardrobe Designer W0](#wardrobe-designer-w0) | By hand, in the game with REDnode and REDagent | W0 | | Not run yet. Built 2026-10-30; reading what V wears checked through REDnode's MCP tools, and EDGEmat's core over the adapter checked outside the game (V's Pants: 12 layers) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
@@ -374,6 +375,19 @@ Added 2026-10-21, when REDcode marked `.mlsetup` files in its Project view for E
 | 4 | With REDcode 0.10.3 or later: REDcode's Project view, right-click the `.mlsetup` | **Open Material in EDGEmat...**; it opens the setup editor |
 | 5 | Right-click a `.mltemplate` under `source\archive` (in the Explorer) › **Open Material in EDGEmat...** | Its surface page, when the surface is in the library; else "not in the library" |
 | 6 | Right-click a `.mesh` or `.xbm` | No EDGEmat entry |
+
+### Wardrobe Designer W0
+
+Added 2026-10-30: the first build of Wardrobe Designer, a REDnode app in `apps/wardrobe-designer` (design, "Wardrobe Designer"). It reads and plans, and changes nothing. It checks W0's open rows: its window over the inventory screen, EDGEmat's core on REDnode's REDbridge, and REDagent's plan. Needs REDnode 0.45.0 or later, REDbridge, and REDagent with its key. Build it first: `npm run wardrobe:build` in the EDGEmat folder (Claude does this).
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | In the game, **F10** › the **REDNODE** tab at the lower left › the gear at the right of the Theme row. With **Developer mode** on, under **Development folders**, paste `E:\Modding\Cyberpunk 2077\EDGEmat\apps` and press **Enter** | **Wardrobe Designer** starts. The Mod Manager asks for its two permissions, REDbridge (`bridge`) and REDagent (`agent`): allow both |
+| 2 | Look at its window, at the left of the screen | The status line says to pick a piece of clothing. The slot buttons name what V wears, such as **Legs: V's Pants**; empty slots say "none" and can't be pressed. The log says "V (feminine body) wears N item(s)" and lists them |
+| 3 | Open the inventory (**I**), with V in view. Press **F10** until the window takes input, and press the **Legs** button | The window shows over the inventory screen and takes the click. Within about 10 s the log lists the pants' mesh and its layers (black leather first), and **Plan** turns on |
+| 4 | Click **How should it look?**, type `red leather`, press **Plan** | "Asking REDagent for a plan...", then the recipe in the log: the setup, the layers to change with their new colors, and notes, with the time and cost. The status says the plan is ready and not applied |
+| 5 | Plan again with `yellow denim`, then `yellow with black polka dots` | Denim: a new surface on the leather layers, in yellow. Polka dots: the notes say patterns are not supported yet |
+| 6 | Tell Claude it's done | Claude reads the app's log through REDnode and records the times and recipes |
 
 ### Shared keys
 
