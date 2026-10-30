@@ -204,6 +204,39 @@ The list of models comes from the key's own account (Gemini's `models` list, the
 
 **MCP.** `mat_from_image` makes a material from an image file. `mat_generate` asks a service. The MCP server cannot read VS Code's secret storage, so it reads the services' usual environment variables (`GEMINI_API_KEY`, `OPENAI_API_KEY`), which a plugin such as EDGEchat can set from its own settings.
 
+### Compose a material: a planner chooses or makes the layers (proposed)
+
+**Proposed 2026-10-29 with the owner.** A modder or a player describes a whole material in words, such as "a shiny but scratched aluminium surface" or "a dull blue cotton cloth". An AI planner turns the words into a multilayered setup: it chooses game surfaces, colors and microblends, and makes a new texture only when the game has nothing that fits.
+
+**Game surfaces first.** They look right under the game's lighting, which a generated image rarely does. Both examples need no image service (checked in the library on 2026-10-29):
+
+| Words | Layers |
+|---|---|
+| "A shiny but scratched aluminium surface" | 1. `aluminium polished 01 300` over the whole material. 2. `aluminium rough 01 300`, showing only through a scratch microblend (the game has 8, such as `scratches_random_01`) |
+| "A dull blue cotton cloth" | 1. `cotton twill clean 01 30` (750 colors): the closest blue, a rough finish |
+
+**Wear without painted masks.** A layer shows where its mask plus its microblend's value is over 1 ([behavior spec](design/behavior.html), section 5, measured on the slim-fits). So a scratch, wear or dirt layer can take one flat value for its whole mask and let the microblend place it. That works on any mesh, with no mask painted for its UVs. **Unverified** in the game on a new setup.
+
+**Making what the game lacks:**
+
+| Need | How |
+|---|---|
+| A print or pattern (polka dots, camo, a logo) | A black-and-white pattern image as a layer's mask, so the pattern sits on the garment's own surface. Or a generated textured `.mi` over the whole material, as `mat_generate` makes today |
+| A grain no surface has (an unusual weave) | A new surface from a generated image's bumps and shine: a custom `.mltemplate` (M6) |
+
+**The pieces:**
+
+| Piece | What it does |
+|---|---|
+| `mat_compose` (name not settled) | Takes a recipe: layers, each with a surface, a color in words, finish, tiling, microblend and coverage ("all", "light wear", "scratches"). Writes a new `.mlsetup` and `.mlmask`, puts them on mesh materials, and returns the description and color map. Checked as `mat_edit` is |
+| The planner | An assistant reads the words, searches `mat_templates`, `mat_microblends` and `mat_colors`, writes the recipe, and calls `mat_generate` when nothing fits |
+| Its brief | In EDGEmat's MCP server instructions (it has none yet) and the tools' descriptions, as EDGEchat's rule says (EDGEchat design, "Where knowledge lives", 2026-10-23): search game surfaces first; wear is a flat mask and a microblend; generate only when nothing fits; preview before saving. Worked recipes go in a guide page that EDGEchat copies into a skill at build, and REDagent can copy too |
+| In the UI | A **Describe a material** box on the New Material page. EDGEmat makes one Claude call with the user's own key (from the shared store, [REDnode #23](https://github.com/Edgemodders/REDnode/issues/23)) and only when pressed, sending the brief, the matching surfaces and microblends, and the words. The recipe opens as layers in the setup editor, to adjust before saving |
+
+**Who plans:** EDGEchat (Claude Code) outside the game; REDagent in the game, with EDGEmat's tools since REDnode 0.45.0 (E1); the Describe box for modders without either.
+
+**Checks first:** a new `.mlmask` written through REDbridge from images, and a new setup on a new mesh shown in the game. **Phase:** M4, beside game materials on a new mesh; custom surfaces stay M6.
+
 ### Game materials on a new mesh
 
 EDGEfab's other route: pick a material from the game and put it on a new mesh.
@@ -255,6 +288,41 @@ Filed on 2026-10-16, each to its repo as a `request`:
 | REDnode | [#12](https://github.com/Edgemodders/REDnode/issues/12): hot-load archives (through RED Hot Tools, or REDnode's own); refresh what uses a reloaded resource |
 | EDGEbuilder | [#1](https://github.com/Edgemodders/EDGEbuilder/issues/1): index the user's mod archives, so custom objects can be placed |
 | A new repo | [EDGEfab](https://github.com/Edgemodders/EDGEfab), created by the owner and scaffolded on 2026-10-16 |
+
+## The Wardrobe app: restyle what V wears, in the game (proposed)
+
+**Proposed 2026-10-29 by the owner, to come sooner rather than later.** A REDnode app for players, not modders. "Wardrobe" is a working name. It lives in this repo and installs on its own as a REDnode app.
+
+**The idea.** The player opens the inventory screen, with V in view, and the app's window beside it. They pick a piece of clothing V is wearing, type how it should look ("make it red leather", "yellow denim", "yellow with black polka dots") and press a button. An AI plans the materials, EDGEmat makes them, and the result is packed and swapped into the running game. The player sees the jacket change in the inventory screen.
+
+**How it works.** Each step reuses something already built:
+
+| Step | How | State on 2026-10-29 |
+|---|---|---|
+| 1. The window | A REDnode overlay app, left on in menus (no `hideWith: menu`) | REDnode draws over the main menu and gameplay. **Unverified:** over the inventory screen, and taking clicks there |
+| 2. What V wears | The game API: the item in each clothing slot (head, face, outer and inner torso, legs, feet, outfit), as TweakDB ids, with their in-game names | The API is there (`GetItemInSlot`, `GetItemInEquipSlot`). **Unverified:** the slot list, and how to read V's body (feminine or masculine) |
+| 3. Its look on V | EDGEmat's core: the item to its appearance, meshes and mesh look for V's body, then each setup's layers in plain words | Built: `mat_find`, the worn-items index, `describeSetup` |
+| 4. The plan | The [Compose](#compose-a-material-a-planner-chooses-or-makes-the-layers-proposed) planner, on the layers V's item already has (a restyle, not a new setup). `agent.ask` to REDagent: the player's words, with the look's materials in `context`. REDagent searches surfaces, colors and microblends with EDGEmat's read tools, which it has in the game since REDnode 0.45.0 (E1) and which run without asking, and answers with a recipe as JSON. A package's question is read-only by REDnode's rule, which fits: REDagent plans, the app writes | Built in REDnode and REDagent. **Unverified:** that REDagent gets EDGEmat's server instructions (the planner's brief) through E1. Paid from the player's Anthropic key, within REDagent's daily limit per package ($0.25 unless the player changes it) |
+| 5. The materials | The app's Node mod bundles EDGEmat's core (MIT) and applies the recipe, with `mat_edit`'s checks: each layer gets a surface and one of its color presets. Saved as a new setup, with the item's meshes copied into a work project in the app's data folder and pointed at it | Built: `mat_edit` with `save: "new"` |
+| 6. Patterns | Polka dots, stripes or camo are not a layer color. A pattern is a mask: a black-and-white image (generated from words, or drawn) becomes a new layer's mask, so the dots sit on the garment's own surface. The alternative is a generated textured material over the whole material, as `mat_generate` makes today | Not built. Needs a new `.mlmask` written through REDbridge (**unverified**) and the player's image key ([REDnode #23](https://github.com/Edgemodders/REDnode/issues/23)). Shares this work with [Compose a material](#compose-a-material-a-planner-chooses-or-makes-the-layers-proposed) |
+| 7. Pack | REDbridge's `project.pack`, through REDnode's `kernel.bridge()`: REDnode's own REDbridge, so no second one runs | Built (REDbridge 0.6.1, REDnode's `bridge` permission) |
+| 8. Into the game | `archives.reload`: REDswap adds the archive to `archive/pc/mod`, and REDnode refreshes what V wears and the inventory's preview of V | Built (REDswap 1.0.0, game 2.5). **Unverified:** that a material change shows at once on the preview |
+| 9. Undo | **Restore** puts the game's look back: an archive with the item's original meshes is swapped in over the restyled one | To design |
+
+**Limits of a first version:**
+
+| Limit | Why | Later |
+|---|---|---|
+| Everyone wearing that look changes, NPCs too | The mesh copy replaces the game's mesh at its own path | A new appearance for V only, through ArchiveXL |
+| Colors are the surface's presets | A layer's color must be one of its surface's presets | A free color needs a custom `.mltemplate` (M6) |
+| The archive stays after a restart, outside EDGEdeck | It is a mod archive in `archive/pc/mod` | Hand it to EDGEdeck as a mod, or keep it in REDnode's development folders. To agree with EDGEdeck |
+| Needs REDnode 0.45.0, REDbridge, REDagent with its key, and game 2.5 | Every step above | |
+
+**For assistants.** EDGEmat's rule is every feature in the UI and the MCP server. Steps 3 to 5 are `mat_find`, `mat_describe` and `mat_edit`, which EDGEchat users have already. A tool that applies a whole recipe to an item, such as `mat_restyle` (name not settled), would let EDGEchat do the same with one call.
+
+**Where it lives.** A REDnode package in this repo (`apps/wardrobe/`, proposed), built with EDGEmat's core bundled. It ships as its own download on EDGEmat's GitHub releases, and later on Nexus Mods, the way EDGEwave ships `edgewave-voice`. Its manifest asks for `bridge`, `archives` and `agent`, and later the image key once #23 has shipped.
+
+**Phases** (proposed, see [Phases](#phases)): **W0 Checks** (the unverified rows above, about a day), **W1 Restyle by words** (surfaces and colors on the layers V's item already has; no image service), **W2 Patterns** (a mask from an image; after #23 and the `.mlmask` check).
 
 ## The material library
 
@@ -328,6 +396,7 @@ Phases are M0 to M7. **Unverified:** that no other EDGE repo uses M. Each ends w
 | **M1 Library** | The extension and MCP skeletons, the EDGEmat activity bar container, the bridge client, the material library built from the game and cached, the library view with thumbnails | A full library builds from the game; its counts match the game's |
 | **M2 Read** | The surface page. The `.mlsetup` editor, read-only: layers in plain words, swatches, each layer's mask. Finding an item's materials. Open File for a setup anywhere on disk, as JSON or inside a mod archive. MCP `mat_find`, `mat_describe`, `mat_templates`, `mat_colors` | A game jacket shows the same layers WolvenKit shows, and Claude describes it correctly. A setup from a mod archive outside any project opens and reads the same |
 | **M3 Edit**, released as the 0.3.0 preview | Change template, color, tiling, levels, microblend; undo and redo; save into a project (REDcode's or WolvenKit's, the same layout), including Save to Project for a file opened from anywhere; a new setup at a new path with a mesh copy pointed at it (the no-MTO route); "save as new look" if time allows. MCP `mat_edit`. **Generate's first slice**, from M4: the New Material page (words through Nano Banana, Nano Banana Pro or GPT Image with the modder's key, or their own photo), takes shown tiled, made seamless, bumps and shine derived, the `.xbm` and a textured `.mi` written into the project, and put on one material of a mesh found in Find. MCP `mat_generate`, `mat_from_image` and a minimal `mat_apply`. First, the two checks in [Open questions](#open-questions): a new `.xbm` from a PNG, and a hand-made textured `.mi` on a garment part in the game | A jacket recolored in EDGEmat, and another recolored by asking Claude, each saved into a REDcode project, packed and deployed by REDcode, show correctly in the game. A setup opened from outside the project, saved into it and packed, loads in the game. A material generated from words goes on part of a garment or an object and shows in the game, through the UI and by asking Claude |
+| **W0 to W2 Wardrobe** (proposed 2026-10-29, owner: sooner rather than later; where it goes in the order is open) | [The Wardrobe app](#the-wardrobe-app-restyle-what-v-wears-in-the-game-proposed), a REDnode app for players. W0 Checks: the window over the inventory screen; V's worn items and body; EDGEmat's core in a REDnode Node mod with REDnode's REDbridge; a recolor swapped in shows on the inventory's preview; REDagent answers a recipe. W1 Restyle by words: surfaces and colors on the item's own layers, packed and swapped in, with Restore. W2 Patterns: a layer mask from an image | A player wearing the Comfy rocker slim-fits types "red leather" in the inventory screen and sees them change there, with no restart and no modding tool open; Restore puts them back |
 | **M4 Make** | Materials for new meshes, what EDGEfab needs ([Custom assets](#custom-assets-from-a-model-to-the-game)): **materials from a textured model** (glTF PBR textures to `.xbm` and a `.mi`); the rest of **[Generate a material](#generate-a-material)** (its first slice is in M3: what M4 adds is prompt presets if tests show the need, the decal kind, and Generate from the Looks editor); **[game materials on a new mesh](#game-materials-on-a-new-mesh)**; the **Looks** editor for a mesh's appearances. EDGEmat's API for EDGEfab. MCP `mat_from_image`, `mat_generate`, `mat_apply`. First, an in-game test of a tiled texture on a garment ([open questions](#open-questions)) | A GLB model from Blender gets a generated material and a game material, in two looks, and shows in the game, once through the UI and once by asking Claude. A non-artist makes "brown leather" from words alone |
 | **M5 Preview** | The bake: a layered material to PBR maps, with layers blended through their masks, templates and microblends, updated live. EDGEmat's API `renderMaterials` for REDcode's viewer ([REDcode #6](https://github.com/Edgemodders/REDcode/issues/6)); the same viewer in EDGEmat's editor. MCP `mat_render` | Side by side with an in-game screenshot, the preview reads the same, in REDcode's viewer and in EDGEmat's |
 | **M6 Beyond mlsetup** | `.mi` parameters on game items; custom colors (a custom `.mltemplate`); layered materials with several layers on a new mesh (masks for its UVs). See [Custom assets](#custom-assets-from-a-model-to-the-game) | A non-multilayered game item retextured, a free color used, and a new mesh with a two-layer material, all shown in the game |
