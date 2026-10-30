@@ -29,3 +29,4 @@ export { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, seamSco
 export { errorText, generateImage, listModels, texturePrompt, ImageServiceError, Services, type CallOptions, type DetailSize, type GeneratedImage, type ImageModel, type Quality, type ServiceId, type ServiceInfo } from "./imageServices";
 export { imageAsPng, makeMaterial, materialSlug, type MadeBy, type MaterialResult, type MaterialTarget, type NewMaterial, type Shine } from "./material";
 export { applyMaterial, texturedMaterialJson, uvTestPattern, writeTexture, writeTexturedMaterial, MetalBase, TextureTemplates, type TexturedMaterial, type TextureKind } from "./apply";
+export { checkKey, envName, hasKey, keysDir, sharedKeys } from "./sharedKeys";

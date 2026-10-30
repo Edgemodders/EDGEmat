@@ -12,7 +12,7 @@ claude mcp add --scope user edgemat -- cmd /c npx -y @edgemodders/edgemat-mcp
 
 On Windows, Claude Code runs `npx` through `cmd /c`. Other clients: the command is `npx`, the arguments `-y @edgemodders/edgemat-mcp`.
 
-To make materials from words (`mat_generate`), give it your own image service key: add `-e GEMINI_API_KEY=<key>` or `-e OPENAI_API_KEY=<key>` before `--`.
+To make materials from words (`mat_generate`), it uses your own image service key from the EDGE tools' shared key store on your PC (`%APPDATA%\Edgemodders\keys`, encrypted for your Windows account): set it once with the EDGEmat extension's **Set Image Service Key...**, or with any EDGE tool that asks for it. Or add `-e GEMINI_API_KEY=<key>` or `-e OPENAI_API_KEY=<key>` before `--`, which wins over the store.
 
 ## What it needs
 
@@ -28,7 +28,7 @@ An option or variable you pass wins over VS Code's settings; an empty one counts
 |---|---|
 | `EDGEMAT_GAME_PATH` | The Cyberpunk 2077 folder |
 | `REDBRIDGE_EXE` | REDbridge |
-| `GEMINI_API_KEY`, `OPENAI_API_KEY` | `mat_generate` only |
+| `GEMINI_API_KEY`, `OPENAI_API_KEY` | `mat_generate` only; else the shared key store |
 
 The material library is built from your own game the first time, and kept in `%LOCALAPPDATA%\EDGEmat` (`--cache` or `EDGEMAT_CACHE` to move it), shared with the extension.
 

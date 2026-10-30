@@ -18,7 +18,7 @@ import { z } from "zod";
 import {
   addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
-  applyMaterial, generateImage, imageAsPng, listModels, makeMaterial, materialSlug, texturePrompt, Services,
+  applyMaterial, generateImage, hasKey, imageAsPng, listModels, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
@@ -443,13 +443,13 @@ server.registerTool(
   {
     description:
       "Makes a new material from words through an AI image service, as EDGEmat's New Material page does: the image is made seamless, bumps and shine are derived, and it is written into a WolvenKit project " +
-      "as textures and a textured .mi (metal_base), and put on the target mesh materials. Spends the user's credits with their own key, from the environment: GEMINI_API_KEY (service gemini) or OPENAI_API_KEY (service openai). " +
+      "as textures and a textured .mi (metal_base), and put on the target mesh materials. Spends the user's credits with their own key, from the EDGE tools' shared key store (set once in EDGEmat's Set Image Service Key... or any EDGE tool), or the environment: GEMINI_API_KEY (service gemini) or OPENAI_API_KEY (service openai). " +
       "words: the material, such as 'worn brown leather with fine creases'; EDGEmat adds a prefix asking for a seamless texture in flat light with no text. " +
       "imageOnly true makes only the image and returns its file, to look at before using it with mat_from_image. A generated material replaces a whole material: on a garment it covers every part that material paints.",
     inputSchema: {
       words: z.string(),
       detail: z.enum(["fine", "medium", "coarse"]).default("medium"),
-      service: z.enum(["gemini", "openai"]).optional().describe("Default: the first with a key in the environment"),
+      service: z.enum(["gemini", "openai"]).optional().describe("Default: the first with a key set"),
       model: z.string().optional().describe("Default: the newest image model the key can use"),
       quality: z.enum(["low", "medium", "high"]).default("medium").describe("OpenAI only"),
       prompt: z.string().optional().describe("The whole prompt, instead of the prefix plus words"),
@@ -460,10 +460,11 @@ server.registerTool(
   },
   async ({ words, detail, service, model, quality, prompt, imageOnly, project, name, repeat, bumps, shine, metal, targets }) => {
     try {
-      const s: ServiceId | undefined = service ?? (env(Services.gemini.env) ? "gemini" : env(Services.openai.env) ? "openai" : undefined);
-      if (!s) return failure(new Error("No image service key: set GEMINI_API_KEY or OPENAI_API_KEY in the MCP server's environment (for Claude Code: claude mcp add ... -e GEMINI_API_KEY=...)."));
-      const key = env(Services[s].env);
-      if (!key) return failure(new Error(`No ${Services[s].name} key: set ${Services[s].env} in the MCP server's environment.`));
+      const s: ServiceId | undefined = service ?? (hasKey("gemini") ? "gemini" : hasKey("openai") ? "openai" : undefined);
+      const howToSet = "Set one in VS Code with EDGEmat's command Set Image Service Key... (it goes in the EDGE tools' shared key store), or set GEMINI_API_KEY or OPENAI_API_KEY in the MCP server's environment.";
+      if (!s) return failure(new Error(`No image service key. ${howToSet}`));
+      const key = await sharedKeys.getKey(s, { tool: "EDGEmat MCP" });
+      if (!key) return failure(new Error(`No ${Services[s].name} key, or one made by another Windows user. ${howToSet}`));
       const p = imageOnly ? undefined : projectFor(project);
       const chosen = model ?? (await listModels(s, { key, timeoutMs: 30_000 }))[0]?.id;
       if (!chosen) return failure(new Error(`${Services[s].name} lists no image models for this key.`));

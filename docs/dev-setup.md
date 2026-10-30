@@ -79,10 +79,10 @@ Register the MCP server with Claude Code (no options needed on a PC with REDcode
 claude mcp add --scope user edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
 ```
 
-For `mat_generate`, the server reads the image service's key from its environment (it cannot read VS Code's secret storage). Add `-e` with your own key, for one or both services; remove and add again to change it (`claude mcp remove --scope user edgemat`). `mat_from_image` and `mat_apply` need no key.
+For `mat_generate`, the server reads the image service's key from the EDGE tools' shared key store (REDnode #23): set it once with EDGEmat's **Set Image Service Key...**, or from PowerShell as REDnode's [Shared keys](https://edgemodders.github.io/REDnode/keys.html) page shows. A `-e GEMINI_API_KEY=...` or `-e OPENAI_API_KEY=...` on the registration still wins when given. `mat_from_image` and `mat_apply` need no key.
 
 ```powershell
-claude mcp add --scope user edgemat -e GEMINI_API_KEY=<your key> -e OPENAI_API_KEY=<your key> -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
+claude mcp add --scope user edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
 ```
 
 ### Releasing

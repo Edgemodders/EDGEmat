@@ -27,6 +27,7 @@ Last updated 2026-10-26.
 | [Which item: In the game](#which-item-in-the-game) | By hand, F5, then in the game with CET | After 0.3.1 | | Not run yet. Built 2026-10-26; the smoke test checks the lookup on the slim-fits, and `mat_find` over stdio returns `worn_by` |
 | [Open Mesh in EDGEmat](#open-mesh-in-edgemat) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-24 | **Partly run by the owner: steps 1 to 3 pass; step 4 failed** (the edit vanished from view after a tab switch, and Save to Project pointed the citizen jeans' meshes, not the project's). Both fixed the same day. Since 2026-10-25 the mesh goes on the Desk: run [The Desk](#the-desk) first, then this test from step 3 |
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
+| [Shared keys](#shared-keys) | By hand, F5, then Claude Code | After 0.3.1 | | Not run yet. Built 2026-10-30; the bundled store's round trip (set, read, check, remove) and `mat_generate`'s no-key answer over stdio pass against a scratch key folder, and REDnode's 30 checks of the library pass |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
@@ -374,6 +375,20 @@ Added 2026-10-21, when REDcode marked `.mlsetup` files in its Project view for E
 | 5 | Right-click a `.mltemplate` under `source\archive` (in the Explorer) › **Open Material in EDGEmat...** | Its surface page, when the surface is in the library; else "not in the library" |
 | 6 | Right-click a `.mesh` or `.xbm` | No EDGEmat entry |
 
+### Shared keys
+
+Added 2026-10-30: the image service keys move from VS Code's secret storage to the EDGE tools' shared key store ([REDnode #23](https://github.com/Edgemodders/REDnode/issues/23), K1), so a key set once is used by every EDGE tool, and the MCP server reads it itself. The store is `%APPDATA%\Edgemodders\keys`, one file per service, encrypted for your Windows account. In the development host (F5), then a normal terminal with Claude Code.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Before starting F5, in File Explorer open `%APPDATA%\Edgemodders\keys` (paste it in the address bar). Then start F5 | If you had set a Gemini or OpenAI key in EDGEmat 0.3, a notification at the bottom right: "your Google Gemini key is now in the EDGE tools' shared key store". `gemini.txt` (or `openai.txt`) is now in the folder: one line of letters and digits, not your key. With no key set before, no notification |
+| 2 | Library view title bar › **New Material** (the sparkle). Type `red brick`, press **Generate** | It makes a take without asking for a key (when step 1 moved one). With none set, it asks once in a password box that says the key goes in the shared key store |
+| 3 | Command palette (`Ctrl+Shift+P`) › **EDGEmat: Set Image Service Key...** › **OpenAI** › type `abc` | Under the box: "OpenAI keys start with sk-". Press Escape: nothing saved |
+| 4 | In a terminal: `claude mcp list`, then `claude mcp get edgemat` | No `GEMINI_API_KEY` or `OPENAI_API_KEY` in EDGEmat's entry, unless you added one yourself or it comes from EDGEchat's own key field |
+| 5 | A new Claude Code session: "Using EDGEmat, make just the image of a red brick material, don't apply it" | `mat_generate` with `imageOnly` returns an image file, using the key from the store. If EDGEchat has its own Gemini key field filled in, that one is used instead |
+| 6 | Command palette › **EDGEmat: Clear Image Service Key...** › the service from step 1 | A warning first: every EDGE tool that uses it asks again. **Clear It**: the file is gone from the folder; **Generate** on the New Material page asks for the key again |
+| 7 | Library view › **...** › **Connect an Assistant (MCP)...** › **Connect Claude Code** | No question about keys; "EDGEmat is connected to Claude Code" |
+
 ### Connect an assistant
 
 Added for 0.3.1, when the MCP server came into the extension. In a normal VS Code with EDGEmat installed from the Marketplace:
@@ -382,7 +397,7 @@ Added for 0.3.1, when the MCP server came into the extension. In a normal VS Cod
 |---|---|---|
 | 1 | Check `%LOCALAPPDATA%\EDGEmat\mcp\` | `edgemat-mcp.cjs` is there, made when EDGEmat started |
 | 2 | Library view › **...** (top right of the view) › **Connect an Assistant (MCP)...** | Four choices; the hint at the top says whether agents inside this editor already see EDGEmat |
-| 3 | **Connect Claude Code**; with a key set, answer the key question | "EDGEmat is connected to Claude Code" |
+| 3 | **Connect Claude Code**; in 0.3.1, with a key set, answer the key question (from the release after 0.3.1 there is none: the server reads the shared key store) | "EDGEmat is connected to Claude Code" |
 | 4 | In a terminal: `claude mcp list` | `edgemat` points at the file from step 1, connected |
 | 5 | A new Claude Code session: "Which EDGEmat tools do you have?", then "Describe the Comfy rocker slim-fits' materials" | The 10 `mat_` tools; `mat_find` and `mat_describe` answer |
 | 6 | VS Code 1.101 or later: open the editor's own agent chat and its tools list | EDGEmat and its tools are listed |
@@ -419,7 +434,7 @@ Run 2026-10-16 (M1 tools) and 2026-10-17 (`mat_colors`, `mat_describe`, `mat_fin
 | Started as a Claude Code plugin with its options left empty (`EDGEMAT_GAME_PATH`, `REDBRIDGE_EXE` and `EDGEMAT_CACHE` set to "") | `mat_find` item `sunny ammo` | Empty counts as unset: it falls back to the VS Code settings and walks the item (2 looks). Run 2026-10-17 over stdio |
 | "Make the jacket's biggest layer dark red and its next one glossy standard leather; just show me" | `mat_edit` with preview | Run 2026-10-20 over stdio on the Arasaka jacket's setup: layer 0 dark red (`c2162c_69039f`, distance 0.032), layer 2 leather standard clean, glossy to shiny, its color and bumps reset to the surface's defaults (said in notes); nothing written. "leather" alone is refused with the 7 surfaces it fits |
 | "... and save it into this project" | `mat_edit` with project | Run 2026-10-20 over stdio into a scratch project: the new setup `..._mcp_project.mlsetup` and the three meshes that use it (`t2_078_ma`, `_mb`, `_mm`), with the materials pointed at it |
-| "Make me a brown leather material" (no key in the server's environment) | `mat_generate` | Refused in words: set `GEMINI_API_KEY` or `OPENAI_API_KEY` in the MCP server's environment, with the `claude mcp add ... -e` form. Run 2026-10-20 over stdio |
+| "Make me a brown leather material" (no key set) | `mat_generate` | Refused in words: set a key with EDGEmat's **Set Image Service Key...** (the shared key store), or `GEMINI_API_KEY` or `OPENAI_API_KEY` in the server's environment. Run 2026-10-20 over stdio; again 2026-10-30 with an empty shared key store (a scratch folder), no network call |
 | "Make a material from this image and put it on the Comfy rocker slim-fits, both bodies" | `mat_from_image` with targets | Run 2026-10-20 over stdio into a scratch project, repeat 6: the plain material and textures in `edgemat\materials\rust_plate\`, both bodies' meshes with `leather` on `rust_plate_x6_..._n01.mi` (repeat in the texture, the garment's normal map kept), the image and its record in `source\raw` |
 | "Put that material on the Light Azure look too" | `mat_apply` | Run 2026-10-20 over stdio: the masculine mesh's `flames_blue_pink` on `rust_plate.mi`; an unknown material name is refused with the mesh's names |
 | "Describe the sneakers' red_yellow_graphic setup" | `mat_describe` with the game path | 20 layers, 19 shown, the converse mask set and the songbird one as another choice, a color map file, each layer in plain words with its share. Run 2026-10-17 over stdio: layer 7 rubber bumper damaged, black, 11.3% |

@@ -199,10 +199,10 @@ The list of models comes from the key's own account (Gemini's `models` list, the
 |---|---|
 | A dialog over the page: prompt, options, Generate | The same, on a **New Material** page, opened from the Library's title bar and later from the Looks editor |
 | Each press adds a take, newest first, each with **Add** | The same, as image tiles. A selected take shows tiled 3 × 3, so seams show before Add |
-| The key in VS Code's secret storage, asked for the first time it is needed; Set and Clear key commands | The same, one key per service (`edgemat.gemini.apiKey`, `edgemat.openai.apiKey`) |
+| The key in VS Code's secret storage, asked for the first time it is needed; Set and Clear key commands | Asked for the first time it is needed, with Set and Clear key commands, one key per service. Since 2026-10-30 kept in the EDGE tools' shared key store ([REDnode #23](https://github.com/Edgemodders/REDnode/issues/23), K1: `%APPDATA%Edgemodderskeysgemini.txt` and `openai.txt`, encrypted for the Windows user), so a key set in any EDGE tool is used by all; a key EDGEmat 0.3 kept in VS Code's secret storage (`edgemat.gemini.apiKey`, `edgemat.openai.apiKey`) is moved there once. The library is REDnode's `tools/keys/keys.mjs`, copied unchanged into `src/core` |
 | "Spends your credits" in the dialog | The same |
 
-**MCP.** `mat_from_image` makes a material from an image file. `mat_generate` asks a service. The MCP server cannot read VS Code's secret storage, so it reads the services' usual environment variables (`GEMINI_API_KEY`, `OPENAI_API_KEY`), which a plugin such as EDGEchat can set from its own settings.
+**MCP.** `mat_from_image` makes a material from an image file. `mat_generate` asks a service. The MCP server reads the key from the shared key store itself, so no client needs it in its settings, and REDnode's in-game copy of the server (E1) gets it too. The services' usual environment variables (`GEMINI_API_KEY`, `OPENAI_API_KEY`) still win when set, as EDGEchat's own key options set them. Until 2026-10-30 the server read only the variables, and **Connect an Assistant** offered to put the key in Claude Code's settings in plain text.
 
 ### Compose a material: a planner chooses or makes the layers (proposed)
 
