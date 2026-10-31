@@ -20,6 +20,7 @@ Last updated 2026-10-26.
 | [New Material](#new-material) | By hand, F5, with an image service key | M3 | 2026-10-20 | Pass |
 | [Generate round trip](#generate-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V |
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
+| [Paint check](#paint-check) | From `npm run paint-check`, with a Tripo key; then in the game | W2 | | Not run yet: waits for a Tripo key. The dry run (no Tripo) passed 2026-10-31 |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
 | [The Desk](#the-desk) | By hand, F5, with REDcode | After 0.3.1 | 2026-10-26 | **Partly run by the owner after the rework, 2026-10-26: steps 1 to 3, 5 to 11, 13, 14, 16, 17 and the first part of 21 pass.** Still to run: 3b (new: Add to Desk in Find), 4, 12, 15, 18 to 20, the rest of 21, and 22 to 24. Earlier runs: 2026-10-25, two failures. Step 12 said "0 files written" in a project that already had its own slim-fits (pointed at other materials), and the edit stayed on the Desk with only a log line; Add and Clear would have deleted it. After the add, the game's mesh in Game Assets showed the Desk's edit in 3D. Both fixed 2026-10-26. A second run the same day: a second pair of slim-fits from Game Assets showed the first pair's edit (the Desk kept one edit per setup for all entries), and a project file kept reading "the project's copy" after the project was closed. Reworked 2026-10-26 into entries with their own edits, variations and a **+** per entry, with new steps |
@@ -242,6 +243,25 @@ The open question "A tiled texture on a game garment" (design, "Open questions")
 | 3 | In the game, Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Pants_01_basic_01", 1)` and `Game.AddToInventory("Items.Pants_01_basic_02", 1)`. Equip the first; look in photo mode from the front, the back and each side | The colored squares on the pants. Note which numbers show on the front of the thighs, the back, the waist; whether the numbers read normally, mirrored or upside down; whether squares stay square or stretch; where the seams cut squares |
 | 4 | Equip the second | Unknown, which is what the test finds out: the squares four times smaller and repeated (LayerTile tiles the texture), the same as the first (it does nothing here), or something else. Also whether the folds from the normal map repeat too |
 | 5 | Screenshots of both pants, front and back | Shared with the session; kept outside the repo |
+
+### Paint check
+
+Added 2026-10-31 (owner's ask): can Tripo paint a garment from words, on the garment's own shape? Tripo's Texture task takes a model and a prompt and paints it in 3D, following seams and shape, where Generate tiles a flat picture. If Tripo keeps the garment's vertices and UVs, its paint goes straight onto the game's mesh and W2's patterns need no mask and no Generate. The design's open question "Paint a garment by words".
+
+`npm run paint-check` exports an item's garment from your game as `.glb`, keeps the parts with layered materials (positions, normals and UVs only: no bones, shape keys or garment data), sends them to Tripo with your words, and compares what comes back with what went out. If the vertices and UVs are kept, it writes Tripo's color and roughness as a textured material with the garment's own normal map, puts it on the garment and packs the project. The Tripo key comes from the shared key store (service `tripo`) and is never printed. One run is 10 credits (US$0.10). `--task <id>` reruns on a finished task without paying again.
+
+Defaults: V's Pants (`Items.Q001_Pants`) on the feminine body (`l1_066_pwa_pants__rogue.mesh`, look `default`: its layered material on 2 chunks is painted, `pants_stitches` is kept), words "yellow with black polka dots". `--item`, `--body` and `--words` change them.
+
+| # | Do | Expected |
+|---|---|---|
+| 1 | Make a Tripo API key: Tripo's developer console, **API Keys**. The account needs at least 20 credits | A key |
+| 2 | Save it in PowerShell (it asks for the key and does not show it): `New-Item -ItemType Directory -Force "$env:APPDATA\Edgemodders\keys" \| Out-Null; Read-Host 'Key' -AsSecureString \| ConvertFrom-SecureString \| Set-Content "$env:APPDATA\Edgemodders\keys\tripo.txt"` | `%APPDATA%\Edgemodders\keys\tripo.txt` exists |
+| 3 | In the repo: `git pull`, `npm run build`, then `npm run paint-check -- "<your Projects folder>\EDGEmat_Paint"` (or ask Claude to run it) | "sent: 2 parts, 9701 vertices"; Tripo's task going from queued to success; its preview image saved in `source\raw\edgemat\tripo`. Then **KEPT** or **NOT KEPT**. KEPT: one line for the painted material and "packed ... EDGEmat_Paint.archive". NOT KEPT: Tripo's paint needs a bake onto the game's UVs, and the check ends here |
+| 4 | Only after KEPT. With the game closed, copy `packed\archive\pc\mod\EDGEmat_Paint.archive` into `<game>\archive\pc\mod` | The archive is in the game |
+| 5 | In the game, a feminine V: Cyber Engine Tweaks' console `Game.AddToInventory("Items.Q001_Pants", 1)`, equip them, photo mode front, back and each side | The pants painted as Tripo's preview shows, with their own folds. Note: dots that follow the legs or break at the seams; anything upside down (rerun with `--task <id> --flip`); stretched or smeared spots; how the shine looks. If the pants look unchanged, `WardrobeDesigner.archive` may hold the same mesh (from a Restore): move it out of `archive\pc\mod` for the test (which archive wins is unverified) |
+| 6 | Screenshots, front and back | Shared with the session; kept outside the repo |
+
+**Dry run, 2026-10-31** (`--dry`: steps up to the upload, no key): V's Pants, feminine. 2 parts, 9,701 vertices, 15,490 triangles, 0.42 × 1.03 × 0.26 m. The UVs use 55% of the square, 2.8% of that twice (mirrored or stacked: those spots get one paint). The matching, run on the upload file itself: 100% found, 100% same UV. The masculine jeans (`l1_062_pma_pants__jeans.mesh`), measured the same way: 1.2% shared on the jeans; the stitching's UVs repeat about 40 times along a strip, so a stitching material is never painted.
 
 ### Find view
 

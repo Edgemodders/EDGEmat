@@ -567,7 +567,8 @@
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "smoke": "node scripts/smoke.mjs",
-    "tiling-check": "node scripts/tiling-check.mjs"
+    "tiling-check": "node scripts/tiling-check.mjs",
+    "paint-check": "node scripts/paint-check.mjs"
   },
   "dependencies": {
     "pngjs": "7.0.0",

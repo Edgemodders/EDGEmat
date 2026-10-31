@@ -19,6 +19,7 @@ Last updated 2026-10-29.
 
 | To-do | Why | Since |
 |---|---|---|
+| Make a Tripo API key (with 20 credits or more) and save it in the shared key store as `tripo` (the PowerShell line in the test) | The [paint check](testing.html#paint-check), steps 1 and 2 | 2026-10-31 |
 | Update to 0.3.1 from the Marketplace in a normal VS Code (not the development host), check the Library, Find and New Material open, then run Connect an Assistant | The release's install test and the new one ([Tests](testing.html#install-of-the-release), [Connect an assistant](testing.html#connect-an-assistant)) | 2026-10-21 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: the Nexus page has the owner's nine. Screenshots 1 to 5 and 8 show a Windows user name in VS Code's Output panel (`C:\Users\...`); replace them on Nexus if that matters. Still open: the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)). The tutorials' in-game shots are in (2026-10-20); their UI shots still wait | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
@@ -47,7 +48,11 @@ Last updated 2026-10-29.
 
 ## Log
 
-### 2026-10-30
+### 2026-10-31
+
+| What | Detail |
+|---|---|
+| **Tripo: researched, and the paint check built** | The owner asked whether Wardrobe Designer can edit a garment with Tripo (unpack it, send it with the player's words, put the result back). Tripo's v3 API changes no existing model's shape from words; its Texture task paints an uploaded model from words in 3D (US$0.10). So, the owner: the paint check first; if it works, W2's patterns come from Tripo, not Generate. Built `npm run paint-check`: the garment as `.glb` through WolvenKit's export (its first use in EDGEmat), only the layered parts sent, Tripo's result compared vertex by vertex and UV by UV, and if kept, its color and roughness put on the garment with its own normal map, packed. The Tripo key from the shared store (`tripo`). Dry run on V's Pants, feminine: 2 parts, 9,701 vertices, UVs 2.8% shared, the matching 100% on the file itself. Not run with Tripo yet: it needs the owner's key. Design, open questions, "Paint a garment by words"; test "Paint check" |
 
 | What | Detail |
 |---|---|
