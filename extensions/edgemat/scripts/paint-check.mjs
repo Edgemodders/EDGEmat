@@ -526,10 +526,12 @@ try {
         layers.push({ mi, prims, img: png });
       }
       if (layers.length <= 1) return layers[0]?.img;
-      const { width: W, height: H } = layers[0].img;
-      if (layers.some((l) => l.img.width !== W || l.img.height !== H)) {
-        console.log(`  ${label}: Tripo's maps differ in size; the first is used`);
-        return layers[0].img;
+      // Tripo sizes each part's maps to the part: the smaller ones are scaled to the largest.
+      const W = Math.max(...layers.map((l) => l.img.width)), H = Math.max(...layers.map((l) => l.img.height));
+      for (const l of layers) {
+        if (l.img.width === W && l.img.height === H) continue;
+        console.log(`  ${label}: material ${l.mi}'s ${l.img.width} px map scaled to ${W} px`);
+        l.img = core.resize(l.img, W, H, false);
       }
       let owner = new Int16Array(W * H).fill(-1);
       layers.forEach((l, li) => {
