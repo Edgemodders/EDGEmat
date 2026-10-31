@@ -51,8 +51,9 @@ const game = await core.resolveGame(settings, {}, true);
 const choice = core.resolveBridge(settings);
 if (!game) fail("no game folder found");
 if (!choice) fail("REDbridge.exe not found");
-const key = dry ? undefined : getKey("tripo", { tool: "EDGEmat" });
-if (!key && !dry) {
+const needKey = !dry && !opt("result");
+const key = needKey ? getKey("tripo", { tool: "EDGEmat" }) : undefined;
+if (!key && needKey) {
   console.error("No Tripo key. Make one in Tripo's developer console (API Keys), then in PowerShell:");
   console.error(`  New-Item -ItemType Directory -Force "$env:APPDATA\\Edgemodders\\keys" | Out-Null; Read-Host 'Key' -AsSecureString | ConvertFrom-SecureString | Set-Content "$env:APPDATA\\Edgemodders\\keys\\tripo.txt"`);
   process.exit(1);
@@ -425,7 +426,7 @@ try {
   console.log(`  its UVs use ${(100 * shared.used).toFixed(1)}% of the square; ${(100 * shared.shared).toFixed(1)}% of that twice or more (mirrored or stacked: those spots get one paint)`);
 
   // 3. Tripo's Texture task.
-  if (dry) {
+  if (dry && !opt("result")) {
     const self = compare(orig, primitives(readGlb(fs.readFileSync(uploadFile))), (p) => p, Math.hypot(...ob.size) * 1e-4);
     console.log(`  the matching, on the file itself: ${(100 * self.found).toFixed(1)}% found, ${(100 * self.same).toFixed(1)}% same UV (expect 100 and 100)`);
     console.log(`Dry run: ${uploadFile} is what would go to Tripo.`);
@@ -433,7 +434,11 @@ try {
     throw "stop";
   }
   let task;
-  if (reuse) {
+  const local = opt("result");
+  if (local) {
+    // A result on disk instead of Tripo's, to test the steps after it.
+    task = { task_id: path.basename(local, ".glb"), output: {} };
+  } else if (reuse) {
     console.log(`Tripo: reusing ${reuse}`);
     task = await waitFor(reuse);
   } else {
@@ -442,10 +447,12 @@ try {
     const { task_id } = await tripo("POST", "/models/texture", { input: token, model: TextureModel, texture_prompt: { text: words }, pbr: true, texture_quality: quality });
     task = await waitFor(task_id);
   }
-  fs.writeFileSync(path.join(work, `${task.task_id}.json`), JSON.stringify(task, null, 2));
-  console.log(`  done: ${task.credits_consumed ?? "?"} credits`);
+  if (!local) {
+    fs.writeFileSync(path.join(work, `${task.task_id}.json`), JSON.stringify(task, null, 2));
+    console.log(`  done: ${task.credits_consumed ?? "?"} credits`);
+  }
   const out = task.output ?? {};
-  const resultBytes = await download(out.model_url ?? out.pbr_model ?? out.model, path.join(work, `${task.task_id}.glb`));
+  const resultBytes = local ? fs.readFileSync(local) : await download(out.model_url ?? out.pbr_model ?? out.model, path.join(work, `${task.task_id}.glb`));
   if (out.rendered_image_url) {
     const preview = path.join(work, `${task.task_id}_preview${path.extname(new URL(out.rendered_image_url).pathname) || ".png"}`);
     await download(out.rendered_image_url, preview);
@@ -483,26 +490,99 @@ try {
     const folder = `edgemat\\materials\\${slug}`;
     const flipV = flip !== best.flipped > best.same;
     const written = [];
+
+    /** Calls fn for each texel (x, y) whose centre a part's triangles cover in the UV square, at W × H. */
+    const rasterize = (p, W, H, fn) => {
+      for (let t = 0; t < p.idx.length; t += 3) {
+        const [a, b, c] = [0, 1, 2].map((q) => [p.uv[p.idx[t + q] * 2] * W, p.uv[p.idx[t + q] * 2 + 1] * H]);
+        const area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+        if (Math.abs(area) < 1e-12) continue;
+        const xs = [a[0], b[0], c[0]], ys = [a[1], b[1], c[1]];
+        for (let y = Math.max(0, Math.floor(Math.min(...ys))); y <= Math.min(H - 1, Math.ceil(Math.max(...ys))); y++) {
+          for (let x = Math.max(0, Math.floor(Math.min(...xs))); x <= Math.min(W - 1, Math.ceil(Math.max(...xs))); x++) {
+            const px = x + 0.5, py = y + 0.5;
+            const w0 = ((b[0] - px) * (c[1] - py) - (c[0] - px) * (b[1] - py)) / area;
+            const w1 = ((c[0] - px) * (a[1] - py) - (a[0] - px) * (c[1] - py)) / area;
+            if (w0 >= 0 && w1 >= 0 && w0 + w1 <= 1) fn(x, y);
+          }
+        }
+      }
+    };
+
+    /**
+     * One map from the materials of several parts: each texel from the material whose part covers it,
+     * grown 8 texels past the islands' edges so filtering and mip levels do not show a seam. Each
+     * material's own map is saved in the work folder as well.
+     */
+    const composite = async (groups, pick, label) => {
+      const layers = [];
+      for (const [mi, prims] of groups) {
+        const pbr = result.json.materials?.[mi]?.pbrMetallicRoughness ?? {};
+        const ref = pick(pbr);
+        const img = ref ? imageOf(result, ref.index) : undefined;
+        if (!img) continue;
+        const png = core.readPng(await core.imageAsPng(bridge, img.bytes, img.ext));
+        fs.writeFileSync(path.join(work, `${label}_tripo_material${mi}.png`), core.writePng(png));
+        layers.push({ mi, prims, img: png });
+      }
+      if (layers.length <= 1) return layers[0]?.img;
+      const { width: W, height: H } = layers[0].img;
+      if (layers.some((l) => l.img.width !== W || l.img.height !== H)) {
+        console.log(`  ${label}: Tripo's maps differ in size; the first is used`);
+        return layers[0].img;
+      }
+      let owner = new Int16Array(W * H).fill(-1);
+      layers.forEach((l, li) => {
+        for (const p of l.prims) rasterize(p, W, H, (x, y) => (owner[y * W + x] = li));
+      });
+      for (let pass = 0; pass < 8; pass++) {
+        const next = owner.slice();
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const i = y * W + x;
+            if (owner[i] >= 0) continue;
+            if (x > 0 && owner[i - 1] >= 0) next[i] = owner[i - 1];
+            else if (x < W - 1 && owner[i + 1] >= 0) next[i] = owner[i + 1];
+            else if (y > 0 && owner[i - W] >= 0) next[i] = owner[i - W];
+            else if (y < H - 1 && owner[i + W] >= 0) next[i] = owner[i + W];
+          }
+        }
+        owner = next;
+      }
+      const data = new Uint8Array(W * H * 4);
+      const counts = layers.map(() => 0);
+      for (let i = 0; i < W * H; i++) {
+        const li = Math.max(0, owner[i]);
+        if (owner[i] >= 0) counts[li]++;
+        data.set(layers[li].img.data.subarray(i * 4, i * 4 + 4), i * 4);
+      }
+      console.log(`  ${label}: ${counts.map((c, li) => `material ${layers[li].mi} ${((100 * c) / (W * H)).toFixed(1)}%`).join(", ")} of the texture`);
+      return { width: W, height: H, data };
+    };
     for (const m of paint) {
       // The result's material on the part that sits on this material's chunks.
       const parts = res.map((r, i) => ({ r, i })).filter(({ i }) => paintNames.has(m.name) && orig[best.owner[i]] && chunkMaterials[chunkOf(orig[best.owner[i]].mesh)] === m.name);
-      const mat = result.json.materials?.[parts[0]?.r.material ?? 0];
-      const pbr = mat?.pbrMetallicRoughness ?? {};
-      const color = pbr.baseColorTexture ? imageOf(result, pbr.baseColorTexture.index) : undefined;
-      if (!color) throw new Error(`The result has no color texture for ${m.name}`);
-      const prep = async (img) => {
-        const png = core.readPng(await core.imageAsPng(bridge, img.bytes, img.ext));
-        return flipV ? flipImage(png) : png;
-      };
-      const stem = `${slug}_${core.materialSlug(m.name)}`;
+      // Tripo gives each part its own material and textures; one game material over several parts
+      // gets one texture, each texel from the part that covers it in the UV square.
+      const groups = new Map();
+      for (const { r } of parts) {
+        const k = r.material ?? 0;
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(r);
+      }
+      // The folder names the words; the files only the material, so paths stay under Windows' 260 characters.
+      const stem = core.materialSlug(m.name);
       const d01 = `${folder}\\${stem}_d01.xbm`, r01 = `${folder}\\${stem}_r01.xbm`;
-      const colorImg = await prep(color);
+      if (groups.size > 1) console.log(`  ${m.name}: ${groups.size} Tripo materials on its ${parts.length} parts, put together by UV`);
+      const color = await composite(groups, (pbr) => pbr.baseColorTexture, `${stem}_color`);
+      if (!color) throw new Error(`The result has no color texture for ${m.name}`);
+      const colorImg = flipV ? flipImage(color) : color;
       written.push(...(await core.writeTexture(bridge, archive, d01, core.writePng(colorImg), "color")));
       fs.writeFileSync(path.join(work, `${stem}_color.png`), core.writePng(colorImg));
       let rough;
-      const mr = pbr.metallicRoughnessTexture ? imageOf(result, pbr.metallicRoughnessTexture.index) : undefined;
+      const mr = await composite(groups, (pbr) => pbr.metallicRoughnessTexture, `${stem}_mr`);
       if (mr) {
-        written.push(...(await core.writeTexture(bridge, archive, r01, core.writePng(roughFrom(await prep(mr))), "rough")));
+        written.push(...(await core.writeTexture(bridge, archive, r01, core.writePng(roughFrom(flipV ? flipImage(mr) : mr)), "rough")));
         rough = r01;
       }
       const folds = m.globalNormal ?? m.normal;
