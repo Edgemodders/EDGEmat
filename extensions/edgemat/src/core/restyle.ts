@@ -74,7 +74,7 @@ export const RestyleBrief = [
   "Change only what the words ask for. Words that name a new material ('denim', 'metal') change every layer that shows the old material the words replace (all the leather layers, holed or not); leave dirt, wear and small trim layers as they are unless the words name them.",
   "Prefer the game's own surfaces: if you have EDGEmat's tools (edgemat__mat_templates or mat_templates for surfaces, mat_colors for a surface's colors and finishes, mat_microblends), use them to pick real ones.",
   "Colors: plain words ('dark red', 'pale yellow') or #rrggbb always work; EDGEmat picks the closest preset of the layer's surface. A preset name only works on the surface you looked it up on, the new one when the surface changes.",
-  "Each layer change may set: surface (a template's game path or name), color, roughness and metal (a finish in words, such as 'glossy' or 'rough'), bumps, microblend (a game path, a name, or 'plain'), tile and opacity (numbers).",
+  "Each layer change may set: surface (a template's game path is safest; a material word such as 'denim' or 'leather' picks the game's plain version of it), color, roughness and metal (a finish in words, such as 'glossy' or 'rough'), bumps, microblend (a game path, a name, or 'plain'), tile and opacity (numbers).",
   "Prints and patterns (dots, stripes, camo, a logo) are not supported yet: give the base color the words ask for and say so in notes.",
 ].join("\n");
 

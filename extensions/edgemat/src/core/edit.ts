@@ -149,15 +149,53 @@ export interface LayerWords {
   microblendNormalStrength?: number;
 }
 
-function presetByWords(list: PresetInfo[], words: string, what: string, title: string): string {
+/** A finish in words, as the roughness it means (the middles of surface.ts's words). */
+const Finish: [RegExp, number][] = [
+  [/^(glossy|glossier|gloss|polished|mirror|chrome|wet|lacquered)$/, 0.07],
+  [/^(shiny|shinier|shine|sheen|smooth)$/, 0.25],
+  [/^(satin|silky|semi|semi-gloss)$/, 0.45],
+  [/^(matte|matt|matter|dull|flat)$/, 0.65],
+  [/^(rough|rougher|coarse)$/, 0.88],
+];
+
+/** The roughness a preset gives where its map is mid grey, from its raw "scale s, bias b". */
+function roughnessOf(p: PresetInfo): number | undefined {
+  const m = p.raw.match(/scale (-?[\d.]+), bias (-?[\d.]+)/);
+  return m ? Number(m[2]) + Number(m[1]) / 2 : undefined;
+}
+
+function presetByWords(list: PresetInfo[], words: string, what: string, title: string, notes?: string[], index?: number): string {
   const w = words.trim().toLowerCase();
   const exact = list.find((p) => p.name.toLowerCase() === w);
   if (exact) return exact.name;
   const fits = list.filter((p) => p.plain.toLowerCase().includes(w));
   const pick = fits.find((p) => p.isDefault) ?? fits[0];
   if (pick) return pick.name;
+  // A finish the surface has no preset named for ("glossy" where the shiniest is "mostly shiny"): the closest.
+  const want = what === PresetWhat.roughLevelsOut ? w.split(/[\s,]+/).map((x) => Finish.find(([re]) => re.test(x))?.[1]).find((v) => v !== undefined) : undefined;
+  if (want !== undefined) {
+    const near = list
+      .map((p) => ({ p, v: roughnessOf(p) }))
+      .filter((x): x is { p: PresetInfo; v: number } => x.v !== undefined && !/inverted|as the texture/.test(x.p.plain))
+      .sort((a, b) => Math.abs(a.v - want) - Math.abs(b.v - want))[0];
+    if (near) {
+      notes?.push(`Layer ${index}: ${title} has no ${what} like "${words}"; used the closest, ${near.p.plain} (${near.p.name}).`);
+      return near.p.name;
+    }
+  }
   const offered = [...new Set(list.map((p) => p.plain))];
   throw new Error(`${title} has no ${what} preset like "${words}". It offers: ${offered.slice(0, 20).join("; ")}.`);
+}
+
+/**
+ * A surface for words that fit several: the game's plain version of that material ("denim" to
+ * denim_clean_01_30), not a custom, patterned or worn one. Undefined when none stands out.
+ */
+function plainSurface(candidates: Template[]): Template | undefined {
+  const plain = candidates.filter((t) => !/\\custom\\/i.test(t.path) && /_clean_/i.test(t.name));
+  // The _01_30 version first: the one the game's clothing uses (denim_clean_01_30, not denim_clean_02).
+  const rank = (t: Template) => (/_clean_01_30$/i.test(t.name) ? 0 : 1);
+  return plain.length ? [...plain].sort((a, b) => rank(a) - rank(b) || a.name.length - b.name.length || a.name.localeCompare(b.name))[0] : undefined;
 }
 
 /** A layer change in words, turned into the game's names: what EDGEmat's MCP tool mat_edit takes. */
@@ -169,11 +207,13 @@ export function patchFromWords(setup: Setup, index: number, w: LayerWords, lib: 
   let t = templateOf(lib, layer.material);
   if (w.surface !== undefined) {
     const found = findSurface(lib, w.surface);
-    if (!found.template) {
-      const c = found.candidates;
+    const c = found.candidates;
+    const plain = found.template ? undefined : plainSurface(c);
+    if (!found.template && !plain) {
       throw new Error(c.length ? `"${w.surface}" fits ${c.length} surfaces, such as ${c.slice(0, 8).map((x) => x.path).join(", ")}. Name one.` : `No surface fits "${w.surface}". Try mat_templates.`);
     }
-    t = found.template;
+    if (plain) notes.push(`Layer ${index}: "${w.surface}" fits ${c.length} surfaces; used the plain one, ${plain.title} (${plain.path}).`);
+    t = (found.template ?? plain)!;
     patch.material = t.path;
   }
   const words: [keyof LayerWords, PresetKind][] = [["roughness", "roughLevelsOut"], ["roughnessContrast", "roughLevelsIn"], ["metal", "metalLevelsOut"], ["metalContrast", "metalLevelsIn"], ["bumps", "normalStrength"]];
@@ -195,7 +235,7 @@ export function patchFromWords(setup: Setup, index: number, w: LayerWords, lib: 
     const lists: Record<string, PresetInfo[]> = { roughLevelsOut: info.roughness, roughLevelsIn: info.roughnessContrast, metalLevelsOut: info.metal, metalLevelsIn: info.metalContrast, normalStrength: info.bumps };
     for (const [k, kind] of words) {
       const v = w[k];
-      if (typeof v === "string") patch[kind] = presetByWords(lists[kind], v, PresetWhat[kind], t.title);
+      if (typeof v === "string") patch[kind] = presetByWords(lists[kind], v, PresetWhat[kind], t.title, notes, index);
     }
   }
   if (w.microblend !== undefined) {

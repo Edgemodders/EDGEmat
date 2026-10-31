@@ -124,8 +124,12 @@ export function parseColor(text: string): Rgb | undefined {
   let chroma = 1;
   let bright = false;
   for (const w of words.filter((x) => x !== base)) {
-    if (w === "very") continue;
+    if (w === "very" || w === "medium" || w === "mid" || w === "true" || w === "pure") continue;
     else if (w === "dark") L *= words.includes("very") ? 0.55 : 0.75;
+    else if (w === "deep") { L *= 0.8; chroma *= 1.1; }
+    else if (w === "soft" || w === "dusty" || w === "faded" || w === "washed") { L += (1 - L) * 0.2; chroma *= 0.7; }
+    else if (w === "rich" || w === "saturated" || w === "hot") chroma *= 1.2;
+    else if (w === "neon") { chroma *= 1.3; bright = true; }
     else if (w === "light") L += (1 - L) * 0.4;
     else if (w === "pale") { L += (1 - L) * 0.6; chroma *= 0.6; }
     else if (w === "vivid") chroma *= 1.3;

@@ -162,14 +162,21 @@ let body: ItemLook["body"] = "any";
 let current: Look | undefined;
 let pickedSlot: number | undefined;
 
-async function readWorn(): Promise<void> {
+/** Thrown while the game is still putting V together after a load: worth a try again. */
+class NotReady extends Error {}
+
+/**
+ * Reads what V wears and labels the slot buttons. `soon`: just after a load, when the game may not
+ * have dressed V yet, so a NotReady is passed on for readWornSoon to try again instead of shown.
+ */
+async function readWorn(soon = false): Promise<void> {
   try {
     const t = Date.now();
     status.set({ text: "Reading what V wears...", tone: "dim" });
     const player = await api.GetPlayer(game.instance);
-    if (!player) throw new Error("V is not in the world.");
+    if (!player) throw new NotReady("V is not in the world.");
     const data = await api.EquipmentSystem.GetData(player);
-    if (!data) throw new Error("The game gave no equipment data for V.");
+    if (!data) throw new NotReady("The game gave no equipment data for V.");
     const gender = String(await player.GetResolvedGenderName());
     body = gender === "Female" ? "feminine" : gender === "Male" ? "masculine" : "any";
     const index = await getItems();
@@ -186,7 +193,21 @@ async function readWorn(): Promise<void> {
     for (const w of worn) if (w.hash) say(`  ${w.label}: ${w.item ? `${w.item.name ?? "(no name)"}, ${w.item.id}${restyled[w.item.id] ? `, restyled: ${restyled[w.item.id].words.join(", then ")}` : ""}` : `${w.hash}, not in EDGEmat's item index`}`);
     status.set({ text: "Pick a piece of clothing, then say how it should look. * marks one you restyled.", tone: "normal" });
   } catch (e) {
+    if (soon && e instanceof NotReady) throw e;
     failed("Reading what V wears", e);
+  }
+}
+
+/** After a load: reads what V wears once the game has dressed V, trying every 2 s for up to 30 s. */
+async function readWornSoon(): Promise<void> {
+  for (let tries = 1; ; tries++) {
+    try {
+      return await readWorn(true);
+    } catch (e) {
+      if (tries >= 15) return failed("Reading what V wears", e);
+      status.set({ text: "Waiting for the game to finish loading V...", tone: "dim" });
+      await new Promise((r) => setTimeout(r, 2000));
+    }
   }
 }
 
@@ -429,13 +450,13 @@ let started = false;
 game.onState((s) => {
   if (s.world && !started) {
     started = true;
-    void readWorn();
+    void readWornSoon();
   }
   if (!s.world) started = false;
 });
 void game.state().then((s) => {
   if (s.world && !started) {
     started = true;
-    void readWorn();
+    void readWornSoon();
   }
 });
