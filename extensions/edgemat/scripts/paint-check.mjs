@@ -510,9 +510,10 @@ try {
     };
 
     /**
-     * One map from the materials of several parts: each texel from the material whose part covers it,
-     * grown 8 texels past the islands' edges so filtering and mip levels do not show a seam. Each
-     * material's own map is saved in the work folder as well.
+     * One map from the materials of a game material's parts: each texel from the material whose part
+     * covers it in the UV square, then the islands' edge colors pushed 16 texels out into the empty
+     * texture (Tripo leaves it black), so the game's smaller mip levels show no dark or glossy seams.
+     * Each material's own map is saved in the work folder as well.
      */
     const composite = async (groups, pick, label) => {
       const layers = [];
@@ -525,7 +526,7 @@ try {
         fs.writeFileSync(path.join(work, `${label}_tripo_material${mi}.png`), core.writePng(png));
         layers.push({ mi, prims, img: png });
       }
-      if (layers.length <= 1) return layers[0]?.img;
+      if (!layers.length) return undefined;
       // Tripo sizes each part's maps to the part: the smaller ones are scaled to the largest.
       const W = Math.max(...layers.map((l) => l.img.width)), H = Math.max(...layers.map((l) => l.img.height));
       for (const l of layers) {
@@ -533,32 +534,51 @@ try {
         console.log(`  ${label}: material ${l.mi}'s ${l.img.width} px map scaled to ${W} px`);
         l.img = core.resize(l.img, W, H, false);
       }
-      let owner = new Int16Array(W * H).fill(-1);
+      const owner = new Int16Array(W * H).fill(-1);
       layers.forEach((l, li) => {
         for (const p of l.prims) rasterize(p, W, H, (x, y) => (owner[y * W + x] = li));
       });
-      for (let pass = 0; pass < 8; pass++) {
-        const next = owner.slice();
+      let data = new Uint8Array(W * H * 4);
+      let filled = new Uint8Array(W * H);
+      const counts = layers.map(() => 0);
+      for (let i = 0; i < W * H; i++) {
+        if (owner[i] < 0) continue;
+        counts[owner[i]]++;
+        filled[i] = 1;
+        data.set(layers[owner[i]].img.data.subarray(i * 4, i * 4 + 4), i * 4);
+      }
+      // Push the edges out: an empty texel takes the average of its filled neighbours, 16 times.
+      const edge = [-1, 1, -W, W];
+      for (let pass = 0; pass < 16; pass++) {
+        const nextData = data.slice(), nextFilled = filled.slice();
         for (let y = 0; y < H; y++) {
           for (let x = 0; x < W; x++) {
             const i = y * W + x;
-            if (owner[i] >= 0) continue;
-            if (x > 0 && owner[i - 1] >= 0) next[i] = owner[i - 1];
-            else if (x < W - 1 && owner[i + 1] >= 0) next[i] = owner[i + 1];
-            else if (y > 0 && owner[i - W] >= 0) next[i] = owner[i - W];
-            else if (y < H - 1 && owner[i + W] >= 0) next[i] = owner[i + W];
+            if (filled[i]) continue;
+            let n = 0, r = 0, g = 0, b = 0;
+            for (const d of edge) {
+              const j = i + d;
+              if ((d === -1 && x === 0) || (d === 1 && x === W - 1) || j < 0 || j >= W * H || !filled[j]) continue;
+              r += data[j * 4];
+              g += data[j * 4 + 1];
+              b += data[j * 4 + 2];
+              n++;
+            }
+            if (!n) continue;
+            nextData.set([Math.round(r / n), Math.round(g / n), Math.round(b / n), 255], i * 4);
+            nextFilled[i] = 1;
           }
         }
-        owner = next;
+        data = nextData;
+        filled = nextFilled;
       }
-      const data = new Uint8Array(W * H * 4);
-      const counts = layers.map(() => 0);
-      for (let i = 0; i < W * H; i++) {
-        const li = Math.max(0, owner[i]);
-        if (owner[i] >= 0) counts[li]++;
-        data.set(layers[li].img.data.subarray(i * 4, i * 4 + 4), i * 4);
-      }
-      console.log(`  ${label}: ${counts.map((c, li) => `material ${layers[li].mi} ${((100 * c) / (W * H)).toFixed(1)}%`).join(", ")} of the texture`);
+      // Whatever is still empty is far from every island: the islands' average color.
+      const avg = [0, 0, 0];
+      let n = 0;
+      for (let i = 0; i < W * H; i++) if (owner[i] >= 0) for (let c = 0; c < 3; c++) avg[c] += data[i * 4 + c];
+      for (let i = 0; i < W * H; i++) if (owner[i] >= 0) n++;
+      for (let i = 0; i < W * H; i++) if (!filled[i]) data.set([...avg.map((v) => Math.round(v / Math.max(1, n))), 255], i * 4);
+      console.log(`  ${label}: ${counts.map((c, li) => `material ${layers[li].mi} ${((100 * c) / (W * H)).toFixed(1)}%`).join(", ")} of the texture; edges padded`);
       return { width: W, height: H, data };
     };
     for (const m of paint) {
