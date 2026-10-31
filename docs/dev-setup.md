@@ -107,6 +107,21 @@ npm run release:notes                  # the GitHub notes of the extension's ver
 npm run release:notes -- 0.3.0 --nexus # plain lines for Nexus's changelog field
 ```
 
+### Releasing Wardrobe Designer
+
+Wardrobe Designer (`apps/wardrobe-designer`, a REDnode app) has its own release, apart from EDGEmat's, the way REDnode's app packs have theirs: its version in `rednode-app.json` (and `package.json`, the same), its changelog [`apps/wardrobe-designer/changelog.md`](https://github.com/Edgemodders/EDGEmat/blob/main/apps/wardrobe-designer/changelog.md), its tags `wardrobe-designer-v<version>`, its workflow `.github/workflows/release-wardrobe.yml` (**Release Wardrobe Designer**) and its Nexus page, [mod 36636](https://www.nexusmods.com/cyberpunk2077/mods/36636) (`apps/wardrobe-designer/nexus/`). The zip, built by `tools/release/wardrobe-zip.mjs`, is laid out like the game folder (`red4ext/plugins/REDnode/apps/wardrobe-designer/`, with the app off until the player switches it on, `LICENSE.txt` and `THIRD-PARTY-NOTICES.txt` from `tools/release/notices.mjs --wardrobe`), so Vortex installs it; Mod Manager Download is on. Its GitHub release is not marked as the repo's latest, which stays EDGEmat's.
+
+1. Make sure every Wardrobe Designer test since its last release passed ([Tests](testing.html)). Untested or failed means no release.
+2. Raise `version` in `apps/wardrobe-designer/rednode-app.json` and `package.json`. In its changelog, rename **Unreleased** to `## <version> (<date>)` and start a new empty **Unreleased** above it. Check: `node tools/release/notes.mjs --wardrobe`.
+3. Update `apps/wardrobe-designer/nexus/description.bbcode` for what changed (`npm run wardrobe:nexus:status` first: if the live description changed on Nexus, `npm run wardrobe:nexus:pull` and merge). Check it with `node tools/check-bbcode.mjs apps/wardrobe-designer/nexus/description.bbcode`. Commit and push to `main`.
+4. **Actions** › **Release Wardrobe Designer** › **Run workflow** › branch `main`, tick **Make a release** and **Update Nexus Mods** (or `npm run wardrobe:release -- -f nexus=true`). Without the ticks, it builds the draft zip as the run's artifact `Wardrobe-Designer-build`.
+5. Install the release's zip in the game (Vortex, or extracted into the game folder) and check the app starts, as the test "Wardrobe Designer install" says. Then `npm run wardrobe:nexus:pull` and commit, until [REDnode #30](https://github.com/Edgemodders/REDnode/issues/30) lets the Nexus tool know this page's own tags.
+
+```powershell
+npm run wardrobe:zip            # builds the app and dist/Wardrobe-Designer-<version>-draft.zip
+npm run wardrobe:nexus:status   # the page, its files, and whether its description matches the repo
+```
+
 ## 5. Docs site and brand images
 
 The site at https://edgemodders.github.io/EDGEmat/ is built by `.github/workflows/pages.yml` on every push to `main`. **Settings > Pages > Source** must be **GitHub Actions**.
@@ -123,3 +138,4 @@ The site at https://edgemodders.github.io/EDGEmat/ is built by `.github/workflow
 | `docs/assets/brand/icon.png` | Site icon, and the extension's Marketplace icon later |
 | `tools/brand/activity.svg` | The activity bar icon. Drawn by hand, not rendered: 24 × 24, stroke 2, `currentColor`, the family's HUD brackets as in REDcode and EDGEdeck. M1 copies it to `extensions/edgemat/images/activity.svg` |
 | `docs/assets/brand/badges/*.svg` | README badges. Edit the list in `tools/brand/badges.py` |
+| `docs/assets/wardrobe-designer/*.png` | Wardrobe Designer's banner, social, Nexus (with room for the EDGEmodders header, added by hand) and icon images, drawn by `.\tools\brand\render-wardrobe.ps1` from `tools/brand/wardrobe.html` (the style of REDnode's app packs) |

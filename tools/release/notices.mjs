@@ -5,6 +5,8 @@
 //   node tools/release/notices.mjs               dist/THIRD-PARTY-NOTICES.txt: the extension and the MCP server
 //   node tools/release/notices.mjs --extension   extensions/edgemat/THIRD-PARTY-NOTICES.txt: the extension's bundle
 //                                                only (vscode:prepublish runs it, after the build)
+//   node tools/release/notices.mjs --wardrobe    apps/wardrobe-designer/dist/THIRD-PARTY-NOTICES.txt: Wardrobe
+//                                                Designer's bundle (tools/release/wardrobe-zip.mjs runs it)
 //
 // Build first: it reads dist/*.map. Generated, never committed.
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -13,9 +15,13 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const extension = process.argv.includes("--extension");
-const maps = [join(root, "extensions/edgemat/dist/extension.js.map"), join(root, "extensions/edgemat/dist/webview/setup.js.map"), join(root, "extensions/edgemat/dist/webview/surface.js.map"), join(root, "extensions/edgemat/dist/mcp/edgemat-mcp.cjs.map")];
-if (!extension) maps.push(join(root, "packages/edgemat-mcp/dist/server.cjs.map"));
-const out = extension ? join(root, "extensions/edgemat/THIRD-PARTY-NOTICES.txt") : join(root, "dist/THIRD-PARTY-NOTICES.txt");
+// --wardrobe: Wardrobe Designer's bundle only, into apps/wardrobe-designer/dist (tools/release/wardrobe-zip.mjs runs it).
+const wardrobe = process.argv.includes("--wardrobe");
+const maps = wardrobe
+  ? [join(root, "apps/wardrobe-designer/dist/mod.mjs.map")]
+  : [join(root, "extensions/edgemat/dist/extension.js.map"), join(root, "extensions/edgemat/dist/webview/setup.js.map"), join(root, "extensions/edgemat/dist/webview/surface.js.map"), join(root, "extensions/edgemat/dist/mcp/edgemat-mcp.cjs.map")];
+if (!extension && !wardrobe) maps.push(join(root, "packages/edgemat-mcp/dist/server.cjs.map"));
+const out = wardrobe ? join(root, "apps/wardrobe-designer/dist/THIRD-PARTY-NOTICES.txt") : extension ? join(root, "extensions/edgemat/THIRD-PARTY-NOTICES.txt") : join(root, "dist/THIRD-PARTY-NOTICES.txt");
 
 // Each bundled package's folder: the source path up to node_modules/<name> or node_modules/@scope/<name>.
 const packages = new Map();
@@ -43,8 +49,10 @@ const entries = [...packages.keys()]
 
 const line = "-".repeat(78);
 const body = [
-  `EDGEmat${extension ? " (the VS Code extension, with its MCP server inside)" : ", the VS Code extension and its MCP server,"} bundles these npm packages.`,
-  "Their notices and licenses follow. EDGEmat itself is MIT (LICENSE).",
+  wardrobe
+    ? "Wardrobe Designer, a REDnode app with EDGEmat's core inside, bundles these npm packages."
+    : `EDGEmat${extension ? " (the VS Code extension, with its MCP server inside)" : ", the VS Code extension and its MCP server,"} bundles these npm packages.`,
+  `Their notices and licenses follow. ${wardrobe ? "Wardrobe Designer and EDGEmat are" : "EDGEmat itself is"} MIT (LICENSE).`,
   "",
   ...entries.map((e) => `- ${e.name} ${e.version} (${e.license})`),
   "",

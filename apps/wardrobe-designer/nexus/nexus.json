@@ -1,0 +1,17 @@
+{
+  "page": 36636,
+  "upload": {
+    "name": "Wardrobe Designer",
+    "category": "main",
+    "primary": true,
+    "modManager": true,
+    "archivePrevious": true,
+    "description": "Wardrobe Designer {version}: restyle what V wears in your own words, from the inventory screen. A REDnode app: needs REDnode 0.49.1 or later with REDbridge and REDagent, on game 2.5."
+  },
+  "mod": "14315126034204",
+  "pulled": {
+    "sha256": "e88e9f9149515b2c8b8b2d5c00bc829cf0233541f0d737c25f86055af384ab8a",
+    "at": "2026-10-31T01:46:06.559Z",
+    "version": "1.0"
+  }
+}

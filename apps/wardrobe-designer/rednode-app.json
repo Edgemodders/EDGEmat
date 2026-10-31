@@ -3,7 +3,7 @@
   "name": "Wardrobe Designer",
   "version": "0.1.0",
   "author": "Edgemodders",
-  "description": "Restyle what V wears: pick a piece of clothing, say how it should look, and see it change in the inventory screen. REDagent plans the materials, EDGEmat makes them, and REDnode swaps them in. Restore puts the game look back.",
+  "description": "Restyle what V wears in your own words, from the inventory screen: REDagent plans the change, EDGEmat makes the materials, and REDnode swaps them into the game. Restore puts the game look back.",
   "main": "dist/mod.mjs",
   "open": true,
   "permissions": [
@@ -12,6 +12,7 @@
     "archives"
   ],
   "requires": {
+    "rednode": ">=0.48.1",
     "redbridge": ">=0.10"
   }
 }

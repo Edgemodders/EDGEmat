@@ -13,7 +13,7 @@ import type { BridgeClient } from "../../../extensions/edgemat/src/core/bridgeCl
 import { defaultCacheDir } from "../../../extensions/edgemat/src/core/config";
 import { loadItems, type ItemEntry, type ItemLook } from "../../../extensions/edgemat/src/core/find";
 import { bridgeOver } from "../../../extensions/edgemat/src/core/kernelBridge";
-import { loadLibrary, type Library } from "../../../extensions/edgemat/src/core/library";
+import { buildLibrary, isCurrent, loadLibrary, type Library } from "../../../extensions/edgemat/src/core/library";
 import { applyRecipe, describeLook, RestyleBrief, type Look, type Recipe } from "../../../extensions/edgemat/src/core/restyle";
 
 /** The clothing slots, as the game's equipment areas, with the words the window shows. */
@@ -143,11 +143,34 @@ const getItems = () =>
     return new Map(list.map((i) => [tweakDbId(i.id), i]));
   })());
 
-function getLibrary(): Library {
-  const lib = loadLibrary(dir);
-  if (!lib) throw new Error("EDGEmat's material library is not built yet: build it once in EDGEmat (VS Code), or ask an assistant to run mat_library build.");
-  return lib;
-}
+/**
+ * EDGEmat's material library: the one EDGEmat built, when it matches the game; else built here from
+ * the player's game, once and again after a game update (about half a minute), so a player needs no
+ * EDGEmat in VS Code.
+ */
+let library: Promise<Library> | undefined;
+const getLibrary = () =>
+  (library ??= (async () => {
+    const b = await getBridge();
+    const had = loadLibrary(dir);
+    if (had && (await isCurrent(had, b))) return had;
+    const t = Date.now();
+    const why = had ? "The game was updated: building the material library again" : "Building the material library from your game, once";
+    status.set({ text: `${why} (about half a minute)...`, tone: "dim" });
+    say(`${why}...`);
+    let shown = 0;
+    const lib = await buildLibrary(b, dir, (step, done, total) => {
+      if (total && done !== undefined && Date.now() - shown > 5000) {
+        shown = Date.now();
+        say(`  ${step} ${done} of ${total}`);
+      }
+    });
+    say(`Material library: ${lib.templates.length} surfaces, ${lib.microblends.length} microblends, in ${seconds(t)}`);
+    return lib;
+  })().catch((e) => {
+    library = undefined;
+    throw e;
+  }));
 
 /** A TweakDB id as the game shows it: the name's length and its CRC32, as 0x + 16 hex digits. */
 function tweakDbId(name: string): string {
@@ -234,7 +257,7 @@ async function pick(i: number, quiet = false): Promise<void> {
     restyleButton.set({ disabled: true });
     restoreButton.set({ disabled: true });
     picked.set({ text: `${item.name ?? item.id}: reading its materials...`, tone: "dim" });
-    const look = await describeLook(await getBridge(), getLibrary(), dir, item, body, { archive: archiveDir, suffix: Suffix, max: MaxMaterials });
+    const look = await describeLook(await getBridge(), await getLibrary(), dir, item, body, { archive: archiveDir, suffix: Suffix, max: MaxMaterials });
     for (const warning of look.warnings) say(`  ${warning}`);
     say(`${item.name ?? item.id} (${item.id}), ${look.body} look ${look.appearance}: ${look.meshes.length} mesh(es)`);
     for (const m of look.meshes) say(`  ${m.mesh}, look ${m.appearance}`);
@@ -375,7 +398,7 @@ async function restyle(): Promise<void> {
     if (!recipe) return;
     status.set({ text: "Making the materials...", tone: "dim" });
     const t2 = Date.now();
-    const r = await applyRecipe(await getBridge(), getLibrary(), look, recipe, archiveDir, Suffix);
+    const r = await applyRecipe(await getBridge(), await getLibrary(), look, recipe, archiveDir, Suffix);
     for (const n of r.notes) say(`  ${n}`);
     if (!r.changed.length) {
       status.set({ text: `Nothing to change.${recipe.notes ? ` ${recipe.notes}` : ""}`, tone: "danger" });

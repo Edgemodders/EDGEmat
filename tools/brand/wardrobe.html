@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wardrobe Designer brand</title>
+<!-- The source of Wardrobe Designer's brand images, in the style of REDnode's app packs (REDnode's
+     packs/admin-tools/nexus/brand/source.html). tools/brand/render-wardrobe.ps1 draws it at each
+     size into docs/assets/wardrobe-designer: ?kind=banner (2560 x 640), social (1280 x 640), nexus
+     (1280 x 640, room at the top left for the EDGEmodders header) and icon (256 x 256). -->
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Rajdhani:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=block" rel="stylesheet">
+<style>
+  :root { --bg: #08090d; --panel: #10131b; --line: #262c3d; --fg: #e3e6ee; --dim: #8a93a8;
+    --yellow: #fcee0a; --cyan: #19f3ff; --green: #5dffa1;
+    --display: "Chakra Petch", sans-serif; --body: "Rajdhani", sans-serif; --mono: "JetBrains Mono", monospace; }
+  html, body { margin: 0; overflow: hidden; background: transparent; }
+  .art { position: relative; overflow: hidden; background:
+      radial-gradient(ellipse at 0% 100%, rgba(252, 238, 10, .08), transparent 55%),
+      linear-gradient(rgba(25, 243, 255, .045) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(90deg, rgba(25, 243, 255, .045) 1px, transparent 1px) 0 0 / 40px 40px,
+      var(--bg); }
+  .corner { position: absolute; width: 58px; height: 58px; border: 0 solid var(--yellow); }
+  .corner.tl { left: 32px; top: 32px; border-left-width: 3px; border-top-width: 3px; }
+  .corner.br { right: 32px; bottom: 32px; border-right-width: 3px; border-bottom-width: 3px; }
+  .kicker { font: 500 28px var(--mono); letter-spacing: .3em; text-transform: uppercase; color: var(--cyan); white-space: nowrap; }
+  .title { font: 700 150px/0.9 var(--display); text-transform: uppercase; letter-spacing: .01em; color: var(--fg); white-space: nowrap; }
+  .title b { color: var(--yellow); font-weight: 700; }
+  .tag { font: 500 46px/1.25 var(--body); color: #c9cfdd; }
+  .rule { height: 4px; background: var(--line); position: relative; }
+  .rule::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 18%; background: var(--yellow); }
+  .panel { background: var(--panel); border: 1px solid var(--line);
+    clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 40px; font: 500 22px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+  .row span:first-child { color: var(--dim); }
+  .row + .row { border-top: 2px solid var(--line); }
+  .c { color: var(--cyan); } .y { color: var(--yellow); } .g { color: var(--green); }
+
+  /* The swatches: one garment's layers, restyled from left to right. */
+  .swatches { position: absolute; display: flex; gap: 14px; align-items: flex-end; }
+  .look { display: flex; flex-direction: column; gap: 6px; }
+  .look i { display: block; border: 1px solid rgba(255, 255, 255, .08); }
+  .look i:first-child { flex: none; }
+  .arrow { color: var(--dim); font: 500 30px var(--mono); align-self: center; }
+
+  /* banner: 2560 x 640 */
+  #banner { width: 2560px; height: 640px; }
+  #banner .text { position: absolute; left: 112px; top: 96px; width: 1500px; }
+  #banner .title { font-size: 128px; margin: 30px 0 34px; }
+  #banner .tag { max-width: 1150px; }
+  #banner .rule { margin-top: 44px; width: 1120px; }
+  #banner .panel { position: absolute; right: 112px; top: 72px; width: 720px; padding: 10px 44px; }
+  #banner .row { padding: 16px 0; }
+  #banner .swatches { right: 112px; bottom: 70px; width: 720px; justify-content: space-between; }
+
+  /* social: 1280 x 640 */
+  #social, #nexus { width: 1280px; height: 640px; }
+  #social .corner, #nexus .corner { width: 36px; height: 36px; left: 16px; top: 16px; }
+  #social .corner.br, #nexus .corner.br { left: auto; top: auto; right: 16px; bottom: 16px; }
+  #social .text { position: absolute; left: 80px; top: 92px; width: 1120px; }
+  #social .kicker, #nexus .kicker { font-size: 17px; }
+  #social .title, #nexus .title { font-size: 100px; margin: 22px 0 22px; }
+  #social .tag, #nexus .tag { font-size: 30px; max-width: 700px; }
+  #social .rule, #nexus .rule { margin-top: 26px; width: 560px; }
+  #social .panel { position: absolute; left: 80px; right: 80px; top: 440px; display: flex; padding: 22px 22px; }
+  #social .row, #nexus .row { flex: 1; display: block; padding: 0; font-size: 15px; }
+  #social .row + .row, #nexus .row + .row { border-top: 0; }
+  #social .row span, #nexus .row span { display: block; }
+  #social .row span + span, #nexus .row span + span { margin-top: 8px; }
+  #social .swatches { right: 80px; top: 236px; gap: 10px; }
+
+  /* nexus: the social layout 55 px lower, leaving the top left for the EDGEmodders header the
+     owner adds by hand (as on REDnode's and its packs' Nexus images) */
+  #nexus .text { position: absolute; left: 74px; top: 147px; width: 1120px; }
+  #nexus .panel { position: absolute; left: 74px; right: 86px; top: 495px; display: flex; padding: 22px 22px; }
+  #nexus .swatches { right: 86px; top: 291px; gap: 10px; }
+
+  /* icon: 256 x 256, transparent cut corners */
+  #icon { width: 256px; height: 256px; clip-path: polygon(0 0, 214px 0, 256px 42px, 256px 256px, 42px 256px, 0 214px); }
+  #icon .corner { width: 26px; height: 26px; border-width: 0; }
+  #icon .corner.tl { left: 20px; top: 20px; border-left-width: 5px; border-top-width: 5px; }
+  #icon .corner.br { right: 20px; bottom: 20px; border-right-width: 5px; border-bottom-width: 5px; }
+  #icon .title { position: absolute; left: 0; right: 0; top: 38px; text-align: center; font-size: 84px; }
+  #icon .swatches { left: 50px; right: 50px; bottom: 42px; justify-content: space-between; gap: 0; }
+  #icon .look { gap: 4px; }
+</style>
+</head>
+<body>
+<script>
+  // Which image: ?kind=banner, social, nexus or icon (or the same as the URL's hash).
+  const kind = new URLSearchParams(location.search).get('kind') || location.hash.slice(1) || 'banner';
+  // One garment's layers in each look: the main surface tall, then its smaller layers.
+  const Looks = [
+    ['#1b1c20', '#2a2b31', '#111215', '#3a3b42'], // black leather, as the game made it
+    ['#c22a2a', '#8f1d1d', '#111215', '#3a3b42'], // red leather
+    ['#d5d53d', '#b9b934', '#2f3a5a', '#3a3b42'], // yellow denim
+    ['#2c5ad1', '#1d3f99', '#111215', '#5b6070'], // blue
+  ];
+  const swatches = (w, h, arrows = true) => {
+    const looks = Looks.map((cols) => `<div class="look">${cols.map((c, i) => `<i style="width:${w}px;height:${i ? Math.round(h * 0.22) : h}px;background:${c}"></i>`).join('')}</div>`);
+    return `<div class="swatches">${arrows ? looks.join('<span class="arrow">›</span>') : looks.join('')}</div>`;
+  };
+  const rows = `
+    <div class="row"><span>Pick</span><span class="c">What V wears</span></div>
+    <div class="row"><span>Say</span><span class="y">Red leather, yellow denim</span></div>
+    <div class="row"><span>See</span><span class="g">In the inventory, at once</span></div>`;
+  const text = (kicker) => `
+    <div class="text">
+      <div class="kicker">${kicker}</div>
+      <div class="title">Wardrobe<b>Designer</b></div>
+      <div class="tag">Restyle what V wears in your own words, and see it change on the inventory screen.</div>
+      <div class="rule"></div>
+    </div>`;
+  const kicker = '// REDnode app · EDGEmat · Cyberpunk 2077 PC';
+  const art = {
+    banner: `${text(kicker)}<div class="panel">${rows}</div>${swatches(120, 96)}`,
+    social: `${text(kicker)}<div class="panel">${rows}</div>${swatches(58, 96)}`,
+    nexus: `${text(kicker)}<div class="panel">${rows}</div>${swatches(58, 96)}`,
+    icon: `<div class="title">W<b>D</b></div>${swatches(30, 30, false)}`,
+  }[kind];
+  document.body.innerHTML = `<div id="${kind}" class="art"><div class="corner tl"></div><div class="corner br"></div>${art}</div>`;
+</script>
+</body>
+</html>

@@ -5,9 +5,11 @@
 //   node tools/release/notes.mjs [version] --nexus      plain lines for Nexus's changelog field
 //   node tools/release/notes.mjs --extension            writes extensions/edgemat/CHANGELOG.md, the
 //                                                       extension's Changelog tab (vscode:prepublish runs it)
+//   node tools/release/notes.mjs [version] --wardrobe   Wardrobe Designer's, from apps/wardrobe-designer/changelog.md
+//                                                       (with --nexus too); its release workflow uses it
 //   --out <file>                                        writes the notes to a file (UTF-8)
 //
-// The version defaults to the extension's package.json version.
+// The version defaults to the extension's package.json version (Wardrobe Designer's rednode-app.json with --wardrobe).
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -15,10 +17,13 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const args = process.argv.slice(2);
 const nexus = args.includes("--nexus");
 const extension = args.includes("--extension");
+const wardrobe = args.includes("--wardrobe");
 const outAt = args.indexOf("--out");
 const out = outAt >= 0 ? args.splice(outAt, 2)[1] : null;
-const version = args.find((a) => !a.startsWith("--")) ?? JSON.parse(readFileSync(root + "extensions/edgemat/package.json", "utf8")).version;
-const lines = readFileSync(root + "docs/changelog.md", "utf8").split(/\r?\n/);
+const versionFile = wardrobe ? "apps/wardrobe-designer/rednode-app.json" : "extensions/edgemat/package.json";
+const version = args.find((a) => !a.startsWith("--")) ?? JSON.parse(readFileSync(root + versionFile, "utf8")).version;
+const changelog = wardrobe ? "apps/wardrobe-designer/changelog.md" : "docs/changelog.md";
+const lines = readFileSync(root + changelog, "utf8").split(/\r?\n/);
 const Docs = "https://edgemodders.github.io/EDGEmat/";
 
 if (extension) {
@@ -42,14 +47,14 @@ if (extension) {
 const heading = new RegExp(`^## ${version.replace(/\./g, "\\.")}(\\s|,|$)`);
 const start = lines.findIndex((line) => heading.test(line));
 if (start < 0) {
-  console.error(`docs/changelog.md has no section for ${version}: rename Unreleased to "## ${version} (date)" first`);
+  console.error(`${changelog} has no section for ${version}: rename Unreleased to "## ${version} (date)" first`);
   process.exit(1);
 }
 let end = lines.findIndex((line, i) => i > start && line.startsWith("## "));
 if (end < 0) end = lines.length;
 const section = lines.slice(start + 1, end);
 if (!section.some((line) => line.trim())) {
-  console.error(`docs/changelog.md: the section for ${version} is empty`);
+  console.error(`${changelog}: the section for ${version} is empty`);
   process.exit(1);
 }
 
@@ -68,6 +73,12 @@ if (nexus) {
     else if (line.trim()) result.push(plain(line.trim()));
   }
   write(result.join("\n"));
+} else if (wardrobe) {
+  write(`${section.join("\n").trim()}
+
+**Install:** with Vortex, or extract \`Wardrobe-Designer-${version}.zip\` below into the Cyberpunk 2077 folder, so the app lands in \`red4ext/plugins/REDnode/apps/wardrobe-designer/\`. In the game: **F10**, the **Mod Manager**, select **Wardrobe Designer**, allow its permissions (REDbridge, REDagent, swapping archives) and switch it on. Needs [REDnode](https://www.nexusmods.com/cyberpunk2077/mods/35419) 0.48.1 or later, with REDbridge and REDagent (your Anthropic key), on game 2.5. On [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/36636) too.
+
+Guide: ${Docs}wardrobe-designer.html (changelog: https://github.com/Edgemodders/EDGEmat/blob/main/apps/wardrobe-designer/changelog.md)`);
 } else {
   write(`${section.join("\n").trim()}
 

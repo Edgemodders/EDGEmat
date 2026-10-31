@@ -20,7 +20,11 @@
     "nexus:pull": "node tools/nexus/nexus.mjs pull",
     "nexus:status": "node tools/nexus/nexus.mjs status",
     "release": "gh workflow run release.yml --ref main -f release=true",
-    "wardrobe:build": "npm run build --workspace apps/wardrobe-designer"
+    "wardrobe:build": "npm run build --workspace apps/wardrobe-designer",
+    "wardrobe:zip": "npm run wardrobe:build && node tools/release/wardrobe-zip.mjs --draft",
+    "wardrobe:release": "gh workflow run release-wardrobe.yml --ref main -f release=true",
+    "wardrobe:nexus:pull": "node tools/nexus/nexus.mjs pull apps/wardrobe-designer/nexus",
+    "wardrobe:nexus:status": "node tools/nexus/nexus.mjs status apps/wardrobe-designer/nexus"
   },
   "devDependencies": {
     "@vscode/vsce": "^4.0.0",

@@ -1,0 +1,132 @@
+# Builds Wardrobe Designer, the REDnode app in apps/wardrobe-designer: its zip for Vortex and players
+# (tools/release/wardrobe-zip.mjs, laid out like the game folder, as REDnode's app packs). Its own
+# release, apart from EDGEmat's (release.yml), with its own changelog, tags and Nexus Mods page.
+#
+#   Run workflow (Actions tab)                  builds the draft zip and keeps it as the run's artifact,
+#                                               to install and test before a release
+#   Run workflow, "Make a release" ticked       also tags the commit wardrobe-designer-v<version> and
+#                                               makes the GitHub release with the zip (not marked as the
+#                                               repo's latest: that stays EDGEmat's). Stops first if that
+#                                               tag exists, if it is not run on main, or if
+#                                               apps/wardrobe-designer/changelog.md has no section for
+#                                               the version or has changes under Unreleased (raise the
+#                                               version in rednode-app.json and package.json, rename
+#                                               Unreleased)
+#   ... and "Update Nexus Mods" ticked          also, after the GitHub release, uploads the zip to the
+#                                               page (mod 36636) as the main file's new version (the old
+#                                               one archived; the first release makes the main file),
+#                                               with Mod Manager Download on, adds its changelog and
+#                                               pushes apps/wardrobe-designer/nexus/description.bbcode
+#                                               (tools/nexus/nexus.mjs, copied from REDnode; NEXUS_KEY).
+#                                               It checks the page first and stops before building if
+#                                               the description changed on Nexus since the last pull
+#                                               (npm run wardrobe:nexus:pull, merge, commit, run again).
+#                                               If the upload fails after the GitHub release, run
+#                                               tools/nexus/nexus.mjs release on the dev PC with the
+#                                               release's zip: it skips what is already done.
+#
+# Release gate: make a release only after every test of the builds since the last release has passed
+# (docs/testing.md). Untested or failed means no release.
+name: Release Wardrobe Designer
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Make a release (tags this commit wardrobe-designer-v<version>). Only after every test has passed
+        type: boolean
+        default: false
+      nexus:
+        description: Update Nexus Mods (with Make a release) - upload the zip, its changelog and the page's description
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the tags: the Nexus check compares with the previous release's description
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: The version
+        run: |
+          version=$(node -p "require('./apps/wardrobe-designer/rednode-app.json').version")
+          package=$(node -p "require('./apps/wardrobe-designer/package.json').version")
+          if [ "${version}" != "${package}" ]; then
+            echo "::error::rednode-app.json is ${version} but package.json is ${package}: raise both."
+            exit 1
+          fi
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+          echo "TAG=wardrobe-designer-v${version}" >> "$GITHUB_ENV"
+
+      - name: The version is not released yet
+        if: inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::Make a release from main, not ${GITHUB_REF_NAME}."
+            exit 1
+          fi
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" --silent 2>/dev/null; then
+            echo "::error::${TAG} is already released. Raise the version in apps/wardrobe-designer/rednode-app.json and package.json."
+            exit 1
+          fi
+
+      - name: Release notes from apps/wardrobe-designer/changelog.md
+        if: inputs.release
+        run: |
+          node tools/release/notes.mjs "${VERSION}" --wardrobe --out "${RUNNER_TEMP}/notes.md"
+          node tools/release/notes.mjs "${VERSION}" --wardrobe --nexus --out "${RUNNER_TEMP}/nexus-notes.txt"
+
+      - name: Nexus Mods can take this release
+        if: inputs.release && inputs.nexus
+        env:
+          NEXUS_KEY: ${{ secrets.NEXUS_KEY }}
+        run: node tools/nexus/nexus.mjs check apps/wardrobe-designer/nexus --version "${VERSION}"
+
+      - run: npm ci
+
+      - run: npm run typecheck --workspace apps/wardrobe-designer
+
+      - name: Build and zip
+        run: |
+          npm run wardrobe:build
+          if [ "${{ inputs.release }}" = "true" ]; then
+            node tools/release/wardrobe-zip.mjs
+            echo "ZIP=dist/Wardrobe-Designer-${VERSION}.zip" >> "$GITHUB_ENV"
+          else
+            node tools/release/wardrobe-zip.mjs --draft
+            echo "ZIP=dist/Wardrobe-Designer-${VERSION}-draft.zip" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Wardrobe-Designer-build
+          path: ${{ env.ZIP }}
+          if-no-files-found: error
+
+      - name: GitHub release
+        id: github
+        if: inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${TAG}" "${ZIP}" --target "${GITHUB_SHA}" --title "Wardrobe Designer ${VERSION}" --notes-file "${RUNNER_TEMP}/notes.md" --latest=false
+
+      - name: Nexus Mods
+        if: ${{ inputs.release && inputs.nexus && !cancelled() && steps.github.outcome == 'success' }}
+        env:
+          NEXUS_KEY: ${{ secrets.NEXUS_KEY }}
+        run: node tools/nexus/nexus.mjs release apps/wardrobe-designer/nexus --version "${VERSION}" --zip "${ZIP}" --notes "${RUNNER_TEMP}/nexus-notes.txt"

@@ -1,0 +1,91 @@
+[center][img]https://raw.githubusercontent.com/Edgemodders/EDGEmat/main/docs/assets/wardrobe-designer/banner.png[/img][/center]
+
+[center][size=5][b][color=#fcee0a]Restyle what V wears in your own words, and see it change on the inventory screen.[/color][/b][/size][/center]
+
+[center][size=3]Wardrobe Designer is a window over the game. Pick a piece of clothing V wears, type how it should look, such as "red leather" or "yellow denim", and press Restyle. An AI plans the change on the garment's own materials, and a few seconds later V wears it, in the inventory and in the world. No modding tools, no restart.[/size][/center]
+
+[center][size=3]What changed in each version: [url=https://github.com/Edgemodders/EDGEmat/blob/main/apps/wardrobe-designer/changelog.md]the changelog[/url] · Guide: [url=https://edgemodders.github.io/EDGEmat/wardrobe-designer.html]Wardrobe Designer docs[/url][/size][/center]
+
+[line]
+
+[quote][size=4][b][color=#fcee0a]STATUS: PREVIEW[/color][/b][/size]
+Built in the open and tested in the game, on game version 2.5. It is a [url=https://www.nexusmods.com/cyberpunk2077/mods/35419]REDnode[/url] app: you need REDnode first, with REDbridge and [url=https://www.nexusmods.com/cyberpunk2077/mods/35670]REDagent[/url].
+[b]It changes colors and fabrics, not shapes.[/b] Patterns and prints are not supported yet.[/quote]
+[line]
+
+[color=#19f3ff][i]Screenshot 1: the Wardrobe Designer window beside V on the inventory screen, the pants restyled[/i][/color]
+
+[size=5][b][color=#fcee0a]How it works[/color][/b][/size]
+
+[list=1]
+[*]Open the inventory, with V in view. The window shows what V wears, one button for each slot: Head, Face, Outer torso, Inner torso, Legs, Feet, Outfit.[/*]
+[*]Press a slot. The window lists that item's materials: the layers a garment is made of, such as black leather, a holed leather panel, canvas trim and dirt.[/*]
+[*]Type how it should look and press [b]Restyle[/b]. "red leather", "yellow denim", "make it glossier", "dark blue cotton".[/*]
+[*][url=https://www.nexusmods.com/cyberpunk2077/mods/35670]REDagent[/url], the AI in REDnode, plans the change on those layers, choosing from the game's own fabrics, colors and finishes. [url=https://www.nexusmods.com/cyberpunk2077/mods/35422]EDGEmat[/url]'s materials engine makes the new materials, and REDnode swaps them into the game.[/*]
+[*]V and the inventory's preview show it within seconds. A [b]*[/b] marks what you restyled.[/*]
+[/list]
+[color=#19f3ff][i]Screenshot 2: one item in four looks: as the game made it, red leather, yellow denim, blue[/i][/color]
+
+[size=5][b][color=#fcee0a]What you can do[/color][/b][/size]
+
+[list]
+[*][b]Recolor:[/b] "red", "dark blue", "pale green". It takes the closest color the game's fabric has.[/*]
+[*][b]Change the fabric:[/b] "denim", "leather", "cotton", "plastic". Every layer of the old fabric changes, and trims and dirt stay.[/*]
+[*][b]Change the finish:[/b] "glossy", "matte", "make it shinier".[/*]
+[*][b]Build on it:[/b] a second restyle starts from the first.[/*]
+[*][b]Restore:[/b] one press puts the item back to the game's own look.[/*]
+[*][b]It stays:[/b] your restyles are one archive in the game's mod folder, so they are there after a restart.[/*]
+[/list]
+[size=5][b][color=#fcee0a]Good to know[/color][/b][/size]
+
+[list]
+[*][b]Everyone in that look changes:[/b] a restyle replaces the item's mesh, so NPCs wearing the same item look the same. A V-only version is planned.[/*]
+[*][b]Colors are the game's:[/b] each fabric offers its own set of colors and finishes, so "red" is the game's closest red on that fabric.[/*]
+[*][b]Patterns and prints[/b] ("polka dots", "camo") are not supported yet: you get the base color, and the AI's note says so.[/*]
+[*][b]The AI costs a little:[/b] REDagent uses your own Anthropic key. A restyle's plan costs about one to five US cents. REDagent keeps a daily limit for each app, $0.25 at first: change it in REDagent, [b]Chats[/b], then the [b]Mods[/b] tab.[/*]
+[*][b]The first start takes half a minute:[/b] it reads your game's materials once (and again after a game update).[/*]
+[/list]
+[size=5][b][color=#fcee0a]Requirements[/color][/b][/size]
+
+[list]
+[*][url=https://www.nexusmods.com/cyberpunk2077/mods/35419]REDnode[/url] 0.48.1 or later, with what it needs (RED4ext, redscript, Codeware). REDswap comes with it.[/*]
+[*]REDbridge: get it from REDnode's Mod Manager ([b]Get REDbridge[/b]), if you have not already.[/*]
+[*][url=https://www.nexusmods.com/cyberpunk2077/mods/35670]REDagent[/url], with your Anthropic API key.[/*]
+[*]Cyberpunk 2077 on PC, game version 2.5.[/*]
+[/list]
+[size=5][b][color=#fcee0a]Install[/color][/b][/size]
+
+[list]
+[*][b]Vortex:[/b] Mod Manager Download, then enable and deploy.[/*]
+[*][b]By hand:[/b] extract the zip into the game folder, so the app lands in [i]red4ext/plugins/REDnode/apps/wardrobe-designer/[/i].[/*]
+[/list]
+In the game, press [b]F10[/b] and open the [b]Mod Manager[/b] from the launcher (the [b]REDNODE[/b] tab at the lower left). Select [b]Wardrobe Designer[/b], allow its three permissions ([b]REDbridge[/b], [b]REDagent[/b] and [b]swapping archives into the game[/b]), and switch it on. Press [b]Pin to launcher[/b] to keep it one press away.
+
+[b]Uninstall:[/b] press [b]Restore[/b] on what you restyled, then remove it in your mod manager, or delete [i]red4ext/plugins/REDnode/apps/wardrobe-designer/[/i]. To drop every restyle at once, also delete [i]archive/pc/mod/WardrobeDesigner.archive[/i] with the game closed.
+
+[size=5][b][color=#fcee0a]Questions[/color][/b][/size]
+
+[b]The window says it is waiting for the game to finish loading V.[/b]
+Right after a save loads, the game needs a moment to dress V. The window tries again by itself.
+
+[b]The plan says "reached its daily limit".[/b]
+REDagent keeps a daily spending limit for each app. Raise it in REDagent: [b]Chats[/b], the [b]Mods[/b] tab, then Wardrobe Designer's limit and [b]Set[/b].
+
+[b]An item does not change.[/b]
+Some items have no layered materials (only fixed textures), and the window says so when you pick them. Items added by other mods are not supported yet.
+
+[b]Is it free?[/b]
+Yes, and open source under the MIT license, in [url=https://github.com/Edgemodders/EDGEmat]EDGEmat's repo[/url]. The AI plans use your own Anthropic key.
+
+[line]
+
+[size=5][b][color=#fcee0a]Links[/color][/b][/size]
+
+[list]
+[*]EDGEmat, the material editor for modders it is built on: [url=https://www.nexusmods.com/cyberpunk2077/mods/35422]Nexus page[/url], [url=https://edgemodders.github.io/EDGEmat/]docs[/url][/*]
+[*]REDnode: [url=https://www.nexusmods.com/cyberpunk2077/mods/35419]Nexus page[/url], [url=https://edgemodders.github.io/REDnode/]docs[/url][/*]
+[*]Source and issues: [url=https://github.com/Edgemodders/EDGEmat]github.com/Edgemodders/EDGEmat[/url][/*]
+[*]EDGEmodders: [url=https://edgemodders.ai/]edgemodders.ai[/url][/*]
+[*]Community Discord: [url=https://discord.gg/63qP3Erw43]discord.gg/63qP3Erw43[/url][/*]
+[/list]
+[size=2]Wardrobe Designer is not affiliated with CD PROJEKT RED or Anthropic. Cyberpunk 2077 is a trademark of CD PROJEKT. Claude is a trademark of Anthropic.[/size]
