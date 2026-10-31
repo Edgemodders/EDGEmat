@@ -7,8 +7,10 @@
 //
 //   node scripts/paint-check.mjs <project folder> [--item Items.Q001_Pants] [--body feminine]
 //                                [--words "yellow with black polka dots"] [--quality standard]
-//                                [--task <Tripo task id>] [--flip] [--dry]
+//                                [--style <image>] [--task <Tripo task id>] [--flip] [--dry]
 //
+// --style sends a picture (png, jpg or webp) beside the words, as Tripo's style image: a swatch of the
+// pattern wanted, for one the words alone do not bring.
 // The Tripo key is read from the shared key store (service "tripo", or TRIPO_API_KEY), never printed.
 // --task reuses a finished task instead of paying for a new one. --flip turns the painted image upside
 // down, for when it shows mirrored top to bottom in the game. --dry stops before Tripo (no key needed). One Texture task is 10 credits (US$0.10),
@@ -29,7 +31,7 @@ const opt = (name, fallback) => {
 };
 const projDir = args[0] && !args[0].startsWith("--") ? path.resolve(args[0]) : undefined;
 if (!projDir) {
-  console.error("Usage: node scripts/paint-check.mjs <project folder> [--item <record>] [--body feminine|masculine] [--words <words>] [--quality standard|detailed] [--task <id>] [--flip]");
+  console.error("Usage: node scripts/paint-check.mjs <project folder> [--item <record>] [--body feminine|masculine] [--words <words>] [--quality standard|detailed] [--style <image>] [--task <id>] [--flip]");
   process.exit(1);
 }
 const itemId = opt("item", "Items.Q001_Pants");
@@ -37,6 +39,11 @@ const body = opt("body", "feminine");
 const words = opt("words", "yellow with black polka dots");
 const quality = opt("quality", "standard");
 const reuse = opt("task");
+const style = opt("style") && path.resolve(opt("style"));
+if (style && !fs.existsSync(style)) {
+  console.error(`No style image at ${style}`);
+  process.exit(1);
+}
 const flip = args.includes("--flip");
 const dry = args.includes("--dry");
 
@@ -94,7 +101,8 @@ async function tripo(method, route, body) {
 }
 
 async function upload(file) {
-  const { presigned_url, file_token } = await tripo("POST", "/files/presign", { format: "glb" });
+  const format = path.extname(file).slice(1).toLowerCase();
+  const { presigned_url, file_token } = await tripo("POST", "/files/presign", { format });
   const put = await fetch(presigned_url, { method: "PUT", headers: { "Content-Type": "application/octet-stream" }, body: fs.readFileSync(file) });
   if (!put.ok) throw new Error(`Upload: HTTP ${put.status}`);
   return file_token;
@@ -442,9 +450,11 @@ try {
     console.log(`Tripo: reusing ${reuse}`);
     task = await waitFor(reuse);
   } else {
-    console.log(`Tripo: upload, then Texture "${words}" (${TextureModel}, ${quality})`);
+    console.log(`Tripo: upload, then Texture "${words}"${style ? ` with the style image ${path.basename(style)}` : ""} (${TextureModel}, ${quality})`);
     const token = await upload(uploadFile);
-    const { task_id } = await tripo("POST", "/models/texture", { input: token, model: TextureModel, texture_prompt: { text: words }, pbr: true, texture_quality: quality });
+    const prompt = { text: words };
+    if (style) prompt.style_image = { file_token: await upload(style) };
+    const { task_id } = await tripo("POST", "/models/texture", { input: token, model: TextureModel, texture_prompt: prompt, pbr: true, texture_quality: quality });
     task = await waitFor(task_id);
   }
   if (!local) {
