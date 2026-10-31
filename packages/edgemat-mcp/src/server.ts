@@ -18,7 +18,7 @@ import { z } from "zod";
 import {
   addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
-  applyMaterial, generateImage, hasKey, imageAsPng, listModels, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
+  applyMaterial, applyRecipe, describeLook, RestyleBrief, generateImage, hasKey, imageAsPng, listModels, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
@@ -342,6 +342,50 @@ server.registerTool(
         next: "Pack the project and install it (REDcode: Pack and Try), then look at the garment in the game.",
         ...result,
         notes: notes.length ? notes : undefined,
+      });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+server.registerTool(
+  "mat_restyle",
+  {
+    description:
+      "Restyles a clothing item, as EDGEmat's Wardrobe Designer does in the game: one call from the item to a project. Without materials, returns the item's look (its meshes and each layered material's shown layers in plain words), which is what to plan on. " +
+      "With materials (a recipe: for each setup, the layer changes in words, as mat_edit takes them), applies it with mat_edit's checks: each changed setup is saved beside the game's under a new name, and the look's meshes are copied into the project and pointed at it, so it shows in the game with no other mod once packed and installed (REDcode: Pack and Try). " +
+      "A layer change that cannot be made is skipped and said in notes; the rest go in. Run it again on the same project and it starts from the restyled copy. body: the look for one body; default every body's look. How to plan:\n" +
+      RestyleBrief,
+    inputSchema: {
+      item: z.string().describe("A clothing record id (Items.Q001_Pants), or words matching one item"),
+      body: z.enum(["masculine", "feminine", "all"]).default("all"),
+      materials: z.array(z.object({ setup: z.string().describe("The game's setup, as the look names it"), edits: z.array(LayerEditSchema).min(1) })).optional(),
+      project: z.string().optional().describe("The project folder, its .cpmodproj, or its source\\archive folder: needed with materials, and read for an earlier restyle"),
+    },
+  },
+  async ({ item, body, materials, project }) => {
+    try {
+      const b = await getBridge();
+      const lib = await library();
+      const items = await loadItems(b, cacheDir);
+      const exact = items.find((i) => i.id.toLowerCase() === item.toLowerCase());
+      const found = exact ? [exact] : searchItems(items, item);
+      if (found.length !== 1 && !(found.length && found.every((i) => i.entityName === found[0].entityName && i.appearanceName === found[0].appearanceName))) {
+        return text({ found: false, matches: found.length, candidates: found.slice(0, 30).map((i) => ({ id: i.id, name: i.name, slot: i.slot })), hint: found.length ? "Several items fit: pass one id." : "No item fits: try mat_find with query." });
+      }
+      const p = project ? projectAt(project) : undefined;
+      if (project && !p) return failure(new Error(`${project} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`));
+      const suffix = suffixFor(p?.name ?? "restyle");
+      const look = await describeLook(b, lib, cacheDir, found[0], body, { archive: p?.archive, suffix });
+      if (!materials) return text({ look, next: "Plan the layer changes, then call mat_restyle again with materials and project." });
+      if (!p) return failure(new Error("Pass project: the WolvenKit project folder to save the restyle into."));
+      const r = await applyRecipe(b, lib, look, { materials }, p.archive, suffix);
+      return text({
+        item: look.item,
+        saved: r.changed.length ? { project: p.dir, changed: r.changed, written: r.written } : undefined,
+        next: r.changed.length ? "Pack the project and install it (REDcode: Pack and Try), then look at the item in the game." : "Nothing changed: see notes.",
+        notes: r.notes.length ? r.notes : undefined,
       });
     } catch (e) {
       return failure(e);

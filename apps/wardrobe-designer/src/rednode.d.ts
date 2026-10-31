@@ -1,4 +1,4 @@
-// The parts of REDnode's "rednode" package this app uses, from its own types (REDnode 0.48.1,
+// The parts of REDnode's "rednode" package this app uses, from its own types (REDnode 0.49.0,
 // packages/rednode/dist). REDnode gives the package at run time; it is not on npm.
 
 declare module "rednode" {
@@ -52,7 +52,7 @@ declare module "rednode" {
   };
 
   export const kernel: {
-    bridge(): Promise<{ version?: string; call(method: string, params?: Record<string, unknown>): Promise<unknown> }>;
+    bridge(): Promise<{ version: string | null; call(method: string, params?: Record<string, unknown>): Promise<unknown> }>;
   };
 
   export const agent: {
@@ -60,4 +60,15 @@ declare module "rednode" {
   };
 
   export const pkg: { readonly id: string; readonly dir: string; readonly dataDir: string };
+
+  export interface ReloadResult {
+    reloaded: string[];
+    failed: { file: string; why: string }[];
+    ms: number;
+    refreshed?: { slot: string; appearance: string }[];
+    preview?: { items: { slot: string; appearance: string }[]; note?: string };
+  }
+  export const archives: {
+    reload(files: string | string[], options?: { refresh?: boolean }): Promise<ReloadResult>;
+  };
 }

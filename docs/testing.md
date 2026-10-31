@@ -29,6 +29,7 @@ Last updated 2026-10-26.
 | [Open Material in EDGEmat](#open-material-in-edgemat) | By hand, F5 | After 0.3.1 | | Not run yet. Type check and build pass (2026-10-21) |
 | [Shared keys](#shared-keys) | By hand, F5, then Claude Code | After 0.3.1 | | Not run yet. Built 2026-10-30; the bundled store's round trip (set, read, check, remove) and `mat_generate`'s no-key answer over stdio pass against a scratch key folder, and REDnode's 30 checks of the library pass |
 | [Wardrobe Designer W0](#wardrobe-designer-w0) | By hand, in the game with REDnode and REDagent | W0 | 2026-10-30 | **Passed** (owner, every step): 6 worn items read in 4.6 s (with the item index of 2,074 clothing items); V's Pants' 12 layers in 2.1 s over REDnode's REDbridge, the window over the inventory screen taking clicks; three plans in 3.0 to 6.2 s for $0.09 in all, with real presets of the right color (checked with `mat_colors`) |
+| [Wardrobe Designer W1](#wardrobe-designer-w1) | By hand, in the game with REDnode and REDagent | W1 | | Not run yet. Built 2026-10-30; checked outside the game: V's Pants restyled into a scratch project twice (the second from the copy), packed (2 files), and `mat_restyle` over stdio |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
@@ -400,6 +401,22 @@ Added 2026-10-30: the first build of Wardrobe Designer, a REDnode app in `apps/w
 | 5 | `yellow denim`: 4.4 s, $0.021. Layer 0 to `denim_clean_01_30` with `6c74fa_null` (light yellow on denim, #d5d53d); layer 4 (the small denim layer) the same. The holed leather (layer 1, 12.7%) stayed black leather. `yellow with black polka dots`: 3.0 s, $0.011. Layer 0 "yellow" in words; the notes say patterns are not supported yet |
 
 Findings for W1: REDagent reached EDGEmat's tools in the game (both preset names are real and right, and the context had only the black ones). Recipes mix preset names and words, which is what `mat_edit`'s word form (`layerFromWords`) takes, so W1 can apply them as they come. The brief should say that a material word ("denim") means every layer of the old material (the holed leather was left), and the recipe should name the surface whenever it uses a preset name, since preset names belong to one surface.
+
+### Wardrobe Designer W1
+
+Added 2026-10-30: Wardrobe Designer 0.1.0 restyles what V wears (design, "Wardrobe Designer", W1). **Restyle** asks REDagent for a recipe, applies it with `mat_edit`'s checks into the app's work project, packs it as `WardrobeDesigner.archive` and swaps it into the game. **Restore** puts the game's look back. Same setup as W0: the development folder is in place and REDagent has its key. Claude builds it (`npm run wardrobe:build`); a running app restarts with the new build.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Load a save, **F10**. If Wardrobe Designer did not restart by itself: the **REDNODE** tab › **Mod Manager** › Wardrobe Designer › **Restart** | The Mod Manager asks for its new permission, **archives** (swap archives into the game): allow it. The window shows **Restyle**, **Restore** and **Refresh**; there is no **Plan** button now |
+| 2 | Open the inventory (**I**), with V in view. Press **F10** until the window takes input, then press **Legs: V's Pants** | The pants' layers in the log, as in W0 (black leather 60.5% first). **Restyle** turns on; **Restore** stays off |
+| 3 | Click **How should it look?**, type `red leather`, press **Restyle** | In the log: the plan, "Saved 2 file(s)", "Packed 2 file(s)", then "Swapped in ... V refreshed: Legs; the inventory's preview too". The pants turn red on the inventory's preview of V, about 20 s after pressing. The status says "Restyled in N s" with REDagent's notes. The **Legs** button now ends in \*, and **Restore** turns on |
+| 4 | Type `make the leather glossier`, press **Restyle** | The log lists the layers as "(restyled)": the second restyle starts from the red one. The pants stay red, with more shine. "Saved 1 file(s)" (the mesh already points at the copy) |
+| 5 | Type `yellow denim`, press **Restyle** | Both leather layers become yellow denim: layer 0 and layer 1 (the holed leather, which W0's plan left). The pants turn yellow in the preview |
+| 6 | Close the inventory and look down at V's legs (or use Photo mode) | The same yellow denim pants on V in the world |
+| 7 | Open the inventory again, press **Legs**, press **Restore** | "Restore V's Pants: removed 2 file(s)", "the archive holds the game's own 1 mesh(es)", then swapped in. The pants are black leather again on the preview; the \* is gone and **Restore** turns off |
+| 8 | Restyle them `red leather` again. Quit to the desktop, start the game and load the save | The pants are still red (the archive stays in `archive\pc\mod`). The **Legs** button ends in \*, and **Restore** works as in step 7 |
+| 9 | Tell Claude it's done | Claude reads the app's log and records the times, the recipes and what was swapped |
 
 ### Shared keys
 

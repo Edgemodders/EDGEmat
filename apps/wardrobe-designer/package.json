@@ -1,6 +1,6 @@
 {
   "name": "wardrobe-designer",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Wardrobe Designer: a REDnode app for players that restyles what V wears (design, \"Wardrobe Designer\").",
   "license": "MIT",

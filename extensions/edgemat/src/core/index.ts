@@ -31,3 +31,4 @@ export { imageAsPng, makeMaterial, materialSlug, type MadeBy, type MaterialResul
 export { applyMaterial, texturedMaterialJson, uvTestPattern, writeTexture, writeTexturedMaterial, MetalBase, TextureTemplates, type TexturedMaterial, type TextureKind } from "./apply";
 export { checkKey, envName, hasKey, keysDir, sharedKeys } from "./sharedKeys";
 export { bridgeOver, type BridgeCall } from "./kernelBridge";
+export { applyRecipe, describeLook, RestyleBrief, type Look, type LookLayer, type LookMaterial, type Recipe, type RestyleResult } from "./restyle";
