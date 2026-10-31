@@ -40,7 +40,10 @@ const reuse = opt("task");
 const flip = args.includes("--flip");
 const dry = args.includes("--dry");
 
-const Api = "https://openapi.tripo3d.com/v3";
+// Tripo has two regions with their own accounts and keys: the global site (tripo3d.ai) and China's
+// (tripo3d.com). Global first; a key the global API refuses is tried once on China's.
+const Regions = ["https://openapi.tripo3d.ai/v3", "https://openapi.tripo3d.com/v3"];
+let Api = Regions[0];
 const TextureModel = "v3.5-20260815";
 
 const settings = core.vscodeUserSettings();
@@ -79,6 +82,11 @@ async function tripo(method, route, body) {
     json = JSON.parse(text);
   } catch {
     throw new Error(`Tripo ${route}: HTTP ${res.status}, not JSON: ${text.slice(0, 200)}`);
+  }
+  if (json.code !== 0 && /invalid api key/i.test(json.message ?? "") && Api === Regions[0]) {
+    Api = Regions[1];
+    console.log("  the global API refused the key; trying Tripo China's");
+    return tripo(method, route, body);
   }
   if (json.code !== 0) throw new Error(`Tripo ${route}: ${json.code} ${json.message ?? ""}${json.suggestion ? ` (${json.suggestion})` : ""}`);
   return json.data;

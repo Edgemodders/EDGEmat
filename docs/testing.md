@@ -254,7 +254,7 @@ Defaults: V's Pants (`Items.Q001_Pants`) on the feminine body (`l1_066_pwa_pants
 
 | # | Do | Expected |
 |---|---|---|
-| 1 | Make a Tripo API key: Tripo's developer console, **API Keys**. The account needs at least 20 credits | A key |
+| 1 | Make a Tripo API key: Tripo's developer console, **API Keys**. The account needs at least 20 credits. Tripo has two regions with their own accounts and keys, global (tripo3d.ai) and China (tripo3d.com); the check tries global, then China | A key |
 | 2 | Save it in PowerShell (it asks for the key and does not show it): `New-Item -ItemType Directory -Force "$env:APPDATA\Edgemodders\keys" \| Out-Null; Read-Host 'Key' -AsSecureString \| ConvertFrom-SecureString \| Set-Content "$env:APPDATA\Edgemodders\keys\tripo.txt"` | `%APPDATA%\Edgemodders\keys\tripo.txt` exists |
 | 3 | In the repo: `git pull`, `npm run build`, then `npm run paint-check -- "<your Projects folder>\EDGEmat_Paint"` (or ask Claude to run it) | "sent: 2 parts, 9701 vertices"; Tripo's task going from queued to success; its preview image saved in `source\raw\edgemat\tripo`. Then **KEPT** or **NOT KEPT**. KEPT: one line for the painted material and "packed ... EDGEmat_Paint.archive". NOT KEPT: Tripo's paint needs a bake onto the game's UVs, and the check ends here |
 | 4 | Only after KEPT. With the game closed, copy `packed\archive\pc\mod\EDGEmat_Paint.archive` into `<game>\archive\pc\mod` | The archive is in the game |
