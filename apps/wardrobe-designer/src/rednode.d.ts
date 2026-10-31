@@ -61,6 +61,11 @@ declare module "rednode" {
 
   export const pkg: { readonly id: string; readonly dir: string; readonly dataDir: string };
 
+  export const secrets: {
+    shared(service: string): Promise<string | null>;
+    askShared(service: string, options?: { reason?: string; offer?: string }): Promise<string | null>;
+  };
+
   export interface ReloadResult {
     reloaded: string[];
     failed: { file: string; why: string }[];

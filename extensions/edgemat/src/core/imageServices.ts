@@ -195,6 +195,13 @@ export async function generateImage(id: ServiceId, model: string, prompt: string
   return { bytes: Buffer.from(b64, "base64"), mime: "image/png", service: id, model, prompt };
 }
 
+/** A texture from words: EDGEmat's texture prompt (or `prompt`), on `model` or the newest image model the key can use. */
+export async function generateTexture(id: ServiceId, words: string, opts: CallOptions & { model?: string; detail?: DetailSize; prompt?: string; quality?: Quality }): Promise<GeneratedImage> {
+  const model = opts.model ?? (await listModels(id, { ...opts, timeoutMs: 30_000 }))[0]?.id;
+  if (!model) throw new ImageServiceError(`${Services[id].name} lists no image models for this key.`);
+  return generateImage(id, model, opts.prompt ?? texturePrompt(words, opts.detail), opts);
+}
+
 export type DetailSize = "fine" | "medium" | "coarse";
 
 const DetailWords: Record<DetailSize, string> = {

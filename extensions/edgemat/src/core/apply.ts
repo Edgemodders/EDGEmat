@@ -127,6 +127,33 @@ export async function applyMaterial(bridge: BridgeClient, archive: string, mesh:
   return [mesh];
 }
 
+/**
+ * Puts one material of a project's copy of a mesh back as the game's mesh has it (its own setup or
+ * textures), undoing applyMaterial on it; the mesh's other materials keep the project's changes.
+ */
+export async function restoreMaterial(bridge: BridgeClient, archive: string, mesh: string, material: string): Promise<string[]> {
+  const game = (await readJson(bridge, undefined, mesh)).json.Data.RootChunk;
+  const { json, fromProject } = await readJson(bridge, archive, mesh);
+  if (!fromProject) return [];
+  const root = json.Data.RootChunk;
+  const named = (r: Json) => (r.materialEntries ?? []).find((e: Json) => String(jsonValue(e.name)).toLowerCase() === material.toLowerCase());
+  const was = named(game), now = named(root);
+  if (!was || !now) throw new Error(`${mesh} has no material named ${material}.`);
+  const local = (e: Json) => Number(e.isLocalInstance) === 1 || e.isLocalInstance === true;
+  if (local(was) !== local(now)) throw new Error(`${mesh}: the material ${material} changed kind in the project; Restore the item instead.`);
+  if (local(now)) {
+    const original = localMaterial(game, was.index);
+    if (!original) throw new Error(`${mesh}: the game's material ${material} has no local instance.`);
+    if (root.localMaterialBuffer?.materials?.[now.index]) root.localMaterialBuffer.materials[now.index] = original;
+    else if (root.preloadLocalMaterialInstances?.[now.index]) root.preloadLocalMaterialInstances[now.index].Data = original;
+    else throw new Error(`${mesh}: the material ${material} has no local instance to put back.`);
+  } else {
+    root.externalMaterials[now.index] = game.externalMaterials[was.index];
+  }
+  await writeJson(bridge, archive, mesh, json);
+  return [mesh];
+}
+
 // ---- the test pattern ----------------------------------------------------------------------------
 
 const Digits = ["111101101101111", "010110010010111", "111001111100111", "111001111001111", "101101111001001", "111100111001111", "111100111101111", "111001001001001", "111101111101111", "111101111001111"];

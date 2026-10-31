@@ -3,18 +3,21 @@
 // layered materials with EDGEmat's core over REDnode's REDbridge, and asks REDagent for a recipe. The
 // recipe is applied with mat_edit's checks into a work project in the app's data folder, packed, and
 // swapped into the running game, where V and the inventory's preview show it at once. Restore puts the
-// game's look back.
+// game's look back. W2: a print or pattern in the words becomes a texture made by the player's Gemini key
+// (REDnode's shared keys), over the whole material the planner picks.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as zlib from "node:zlib";
-import { agent, api, archives, game, kernel, pkg, ui, type GameRef } from "rednode";
+import { agent, api, archives, game, kernel, pkg, secrets, ui, type GameRef } from "rednode";
 import type { BridgeClient } from "../../../extensions/edgemat/src/core/bridgeClient";
 import { defaultCacheDir } from "../../../extensions/edgemat/src/core/config";
 import { loadItems, type ItemEntry, type ItemLook } from "../../../extensions/edgemat/src/core/find";
 import { bridgeOver } from "../../../extensions/edgemat/src/core/kernelBridge";
+import { generateTexture } from "../../../extensions/edgemat/src/core/imageServices";
 import { buildLibrary, isCurrent, loadLibrary, type Library } from "../../../extensions/edgemat/src/core/library";
-import { applyRecipe, describeLook, RestyleBrief, type Look, type Recipe } from "../../../extensions/edgemat/src/core/restyle";
+import { imageAsPng } from "../../../extensions/edgemat/src/core/material";
+import { applyPatterns, applyRecipe, describeLook, RestyleBrief, type Look, type PatternImage, type Recipe } from "../../../extensions/edgemat/src/core/restyle";
 
 /** The clothing slots, as the game's equipment areas, with the words the window shows. */
 const Slots = [
@@ -263,6 +266,7 @@ async function pick(i: number, quiet = false): Promise<void> {
     for (const m of look.meshes) say(`  ${m.mesh}, look ${m.appearance}`);
     for (const m of look.materials) {
       say(`    ${m.name}: ${m.restyled ? `${m.target} (restyled)` : m.setup}`);
+      if (m.pattern) say(`      wears a pattern: ${m.pattern}`);
       for (const l of m.layers) say(`      layer ${l.layer}: ${l.surface}, ${l.color ?? "no color"}${l.share === undefined ? "" : `, ${l.share}%`}`);
     }
     for (const o of look.other) say(`    ${o}`);
@@ -285,14 +289,14 @@ const PlanPrompt = (want: string) =>
     "You are the planner for EDGEmat's Wardrobe Designer, restyling a piece of clothing V wears in Cyberpunk 2077.",
     `The player wants: "${want}".`,
     RestyleBrief,
-    'Answer with only one JSON object, no other text: {"materials": [{"setup": "<the setup as the context names it>", "edits": [{"layer": <index>, "surface": "<only if it changes>", "color": "<words, #rrggbb, or a preset of the layer\'s surface>", "roughness": "<optional words>", "microblend": "<optional>"}]}], "notes": "<one or two plain sentences for the player>"}',
+    'Answer with only one JSON object, no other text: {"materials": [{"setup": "<the setup as the context names it>", "edits": [{"layer": <index>, "surface": "<only if it changes>", "color": "<words, #rrggbb, or a preset of the layer\'s surface>", "roughness": "<optional words>", "microblend": "<optional>"}]}], "patterns": [{"setup": "<the setup>", "words": "<the pattern and its colors>", "repeat": <number>, "shine": "matte|satin|glossy"}], "notes": "<one or two plain sentences for the player>"}. Leave out patterns when the words ask for none.',
   ].join("\n");
 
 /** What the planner gets: the item, V's body, and each layered material's shown layers. */
 const planContext = (look: Look) => ({
   item: look.item,
   body: look.body,
-  materials: look.materials.map((m) => ({ name: m.name, setup: m.setup, restyled: m.restyled || undefined, layers: m.layers })),
+  materials: look.materials.map((m) => ({ name: m.name, setup: m.setup, restyled: m.restyled || undefined, pattern: m.pattern ? true : undefined, layers: m.layers })),
 });
 
 /** The JSON object in an answer, also when it is wrapped in a code block or a sentence. */
@@ -301,7 +305,8 @@ function parseRecipe(text: string): Recipe | undefined {
   if (start < 0 || end <= start) return undefined;
   try {
     const r = JSON.parse(text.slice(start, end + 1)) as Recipe;
-    return Array.isArray(r.materials) ? r : undefined;
+    if (!Array.isArray(r.materials) && !Array.isArray(r.patterns)) return undefined;
+    return { ...r, materials: Array.isArray(r.materials) ? r.materials : [] };
   } catch {
     return undefined;
   }
@@ -325,10 +330,36 @@ async function plan(look: Look, want: string): Promise<Recipe | undefined> {
     say(`  ${m.setup}`);
     for (const e of m.edits ?? []) say(`    layer ${e.layer}: ${Object.entries(e).filter(([k]) => k !== "layer").map(([k, v]) => `${k} ${v}`).join(", ")}`);
   }
+  for (const p of recipe.patterns ?? []) say(`  ${p.setup}: the pattern "${p.words}", repeat ${p.repeat ?? 4}, ${p.shine ?? "satin"}`);
   if (recipe.notes) say(`  Notes: ${recipe.notes}`);
   console.log(`recipe ${JSON.stringify(recipe)}`);
   return recipe;
 }
+
+// ---------- patterns ----------
+
+/**
+ * The player's Gemini key, through REDnode's shared keys: at once when this app is allowed and a key
+ * is saved; else REDnode's own Key request window asks the player (to allow it, and to paste a key
+ * when none is saved). Null when the player says no.
+ */
+async function geminiKey(): Promise<string | null> {
+  const key = await secrets.shared("gemini");
+  if (key) return key;
+  status.set({ text: "REDnode is asking for your Gemini key, in its own window...", tone: "dim" });
+  say("Patterns need an image service: REDnode asks for your Google Gemini key (aistudio.google.com > Get API key)");
+  return secrets.askShared("gemini", { reason: "To make the pattern you asked for as a texture, with your own Gemini key and credits" });
+}
+
+/** A pattern's image from Gemini: a seamless texture from its words, as PNG. */
+const patternImage = (key: string): PatternImage => async (words) => {
+  const t = Date.now();
+  status.set({ text: `Gemini is making the pattern "${words}"...`, tone: "dim" });
+  const img = await generateTexture("gemini", words, { key });
+  say(`  Gemini (${img.model}) made "${words}" in ${seconds(t)}`);
+  const png = await imageAsPng(await getBridge(), img.bytes, img.mime.includes("jpeg") ? ".jpg" : ".png");
+  return { png, made: { service: "Google Gemini", model: img.model, prompt: img.prompt, words } };
+};
 
 // ---------- restyle, pack and swap ----------
 
@@ -398,17 +429,29 @@ async function restyle(): Promise<void> {
     if (!recipe) return;
     status.set({ text: "Making the materials...", tone: "dim" });
     const t2 = Date.now();
+    // The key before anything is written, so a pattern the player has no key for changes nothing.
+    const patterns = recipe.patterns?.filter((p) => p?.setup && p?.words) ?? [];
+    const key = patterns.length ? await geminiKey() : null;
+    if (patterns.length && !key) {
+      status.set({ text: "Patterns need a Gemini key: nothing was changed. Try again to be asked once more.", tone: "danger" });
+      say("No Gemini key: nothing was changed");
+      return;
+    }
     const r = await applyRecipe(await getBridge(), await getLibrary(), look, recipe, archiveDir, Suffix);
     for (const n of r.notes) say(`  ${n}`);
-    if (!r.changed.length) {
+    const made = key ? await applyPatterns(await getBridge(), look, patterns, archiveDir, patternImage(key)) : undefined;
+    for (const n of made?.notes ?? []) say(`  ${n}`);
+    const written = [...r.written, ...(made?.written ?? [])];
+    if (!r.changed.length && !made?.applied.length) {
       status.set({ text: `Nothing to change.${recipe.notes ? ` ${recipe.notes}` : ""}`, tone: "danger" });
       return;
     }
-    say(`Saved ${r.written.length} file(s) in ${seconds(t2)}: ${r.changed.map((c) => `${c.target}, layer(s) ${c.layers.join(", ")}`).join("; ")}`);
+    const what = [...r.changed.map((c) => `${c.target}, layer(s) ${c.layers.join(", ")}`), ...(made?.applied ?? []).map((a) => `${a.material}: "${a.words}" x${a.repeat}`)];
+    say(`Saved ${written.length} file(s) in ${seconds(t2)}: ${what.join("; ")}`);
     const s = readState();
     const had = s.restyles[look.item.id];
     const files = [...(had?.files ?? [])];
-    for (const f of r.written) if (!files.some((x) => sameFile(x, f))) files.push(f);
+    for (const f of written) if (!files.some((x) => sameFile(x, f))) files.push(f);
     s.restyles[look.item.id] = { name: look.item.name, words: [...(had?.words ?? []), want], files, when: new Date().toISOString() };
     // Game files copied in to undo an earlier restyle go now: this pack holds restyles again.
     const kept = Object.values(s.restyles).flatMap((x) => x.files);

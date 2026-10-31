@@ -9,7 +9,8 @@
   "permissions": [
     "bridge",
     "agent",
-    "archives"
+    "archives",
+    "keys:gemini"
   ],
   "requires": {
     "rednode": ">=0.48.1",

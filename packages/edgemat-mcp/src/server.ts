@@ -18,8 +18,8 @@ import { z } from "zod";
 import {
   addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
-  applyMaterial, applyRecipe, describeLook, RestyleBrief, generateImage, hasKey, imageAsPng, listModels, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
-  type ColorInfo, type LayerInfo, type Library, type MaterialResult, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
+  applyMaterial, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, hasKey, imageAsPng, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
+  type ColorInfo, type LayerInfo, type Library, type MaterialResult, type PatternImage, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
 declare const __VERSION__: string;
@@ -355,16 +355,27 @@ server.registerTool(
     description:
       "Restyles a clothing item, as EDGEmat's Wardrobe Designer does in the game: one call from the item to a project. Without materials, returns the item's look (its meshes and each layered material's shown layers in plain words), which is what to plan on. " +
       "With materials (a recipe: for each setup, the layer changes in words, as mat_edit takes them), applies it with mat_edit's checks: each changed setup is saved beside the game's under a new name, and the look's meshes are copied into the project and pointed at it, so it shows in the game with no other mod once packed and installed (REDcode: Pack and Try). " +
-      "A layer change that cannot be made is skipped and said in notes; the rest go in. Run it again on the same project and it starts from the restyled copy. body: the look for one body; default every body's look. How to plan:\n" +
+      "A layer change that cannot be made is skipped and said in notes; the rest go in. Run it again on the same project and it starts from the restyled copy. body: the look for one body; default every body's look. " +
+      "patterns (prints such as polka dots, stripes or camo): each makes a texture from its words through the user's AI image service and puts it over that whole material, as mat_generate does; it spends their credits with their own key (the EDGE tools' shared key store, or GEMINI_API_KEY or OPENAI_API_KEY). How to plan:\n" +
       RestyleBrief,
     inputSchema: {
       item: z.string().describe("A clothing record id (Items.Q001_Pants), or words matching one item"),
       body: z.enum(["masculine", "feminine", "all"]).default("all"),
       materials: z.array(z.object({ setup: z.string().describe("The game's setup, as the look names it"), edits: z.array(LayerEditSchema).min(1) })).optional(),
+      patterns: z
+        .array(
+          z.object({
+            setup: z.string().describe("The game's setup, as the look names it"),
+            words: z.string().describe("The pattern and its colors, for the image service: 'bright yellow with large black polka dots'"),
+            repeat: z.number().int().min(1).max(32).optional().describe("How many times it repeats across the garment; fewer is larger. Default 4"),
+            shine: z.enum(["matte", "satin", "glossy"]).optional(),
+          }),
+        )
+        .optional(),
       project: z.string().optional().describe("The project folder, its .cpmodproj, or its source\\archive folder: needed with materials, and read for an earlier restyle"),
     },
   },
-  async ({ item, body, materials, project }) => {
+  async ({ item, body, materials, patterns, project }) => {
     try {
       const b = await getBridge();
       const lib = await library();
@@ -378,14 +389,19 @@ server.registerTool(
       if (project && !p) return failure(new Error(`${project} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`));
       const suffix = suffixFor(p?.name ?? "restyle");
       const look = await describeLook(b, lib, cacheDir, found[0], body, { archive: p?.archive, suffix });
-      if (!materials) return text({ look, next: "Plan the layer changes, then call mat_restyle again with materials and project." });
+      if (!materials && !patterns) return text({ look, next: "Plan the layer changes and patterns, then call mat_restyle again with materials or patterns, and project." });
       if (!p) return failure(new Error("Pass project: the WolvenKit project folder to save the restyle into."));
-      const r = await applyRecipe(b, lib, look, { materials }, p.archive, suffix);
+      // The key first, so a missing one changes nothing.
+      const image = patterns?.length ? await imageKey() : undefined;
+      const r = await applyRecipe(b, lib, look, { materials: materials ?? [], patterns }, p.archive, suffix);
+      const made = image && patterns ? await applyPatterns(b, look, patterns, p.archive, patternImage(b, image.service, image.key)) : undefined;
+      const changed = r.changed.length + (made?.applied.length ?? 0);
+      const notes = [...r.notes, ...(made?.notes ?? [])];
       return text({
         item: look.item,
-        saved: r.changed.length ? { project: p.dir, changed: r.changed, written: r.written } : undefined,
-        next: r.changed.length ? "Pack the project and install it (REDcode: Pack and Try), then look at the item in the game." : "Nothing changed: see notes.",
-        notes: r.notes.length ? r.notes : undefined,
+        saved: changed ? { project: p.dir, changed: r.changed.length ? r.changed : undefined, patterns: made?.applied.length ? made.applied : undefined, written: [...new Set([...r.written, ...(made?.written ?? [])])] } : undefined,
+        next: changed ? "Pack the project and install it (REDcode: Pack and Try), then look at the item in the game." : "Nothing changed: see notes.",
+        notes: notes.length ? notes : undefined,
       });
     } catch (e) {
       return failure(e);
@@ -482,6 +498,26 @@ const materialOutResult = (r: MaterialResult, project: string) => ({
     : "Not put on any mesh: pass targets (mat_find lists meshes and material names), or mat_apply the .mi later.",
 });
 
+const HowToSetKey = "Set one in VS Code with EDGEmat's command Set Image Service Key... (it goes in the EDGE tools' shared key store), or set GEMINI_API_KEY or OPENAI_API_KEY in the MCP server's environment.";
+
+/** The image service to use (the one asked for, else the first with a key) and its key; throws in words when there is none. */
+async function imageKey(service?: ServiceId): Promise<{ service: ServiceId; key: string }> {
+  const s: ServiceId | undefined = service ?? (hasKey("gemini") ? "gemini" : hasKey("openai") ? "openai" : undefined);
+  if (!s) throw new Error(`No image service key. ${HowToSetKey}`);
+  const key = await sharedKeys.getKey(s, { tool: "EDGEmat MCP" });
+  if (!key) throw new Error(`No ${Services[s].name} key, or one made by another Windows user. ${HowToSetKey}`);
+  return { service: s, key };
+}
+
+/** A pattern's image: a seamless texture from its words, as PNG. */
+const patternImage = (b: BridgeClient, service: ServiceId, key: string): PatternImage => async (words) => {
+  const started = Date.now();
+  const img = await generateTexture(service, words, { key });
+  log(`${Services[service].name} ${img.model} made a pattern in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+  const png = await imageAsPng(b, img.bytes, img.mime.includes("jpeg") ? ".jpg" : ".png");
+  return { png, made: { service: Services[service].name, model: img.model, prompt: img.prompt, words } };
+};
+
 server.registerTool(
   "mat_generate",
   {
@@ -504,17 +540,12 @@ server.registerTool(
   },
   async ({ words, detail, service, model, quality, prompt, imageOnly, project, name, repeat, bumps, shine, metal, targets }) => {
     try {
-      const s: ServiceId | undefined = service ?? (hasKey("gemini") ? "gemini" : hasKey("openai") ? "openai" : undefined);
-      const howToSet = "Set one in VS Code with EDGEmat's command Set Image Service Key... (it goes in the EDGE tools' shared key store), or set GEMINI_API_KEY or OPENAI_API_KEY in the MCP server's environment.";
-      if (!s) return failure(new Error(`No image service key. ${howToSet}`));
-      const key = await sharedKeys.getKey(s, { tool: "EDGEmat MCP" });
-      if (!key) return failure(new Error(`No ${Services[s].name} key, or one made by another Windows user. ${howToSet}`));
+      const { service: s, key } = await imageKey(service);
       const p = imageOnly ? undefined : projectFor(project);
-      const chosen = model ?? (await listModels(s, { key, timeoutMs: 30_000 }))[0]?.id;
-      if (!chosen) return failure(new Error(`${Services[s].name} lists no image models for this key.`));
       const fullPrompt = prompt ?? texturePrompt(words, detail);
       const started = Date.now();
-      const img = await generateImage(s, chosen, fullPrompt, { key, quality });
+      const img = await generateTexture(s, words, { key, model, prompt: fullPrompt, quality });
+      const chosen = img.model;
       log(`${Services[s].name} ${chosen} made an image in ${((Date.now() - started) / 1000).toFixed(1)} s`);
       const b = await getBridge();
       const png = await imageAsPng(b, img.bytes, img.mime.includes("jpeg") ? ".jpg" : ".png");

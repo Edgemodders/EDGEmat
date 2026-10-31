@@ -26,9 +26,9 @@ export { addToInventory, isFilePath, itemMaterials, itemsWearing, loadItems, mes
 export { Desk, deskLabel, deskProjectName, type DeskConflict, type DeskEntry, type DeskResult } from "./desk";
 export { renderMaterials, type RenderedMaterial, type RenderRequest } from "./render";
 export { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, seamScore, squareCrop, writePng, type Image } from "./maps";
-export { errorText, generateImage, listModels, texturePrompt, ImageServiceError, Services, type CallOptions, type DetailSize, type GeneratedImage, type ImageModel, type Quality, type ServiceId, type ServiceInfo } from "./imageServices";
+export { errorText, generateImage, generateTexture, listModels, texturePrompt, ImageServiceError, Services, type CallOptions, type DetailSize, type GeneratedImage, type ImageModel, type Quality, type ServiceId, type ServiceInfo } from "./imageServices";
 export { imageAsPng, makeMaterial, materialSlug, type MadeBy, type MaterialResult, type MaterialTarget, type NewMaterial, type Shine } from "./material";
 export { applyMaterial, texturedMaterialJson, uvTestPattern, writeTexture, writeTexturedMaterial, MetalBase, TextureTemplates, type TexturedMaterial, type TextureKind } from "./apply";
 export { checkKey, envName, hasKey, keysDir, sharedKeys } from "./sharedKeys";
 export { bridgeOver, type BridgeCall } from "./kernelBridge";
-export { applyRecipe, describeLook, RestyleBrief, type Look, type LookLayer, type LookMaterial, type Recipe, type RestyleResult } from "./restyle";
+export { applyPatterns, applyRecipe, describeLook, RestyleBrief, type Look, type LookLayer, type LookMaterial, type PatternImage, type PatternPlan, type PatternResult, type Recipe, type RestyleResult } from "./restyle";
