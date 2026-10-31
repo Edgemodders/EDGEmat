@@ -266,7 +266,7 @@ async function pick(i: number, quiet = false): Promise<void> {
     for (const m of look.meshes) say(`  ${m.mesh}, look ${m.appearance}`);
     for (const m of look.materials) {
       say(`    ${m.name}: ${m.restyled ? `${m.target} (restyled)` : m.setup}`);
-      if (m.pattern) say(`      wears a pattern: ${m.pattern}`);
+      if (m.pattern) say(`      wears the pattern "${m.wears?.words ?? "?"}", repeat ${m.wears?.repeat ?? "?"}; the layers below are hidden under it`);
       for (const l of m.layers) say(`      layer ${l.layer}: ${l.surface}, ${l.color ?? "no color"}${l.share === undefined ? "" : `, ${l.share}%`}`);
     }
     for (const o of look.other) say(`    ${o}`);
@@ -296,7 +296,7 @@ const PlanPrompt = (want: string) =>
 const planContext = (look: Look) => ({
   item: look.item,
   body: look.body,
-  materials: look.materials.map((m) => ({ name: m.name, setup: m.setup, restyled: m.restyled || undefined, pattern: m.pattern ? true : undefined, layers: m.layers })),
+  materials: look.materials.map((m) => ({ name: m.name, setup: m.setup, restyled: m.restyled || undefined, wears: m.pattern ? m.wears ?? {} : undefined, layers: m.layers })),
 });
 
 /** The JSON object in an answer, also when it is wrapped in a code block or a sentence. */

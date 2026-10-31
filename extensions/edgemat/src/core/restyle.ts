@@ -42,6 +42,8 @@ export interface LookMaterial {
   uses: { mesh: string; material: string }[];
   /** The generated material a pattern put on it in the project, which its layers no longer show through. */
   pattern?: string;
+  /** That pattern as it was made, from its record: what a change to it ("bigger dots") starts from. */
+  wears?: { words?: string; repeat?: number; shine?: string };
   layers: LookLayer[];
 }
 
@@ -108,7 +110,7 @@ export const RestyleBrief = [
   "Each layer change may set: surface (a template's game path is safest; a material word such as 'denim' or 'leather' picks the game's plain version of it), color, roughness and metal (a finish in words, such as 'glossy' or 'rough'), bumps, microblend (a game path, a name, or 'plain'), tile and opacity (numbers).",
   "Prints and patterns (polka dots, stripes, checks, plaid, camo, florals, leopard): add an entry to patterns instead of layer edits for that material. A pattern is a generated texture over the whole material, replacing all of its layers (other fabrics, trims, dirt and wear on it), while the garment keeps its folds. So put it only on the material the words mean, usually the largest, and give that material no layer edits.",
   "A pattern's words describe only the pattern and its colors, for an image generator: 'bright yellow with large black polka dots', 'red and black tartan', 'green woodland camo'. Its repeat is how many times the image repeats across the garment's texture: 2 to 3 for large shapes, 4 by default, 8 or more for small ones. Its shine is matte, satin or glossy.",
-  "A material marked pattern already wears one: a new pattern replaces it, and layer changes to it take the pattern off, so its layers show again (with the colors they had). A logo or a picture in one place is not supported: say so in notes.",
+  "A material with wears already wears a pattern: wears gives its words, repeat and shine, and its listed layers are hidden under it. To change that pattern ('bigger dots', 'make the dots blue'), give a new pattern that starts from wears' words and changes only what is asked: bigger means a smaller repeat, smaller a larger one, and the colors stay unless the words name new ones. Layer changes to it take the pattern off, so its layers show again with the colors listed. A logo or a picture in one place is not supported: say so in notes.",
 ].join("\n");
 
 /** The words a recipe's layer change may use: mat_edit's, and nothing else. */
@@ -159,7 +161,10 @@ export async function describeLook(bridge: BridgeClient, lib: Library, dir: stri
           had.meshes.push(mesh.mesh);
           had.uses.push({ mesh: mesh.mesh, material: use.name });
         }
-        had.pattern ??= patterned.get(use.name);
+        if (!had.pattern && patterned.get(use.name)) {
+          had.pattern = patterned.get(use.name);
+          had.wears = patternRecord(options.archive!, had.pattern!);
+        }
         continue;
       }
       if (out.materials.length >= max) {
@@ -173,7 +178,7 @@ export async function describeLook(bridge: BridgeClient, lib: Library, dir: stri
       const layers = opened.info.layers
         .filter((l) => l.shown)
         .map((l) => ({ layer: l.index, surface: l.surface.title, surfacePath: l.surface.path, color: l.color?.plain, colorPreset: l.color?.name, share: l.share === undefined ? undefined : Math.round(l.share * 1000) / 10 }));
-      out.materials.push({ name: use.name, setup: use.setup, target, restyled: !!copy, mask: use.mask, meshes: [mesh.mesh], uses: [{ mesh: mesh.mesh, material: use.name }], pattern: patterned.get(use.name), layers });
+      out.materials.push({ name: use.name, setup: use.setup, target, restyled: !!copy, mask: use.mask, meshes: [mesh.mesh], uses: [{ mesh: mesh.mesh, material: use.name }], pattern: patterned.get(use.name), wears: patterned.get(use.name) ? patternRecord(options.archive!, patterned.get(use.name)!) : undefined, layers });
     }
   }
   return out;
@@ -188,6 +193,18 @@ async function patternsIn(bridge: BridgeClient, archive: string | undefined, mes
     if (mi) out.set(use.name, mi);
   }
   return out;
+}
+
+/** How a pattern was made, from the record makeMaterial keeps beside it in source\raw. */
+function patternRecord(archive: string, mi: string): LookMaterial["wears"] {
+  const folder = path.win32.dirname(mi);
+  const file = path.join(path.resolve(archive, "..", "raw"), folder, `${path.win32.basename(folder)}.edgemat.json`);
+  try {
+    const r = JSON.parse(fs.readFileSync(file, "utf8")) as { words?: string; repeat?: number; shine?: string };
+    return { words: r.words, repeat: r.repeat, shine: r.shine };
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -247,6 +264,7 @@ export async function applyRecipe(bridge: BridgeClient, lib: Library, look: Look
 function dropPattern(archive: string, look: Look, material: LookMaterial, keep?: string): string | undefined {
   const old = material.pattern && path.win32.dirname(material.pattern);
   material.pattern = undefined;
+  material.wears = undefined;
   if (!old || (keep && same(old, keep))) return undefined;
   if (look.materials.some((m) => m !== material && m.pattern && same(path.win32.dirname(m.pattern), old))) return undefined;
   fs.rmSync(path.join(archive, old), { recursive: true, force: true });
@@ -284,6 +302,7 @@ export async function applyPatterns(bridge: BridgeClient, look: Look, patterns: 
       const gone = dropPattern(archive, look, material, r.folder);
       if (gone) result.notes.push(`${material.name}: the pattern before it was removed (${gone}).`);
       material.pattern = r.applied[0]?.mi ?? material.pattern;
+      material.wears = { words, repeat, shine };
     } catch (e) {
       result.notes.push(`Skipped the pattern on ${material.name}: ${message(e)}`);
     }
