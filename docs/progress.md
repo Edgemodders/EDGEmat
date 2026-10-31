@@ -240,6 +240,7 @@ Last updated 2026-10-29.
 
 | Decision | Why | Date |
 |---|---|---|
+| AI service clients (Tripo, image services) may later move to the tool whose job they are, decided case by case; EDGEmat may then depend on EDGEfab for a feature once EDGEfab has all of it. For now Wardrobe Designer drives the player-facing features, with clients where they are, and refactoring follows | Prove the concept first and let the design settle. A player must never be blocked from a feature, or made to download another tool, by a move (owner) | 2026-10-31 |
 | Game surfaces are read-only; custom colors come from a custom copy | A surface is shared by every item that uses it | 2026-10-16 |
 | The bridge client is copied from REDcode for now | A shared npm package for the EDGE tools stays the goal | 2026-10-16 |
 | The library is built from the user's game, never shipped | The EDGE repos never ship data extracted from the game; it also stays current after patches | 2026-10-14 |
