@@ -421,17 +421,19 @@ async function restore(): Promise<void> {
     const mine = rec.files.filter((f) => !kept.some((x) => sameFile(x, f)));
     for (const f of mine) removeFile(f);
     say(`Restore ${look.item.name ?? look.item.id}: removed ${mine.length} file(s) from the work project`);
-    if (!kept.length) {
-      // An archive needs something in it: the game's own meshes, unchanged, so the swap shows them.
-      const b = await getBridge();
-      for (const mesh of mine.filter((f) => /\.mesh$/i.test(f))) {
-        const out = path.join(archiveDir, mesh);
-        fs.mkdirSync(path.dirname(out), { recursive: true });
-        await b.extract(mesh, out);
-        s.originals.push(mesh);
-      }
-      say(`  Nothing else is restyled: the archive holds the game's own ${s.originals.length} mesh(es) until the next restyle`);
+    // The game's own meshes, unchanged, go in their place. REDswap clears the game's copies only of
+    // the files the new archive holds, so a mesh just left out would keep its restyled copy until a
+    // restart (seen 2026-10-30, REDswap 1.0.0). REDbridge reads only the game's archives, so these
+    // are the originals. They stay until the next restyle; by then the game has the original loaded.
+    const b = await getBridge();
+    const meshes = mine.filter((f) => /\.mesh$/i.test(f));
+    for (const mesh of meshes) {
+      const out = path.join(archiveDir, mesh);
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      await b.extract(mesh, out);
+      if (!s.originals.some((x) => sameFile(x, mesh))) s.originals.push(mesh);
     }
+    say(`  The archive holds the game's own ${meshes.length} mesh(es) in their place, until the next restyle`);
     writeState(s);
     await packAndSwap(look.item.id);
     status.set({ text: `Restored in ${seconds(t)}.`, tone: "accent" });
