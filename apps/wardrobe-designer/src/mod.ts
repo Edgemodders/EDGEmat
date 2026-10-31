@@ -288,8 +288,38 @@ async function plan(look: Look, want: string): Promise<Recipe | undefined> {
 
 // ---------- restyle, pack and swap ----------
 
-/** Packs the work project and swaps it into the game; V and the inventory's preview show it at once. */
-async function packAndSwap(): Promise<void> {
+/** The base clothing slots the inventory's preview wears items in. */
+const PreviewSlots = ["Head", "Eyes", "Chest", "Torso", "Legs", "Feet", "Outfit"].map((s) => `AttachmentSlots.${s}`);
+
+/**
+ * Applies the item's appearance again on the inventory's preview of V, so it loads the swapped files.
+ * REDnode does this after a swap only in the slots it refreshed on V, and with the inventory open the
+ * game hides V's own items (they read empty_appearance_default), so nothing is refreshed: seen
+ * 2026-10-30 with REDnode 0.48.1, without Equipment-EX. Returns the slot, or why there was none.
+ */
+async function refreshPreview(itemId: string): Promise<string> {
+  const hash = tweakDbId(itemId).toLowerCase();
+  const ts = await api.GameInstance.GetTransactionSystem(game.instance);
+  const layer = await (await api.GameInstance.GetInkSystem())?.GetLayer("inkMenuLayer");
+  const menu = await layer?.GetGameController();
+  const preview = await menu?.GetPuppet("inventory");
+  if (!preview) return "no preview (the inventory has not made one yet)";
+  for (const slot of PreviewSlots) {
+    const item = await ts.GetItemInSlot(preview, slot);
+    const id = item ? await item.GetItemID() : null;
+    if (id && String(id.id).toLowerCase() === hash) {
+      await ts.ResetItemAppearance(preview, id);
+      return slot;
+    }
+  }
+  return "the preview does not wear it";
+}
+
+/**
+ * Packs the work project and swaps it into the game; V and the inventory's preview show it at once.
+ * `itemId`: the item restyled or restored, refreshed on the preview when REDnode did not.
+ */
+async function packAndSwap(itemId?: string): Promise<void> {
   const b = await getBridge();
   let t = Date.now();
   fs.mkdirSync(packedDir, { recursive: true });
@@ -300,7 +330,15 @@ async function packAndSwap(): Promise<void> {
   const r = await archives.reload([packed.archive]);
   for (const f of r.failed) say(`  Not swapped: ${f.file}: ${f.why}`);
   if (!r.reloaded.length) throw new Error(`the archive was not swapped in${r.failed[0] ? `: ${r.failed[0].why}` : ""}.`);
-  say(`Swapped in, ${seconds(t)}${r.refreshed?.length ? `; V refreshed: ${r.refreshed.map((x) => x.slot.replace(/^.*\./, "")).join(", ")}` : ""}${r.preview?.items.length ? "; the inventory's preview too" : r.preview?.note ? `; preview: ${r.preview.note}` : ""}`);
+  say(`Swapped in, ${seconds(t)}${r.refreshed?.length ? `; V refreshed: ${r.refreshed.map((x) => x.slot.replace(/^.*\./, "")).join(", ")}` : "; nothing on V refreshed (with the inventory open, the game shows V's items on the preview)"}${r.preview?.items.length ? "; the inventory's preview too" : r.preview?.note ? `; preview: ${r.preview.note}` : ""}`);
+  if (itemId && !r.preview?.items.length) {
+    try {
+      const done = await refreshPreview(itemId);
+      say(/^[A-Z]\w+\./.test(done) ? `  Refreshed it on the inventory's preview (${done.replace(/^.*\./, "")})` : `  Not refreshed on the preview: ${done}`);
+    } catch (e) {
+      say(`  Refreshing the inventory's preview failed: ${message(e)}`);
+    }
+  }
 }
 
 async function restyle(): Promise<void> {
@@ -334,7 +372,7 @@ async function restyle(): Promise<void> {
     s.originals = [];
     writeState(s);
     status.set({ text: "Packing and swapping it in...", tone: "dim" });
-    await packAndSwap();
+    await packAndSwap(look.item.id);
     status.set({ text: `Restyled in ${seconds(t)}.${recipe.notes ? ` ${recipe.notes}` : ""}`, tone: "accent" });
     labelSlots();
     if (pickedSlot !== undefined) await pick(pickedSlot, true);
@@ -374,7 +412,7 @@ async function restore(): Promise<void> {
       say(`  Nothing else is restyled: the archive holds the game's own ${s.originals.length} mesh(es) until the next restyle`);
     }
     writeState(s);
-    await packAndSwap();
+    await packAndSwap(look.item.id);
     status.set({ text: `Restored in ${seconds(t)}.`, tone: "accent" });
     labelSlots();
     if (pickedSlot !== undefined) await pick(pickedSlot, true);
