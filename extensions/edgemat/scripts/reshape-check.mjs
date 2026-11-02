@@ -96,7 +96,7 @@ const axis = (w) => {
  * (the camera at its left, looking at it), as a tailor's side view; Tripo's naming is unverified.
  */
 function views(front) {
-  // Facing `front` with up Y, its right is front Ã— up, so its left is up Ã— front.
+  // Facing `front` with up Y, its right is front x up, so its left is up x front.
   const left = cross(Up, front);
   return [
     { view: "front", cam: front },
