@@ -2,7 +2,7 @@
 
 What has been done on EDGEmat, what was decided and why, and what is open. Newest first within each section. Read this to catch up without asking. The [design](design.html) and the [behavior spec](design/behavior.html) hold the full detail.
 
-Last updated 2026-10-29.
+Last updated 2026-11-02.
 
 ## At a glance
 
@@ -19,7 +19,6 @@ Last updated 2026-10-29.
 
 | To-do | Why | Since |
 |---|---|---|
-| Run [Wardrobe Designer W2 pattern fixes](testing.html#wardrobe-designer-w2-pattern-fixes) in the game | Built 2026-11-01 from the W2 run's findings | 2026-11-01 |
 | Update to 0.3.1 from the Marketplace in a normal VS Code (not the development host), check the Library, Find and New Material open, then run Connect an Assistant | The release's install test and the new one ([Tests](testing.html#install-of-the-release), [Connect an assistant](testing.html#connect-an-assistant)) | 2026-10-21 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: the Nexus page has the owner's nine. Screenshots 1 to 5 and 8 show a Windows user name in VS Code's Output panel (`C:\Users\...`); replace them on Nexus if that matters. Still open: the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)). The tutorials' in-game shots are in (2026-10-20); their UI shots still wait | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
@@ -48,6 +47,12 @@ Last updated 2026-10-29.
 | [EDGEfab #3](https://github.com/Edgemodders/EDGEfab/issues/3) | Fit a generated mesh onto a game garment, replacing it: weights from the original garment, out of V's body, garment support, both bodies, at the original's path; callable outside VS Code, for Wardrobe Designer's Reshape | Filed 2026-10-31 (owner's ask). Not urgent: fits EDGEfab's F4 Clothing |
 
 ## Log
+
+### 2026-11-02
+
+| What | Detail |
+|---|---|
+| **W2 pattern fixes passed in the game** | The owner's run on V's Pants: `yellow with large black polka dots` (one Gemini picture), then "make the dots bigger" (repeat 3 to 2) and "make it glossy" each said "the same picture as before; the image service was not asked", with no Gemini call. Restore worked. This picture tiled across but not down, so it was blended down only: the photo-mode shots show sharp dots with a few faded ones in horizontal bands, where the tile's top and bottom edges meet |
 
 ### 2026-11-01
 
