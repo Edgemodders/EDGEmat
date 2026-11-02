@@ -20,7 +20,7 @@ Last updated 2026-10-26.
 | [New Material](#new-material) | By hand, F5, with an image service key | M3 | 2026-10-20 | Pass |
 | [Generate round trip](#generate-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V |
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
-| [Reshape check](#reshape-check) | From `node scripts/reshape-check.mjs`, with Gemini and Tripo keys; then in the game | W3 | 2026-11-02 | Steps 1 to 3 run by Claude: the views, Gemini's change and Tripo's model all work. The fit (step 4) and the game are open |
+| [Reshape check](#reshape-check) | From `node scripts/reshape-check.mjs`, with Gemini and Tripo keys; then in the game | W3 | 2026-11-02 | Steps 1 to 4 run by Claude: the views, Gemini's change, Tripo's model and the fit work; the hat is imported and packed. The game is open |
 | [Paint check](#paint-check) | From `npm run paint-check`, with a Tripo key; then in the game | W2 | 2026-10-31 | **Passed** (owner, dev PC): Tripo keeps the garment's vertices and UVs, and its paint shows in the game as painted. It paints no repeating pattern |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
@@ -256,9 +256,17 @@ Added 2026-11-02 (owner: W3 next): design, "Reshape: a garment's shape changed b
 | 1. Views | Exports the item's meshes as `.glb`, draws them front, left, back and right (orthographic, the look's colors from EDGEmat's color maps, soft light, white), the garment half the square so a change has room. `views.png` (two by two) and `views.json` (scale, centre, box) | `views` (default) | None |
 | 2. Change | Sends `views.png` to Gemini with the words; cuts the answer into four views; prints each view's outline before and after, in metres | `edit` | A few US cents. The same words reuse the picture; `--again` asks again; `--model` picks Gemini's model |
 | 3. Model | Uploads the four changed views to Tripo's multiview to model (`v3.1-20260211`), downloads the `.glb` and Tripo's preview, and draws the model the same way | `model` | 30 credits (US$0.30) on 2026-11-02 |
-| 4. Fit | Not built yet | | |
+| 3b. Fewer faces | Tripo's retopology of that model to `--faces` (default 6000), its texture baked on | `model` | 30 credits |
+| 4. Fit | For a garment on one bone (a hat). Drops stray pieces (wholly outside the model's main box, or under 0.5% of it); turns Tripo's model (it faces +X) to the garment's front; places it on the box the changed views show, by their scale; writes a `.glb` shaped as WolvenKit's export (the armature and skin kept, one part, every vertex on the bone, tangents from the UVs) at the mesh's raw path; imports it over the mesh; Tripo's color and roughness as a textured material on the look's first material; packs | `fit` | None |
 
-Run it as `node extensions\edgemat\scripts\reshape-check.mjs "<your Projects folder>\EDGEmat_ReshapeCheck" --until edit --what "cowboy hat"` after `npm run build` in `extensions\edgemat`. Defaults: the Cowboy hat with hardened-leather band (`Items.Hat_02_basic_01`, `h1_021_pwa_hat__cowboy_sheriff.mesh`, look `white`), feminine, "make the brim twice as wide".
+Run it as `node extensions\edgemat\scripts\reshape-check.mjs "<your Projects folder>\EDGEmat_ReshapeCheck" --until edit --what "cowboy hat"` after `npm run build` in `extensions\edgemat`. The game's export is kept as `<mesh>.original.glb` in the work folder; a fitted mesh gets a `<mesh>.reshaped.json` mark beside it.
+
+| # | In the game | Expected |
+|---|---|---|
+| 1 | With the game closed, copy `<project>\packed\archive\pc\mod\EDGEmat_ReshapeCheck.archive` into `<game>\archive\pc\mod` | |
+| 2 | Start the game, load a save with a feminine V. Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Hat_02_basic_01", 1)`. Inventory › **Head**: equip the **Cowboy hat with hardened-leather band** | The inventory's preview shows the wide-brimmed hat |
+| 3 | Photo mode: front, each side, back, and a look up and down | The hat sits on the head as the game's did: not floating, not sunk into the forehead; hair not through the crown; the brim about 1.6 times as wide; the band dark, the buckle at the back; the texture the right way up (as `fit_..._views.png`). It moves with the head |
+| 4 | Screenshots; take the archive out of `archive\pc\mod` afterwards | Shared with the session | Defaults: the Cowboy hat with hardened-leather band (`Items.Hat_02_basic_01`, `h1_021_pwa_hat__cowboy_sheriff.mesh`, look `white`), feminine, "make the brim twice as wide".
 
 **Run 2026-11-02 by Claude on the dev PC, steps 1 to 3.** The hat: 1 mesh, 4 parts, 2,538 triangles, 0.31 × 0.19 × 0.35 m. WolvenKit names the most detailed level `LOD_1`. The `.glb` faces +Z (the front brim dips, the buckle is at the back).
 
@@ -268,7 +276,9 @@ Run it as `node extensions\edgemat\scripts\reshape-check.mjs "<your Projects fol
 | 2 | Nano Banana Pro, prompt "the same size" | Nearly unchanged (the hat filled 80% of each square, and the prompt said to keep its size) |
 | 3 | Nano Banana Pro, the hat half the square, "the same camera and scale; it may grow" | **Brim 1.6 times as wide in all four views, the crown unchanged, the views in step**; the buckle only at the back. 14 s |
 
-Tripo, task `080581f8-…`, from try 3: 130 s, 30 credits. A believable cowboy hat with the wide brim, the band and the back buckle, in the hat's colors; a small loose piece beside it. **1,484,202 triangles** (the game's: 2,538): the next run asks for fewer. Tripo's model faces +X, scaled to 1 m. Open: step 4, the fit (place it on the original, the head's bone weights, LODs, import over the mesh), then the game.
+Tripo, task `080581f8-…`, from try 3: 130 s, 30 credits. A believable cowboy hat with the wide brim, the band and the back buckle, in the hat's colors; a small loose piece beside it. **1,484,202 triangles** (the game's: 2,538): the next run asks for fewer. Tripo's model faces +X, scaled to 1 m.
+
+**Step 4, the same day (Claude):** the hat is on one bone, `Head`, and has one level of detail; its export's vertex colors are all zero. Tripo's retopology (task `b220c41f-…`, 145 s, 30 credits) to 8,475 triangles, then a loose piece of 390 triangles beside the hat dropped (it had widened the fit), leaving 8,085 triangles and 6,890 vertices (the game's hat: 2,538 triangles). The fitted model drawn as the changed views matches them. Tripo's model came out rounder than Gemini drew it, so the fit stretches it a third more front to back than across (0.66 against 0.50). WolvenKit's import worked: the mesh now has 1 part on `Head` (the game's had 4: hat, band piece, emissive, glass), every look keeps its first material (`white` now Tripo's texture, 2048 px, with Tripo's roughness), box 0.50 × 0.55 m, the crown's top at the game hat's height. Packed: `EDGEmat_ReshapeCheck.archive`. Open: the game, steps 1 to 4 above. Not done: the masculine mesh, other looks' materials (the other looks show the hat in their old material on Tripo's UVs), Tripo's normal map.
 
 ### Paint check
 
