@@ -10,16 +10,19 @@
 //
 //   node scripts/reshape-check.mjs <project folder> [--item Items.Hat_02_basic_01] [--body feminine]
 //        [--words "make the brim twice as wide"] [--what "cowboy hat"] [--until views|edit|model|fit]
-//        [--again] [--model <Gemini model>] [--task <Tripo task id>] [--faces 6000] [--front +z]
+//        [--service gemini|openai] [--model <model>] [--again] [--edit <picture>] [--task <Tripo task id>]
+//        [--faces 6000] [--front -z]
 //        [--model-front +x] [--bone Head] [--flipv] [--size 768]
 //
-// --until stops after that step (default: views, so nothing is paid for until asked). --again asks Gemini
-// once more for the same words. --task reuses a finished Tripo task. --faces is the retopology's face
+// --until stops after that step (default: views, so nothing is paid for until asked). --service and
+// --model choose who changes the pictures (Gemini's gemini-3-pro-image, or OpenAI's gpt-image-2.5-sunburst);
+// each model keeps its own picture. --again asks once more for the same words; --edit uses a picture made
+// before. --task reuses a finished Tripo task. --faces is the retopology's face
 // count (0: none). --front is the direction the garment faces in the exported .glb (-z; files made with
 // +z before 2026-11-02 need --front +z to be read the same), --model-front the one Tripo's model faces.
 // --anchor centres the top of the fitted garment (that share of its height, 0.3) on the game's: a
 // hat's crown on the head. --flipv reads the textures upside down. Keys come from the shared key store
-// (gemini, tripo), never printed. Gemini: a few US cents a round. Tripo: 30 credits a model, and the
+// (gemini, openai, tripo), never printed. Gemini: a few US cents a round. Tripo: 30 credits a model, and the
 // retopology's.
 
 import * as fs from "node:fs";
@@ -484,31 +487,37 @@ try {
   console.log(`Views: ${sheet}`);
   if (!upTo("edit")) throw "stop";
 
-  // 2. The views changed by words, as one picture.
+  // 2. The views changed by words, as one picture. Each service and model keeps its own picture, so they
+  // can be set side by side; --edit picks a picture made before for the next steps.
+  const service = opt("service", "gemini");
+  if (!["gemini", "openai"].includes(service)) throw new Error("--service is gemini or openai");
+  // Gemini's Pro follows a change best (2026-11-02); OpenAI's sunburst is its model for exact edits.
+  const model = opt("model", service === "gemini" ? "gemini-3-pro-image" : "gpt-image-2.5-sunburst");
   const slug = core.materialSlug(words);
-  const editFile = path.join(work, `edit_${slug}.png`);
-  if (again || !fs.existsSync(editFile)) {
-    const key = getKey("gemini", { tool: "EDGEmat" });
-    if (!key) throw new Error("No Gemini key in the shared key store (service gemini)");
-    const model = opt("model") ?? (await core.listModels("gemini", { key, timeoutMs: 30_000 }))[0]?.id;
+  const editFile = opt("edit") ? path.resolve(opt("edit")) : path.join(work, `edit_${slug}_${core.materialSlug(model)}.png`);
+  if (!opt("edit") && (again || !fs.existsSync(editFile))) {
+    const key = getKey(service, { tool: "EDGEmat" });
+    if (!key) throw new Error(`No ${service === "gemini" ? "Gemini" : "OpenAI"} key in the shared key store (service ${service})`);
     const prompt = [
       `The picture shows one ${what} from four sides, on a plain white background, as a 2 by 2 grid of orthographic views: top left from the front, top right from its left side, bottom left from the back, bottom right from its right side.`,
       `Change it: ${words}.`,
-      `Show the changed ${what} in the same four views and the same grid, with the same straight-on camera at the same distance and scale (the parts the words do not change stay the same size and place), soft light and plain white background. It may grow past where it was.`,
-      "Change only what the words ask, the same way in every view, so the four views show one object. Each view keeps its own details where they are: what shows only from the back stays only in the back view. Keep its colors and materials unless the words change them. No text, labels, shadows on the ground or borders.",
+      `A changed part replaces the old one: the old part is gone, not kept inside, under or beside the new one, so the ${what} still has each of its parts once.`,
+      `Show the changed ${what} in the same four views and the same grid, with the same straight-on camera at the same distance and scale: the parts the words do not change keep their size and place, and a part made bigger may reach past where the old one did. Soft light, plain white background.`,
+      "Change it the same way in every view, so the four views show one object. Each view keeps its own details where they are: what shows only from the front stays only in the front view. Keep its colors and materials unless the words change them. No text, labels, shadows on the ground or borders.",
     ].join(" ");
     const start = Date.now();
-    const img = await core.editImage("gemini", model, prompt, [{ bytes: fs.readFileSync(sheet), mime: "image/png" }], { key, aspect: "1:1" });
+    const img = await core.editImage(service, model, prompt, [{ bytes: fs.readFileSync(sheet), mime: "image/png" }], { key, aspect: "1:1", size: Size * 2 + ((16 - ((Size * 2) % 16)) % 16), timeoutMs: 300_000 });
     const png = await core.imageAsPng(bridge, img.bytes, img.mime === "image/png" ? ".png" : ".jpg");
     fs.writeFileSync(editFile, png);
-    fs.writeFileSync(editFile.replace(/\.png$/, ".json"), JSON.stringify({ made: new Date().toISOString(), service: "gemini", model, words, prompt: img.prompt }, null, 2));
-    console.log(`Gemini (${model}) changed the views in ${((Date.now() - start) / 1000).toFixed(1)} s`);
+    fs.writeFileSync(editFile.replace(/\.png$/, ".json"), JSON.stringify({ made: new Date().toISOString(), service, model, words, prompt: img.prompt }, null, 2));
+    console.log(`${service === "gemini" ? "Gemini" : "OpenAI"} (${model}) changed the views in ${((Date.now() - start) / 1000).toFixed(1)} s`);
   } else {
-    console.log(`Gemini: the same words as before, the picture kept (--again for a new one)`);
+    console.log(`${opt("edit") ? "The picture given" : `${model}: the same words as before, the picture kept (--again for a new one)`}: ${editFile}`);
   }
   const edited = core.readPng(fs.readFileSync(editFile));
   const quarters = cut(edited, Size);
-  vs.forEach((v, i) => fs.writeFileSync(path.join(work, `edit_${slug}_${v.view}.png`), core.writePng(quarters[i])));
+  const editStem = path.basename(editFile, ".png");
+  vs.forEach((v, i) => fs.writeFileSync(path.join(work, `${editStem}_${v.view}.png`), core.writePng(quarters[i])));
   // How the outline changed, view by view: a first measure of whether the views stayed in step.
   vs.forEach((v, i) => {
     const a = silhouette(drawn[i]), b = silhouette(quarters[i]);
@@ -532,7 +541,7 @@ try {
     if (balance) console.log(`Tripo: ${JSON.stringify(balance)}`);
     console.log(`Tripo: multiview to model (${ModelVersion}), four views`);
     const inputs = [];
-    for (const v of vs) inputs.push({ [v.view]: await upload(path.join(work, `edit_${slug}_${v.view}.png`)) });
+    for (const v of vs) inputs.push({ [v.view]: await upload(path.join(work, `${editStem}_${v.view}.png`)) });
     const { task_id } = await tripo("POST", "/generation/multiview-to-model", { inputs, model: ModelVersion, texture: true, pbr: true });
     task = await waitFor(task_id);
   }
@@ -563,7 +572,7 @@ try {
       await download(low.output?.model_url ?? low.output?.pbr_model ?? low.output?.model, lowFile);
     }
   }
-  const model = readGlb(fs.readFileSync(lowFile));
+  const low3d = readGlb(fs.readFileSync(lowFile));
   // Tripo's models face +X; turned about the vertical to face the garment's front.
   const tripoFront = axis(opt("model-front", "+x"));
   const turn = Math.atan2(cross(tripoFront, front)[1], dot(tripoFront, front));
@@ -578,10 +587,10 @@ try {
     return out;
   };
   const res = [];
-  for (const p of primitives(model)) {
-    const pbr = model.json.materials?.[p.material ?? 0]?.pbrMetallicRoughness ?? {};
+  for (const p of primitives(low3d)) {
+    const pbr = low3d.json.materials?.[p.material ?? 0]?.pbrMetallicRoughness ?? {};
     const tex = async (ref) => {
-      const img = ref ? imageOf(model, ref.index) : undefined;
+      const img = ref ? imageOf(low3d, ref.index) : undefined;
       return img ? core.readPng(await core.imageAsPng(bridge, img.bytes, img.ext)) : undefined;
     };
     res.push({ ...p, pos: rotY(p.pos), nrm: p.nrm && rotY(p.nrm), texture: await tex(pbr.baseColorTexture), rough: await tex(pbr.metallicRoughnessTexture) });

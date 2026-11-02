@@ -332,18 +332,24 @@ try {
         { name: "models/gemini-2.5-flash-image", displayName: "Nano Banana", supportedGenerationMethods: ["generateContent"] },
         { name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", supportedGenerationMethods: ["generateContent"] },
         { name: "models/imagen-4.0-generate-001", supportedGenerationMethods: ["predict"] },
+        { name: "models/gemini-3.1-flash-lite-image", displayName: "Nano Banana 2 Lite", supportedGenerationMethods: ["generateContent"] },
         { name: "models/gemini-3-pro-image", displayName: "Nano Banana Pro", supportedGenerationMethods: ["generateContent"] },
       ] });
       if (req.url.includes(":generateContent")) {
         const j = JSON.parse(body);
-        if (j.contents[0].parts[0].text.includes("blocked")) return send(200, { promptFeedback: { blockReason: "SAFETY" } });
+        const text = j.contents[0].parts.find((p) => p.text)?.text ?? "";
+        if (text.includes("blocked")) return send(200, { promptFeedback: { blockReason: "SAFETY" } });
         if (j.generationConfig.imageConfig.imageSize) return send(400, { error: { message: "imageSize is not supported for this model" } });
-        const text = j.contents[0].parts[0].text;
         if (text.includes("recite") && (text.includes("always") || !text.includes("original design"))) return send(200, { candidates: [{ finishReason: "IMAGE_RECITATION" }] });
         return send(200, { candidates: [{ content: { parts: [{ text: "here" }, { inlineData: { mimeType: "image/png", data: onePng } }] } }] });
       }
       if (req.url === "/v1/models") return send(200, { data: [{ id: "gpt-image-1-mini" }, { id: "gpt-4o" }, { id: "gpt-image-2.5-flare" }] });
       if (req.url === "/v1/images/generations") return send(200, { data: [{ b64_json: onePng }] });
+      if (req.url === "/v1/images/edits") {
+        // A form with the pictures as files.
+        if (!/^multipart\/form-data; boundary=/.test(req.headers["content-type"] ?? "") || !body.includes('name="image[]"; filename="picture1.png"')) return send(400, { error: { message: "no image" } });
+        return send(200, { data: [{ b64_json: onePng }] });
+      }
       send(404, { error: { message: "no such route" } });
     });
   });
@@ -358,7 +364,7 @@ try {
     const refused = await core.listModels("openai", { key: "bad", base }).then(() => "", (e) => e.message);
     const slow = await core.listModels("openai", { key: "k2", base: `${base}/slow`, timeoutMs: 300 }).then(() => "", (e) => e.message);
     const gen = seen.filter((s) => s.url.includes(":generateContent"));
-    check(gm.map((m) => m.id).join() === "gemini-3-pro-image,gemini-2.5-flash-image" && core.readPng(gi.bytes).width === 4 && gen.length === 3 && gen[0].key === "k1"
+    check(gm.map((m) => m.id).join() === "gemini-3-pro-image,gemini-2.5-flash-image,gemini-3.1-flash-lite-image" &&core.readPng(gi.bytes).width === 4 && gen.length === 3 && gen[0].key === "k1"
       && blocked.includes("blocked (SAFETY)") && om.map((m) => m.id).join() === "gpt-image-2.5-flare,gpt-image-1-mini" && core.readPng(oi.bytes).width === 4
       && JSON.parse(seen.find((s) => s.url === "/v1/images/generations").body).quality === "low" && refused.includes("refused the key") && refused.includes("Incorrect API key") && slow.includes("No answer"),
       `image services (stand-in): Gemini lists ${gm.length} image models and retries without a size; a blocked prompt says why; OpenAI lists ${om.length}; a bad key: "${refused}"; a slow answer: "${slow}"`);
@@ -366,6 +372,14 @@ try {
     const always = await core.generateImage("gemini", "gemini-2.5-flash-image", "recite dots always", { key: "k1", base }).then(() => "", (e) => e.message);
     check(core.readPng(recited.bytes).width === 4 && recited.prompt.includes("original design") && always.includes("IMAGE_RECITATION"),
       `image services (stand-in): Gemini's IMAGE_RECITATION is asked once more, reworded; twice says why: "${always}"`);
+    const picture = { bytes: core.writePng({ width: 4, height: 4, data: new Uint8Array(64).fill(90) }), mime: "image/png" };
+    const ge = await core.editImage("gemini", "gemini-3-pro-image", "make it red", [picture], { key: "k1", base });
+    const sentGemini = JSON.parse(seen.filter((s) => s.url.includes(":generateContent")).at(-1).body);
+    const oe = await core.editImage("openai", "gpt-image-2.5-sunburst", "make it red", [picture], { key: "k2", base, size: 1536 });
+    const sentOpenai = seen.findLast((s) => s.url === "/v1/images/edits").body;
+    check(core.readPng(ge.bytes).width === 4 && sentGemini.contents[0].parts[0].inlineData?.mimeType === "image/png" && sentGemini.contents[0].parts[1].text === "make it red"
+      && core.readPng(oe.bytes).width === 4 && sentOpenai.includes("gpt-image-2.5-sunburst") && sentOpenai.includes("1536x1536"),
+      "image services (stand-in): pictures changed by words, Gemini with the picture inline, OpenAI as a form with the picture as a file; the Lite model listed last");
   } finally {
     server.closeAllConnections?.();
     server.close();

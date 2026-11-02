@@ -83,16 +83,17 @@ function anySignal(signals: AbortSignal[]): AbortSignal | undefined {
   return c.signal;
 }
 
-async function call(service: ServiceInfo, path: string, opts: CallOptions, init: { method?: string; body?: unknown; headers: Record<string, string> }): Promise<any> {
+async function call(service: ServiceInfo, path: string, opts: CallOptions, init: { method?: string; body?: unknown; form?: FormData; headers: Record<string, string> }): Promise<any> {
   const limit = opts.timeoutMs ?? 180_000;
   const signals = [opts.signal, limit > 0 ? AbortSignal.timeout(limit) : undefined].filter(Boolean) as AbortSignal[];
   const url = new URL(path, (opts.base ?? service.base).replace(/\/+$/, "") + "/");
   let res: Response;
   try {
+    // A form (files) sets its own content type with its boundary.
     res = await fetch(url, {
-      method: init.method ?? (init.body === undefined ? "GET" : "POST"),
+      method: init.method ?? (init.body === undefined && !init.form ? "GET" : "POST"),
       headers: { ...init.headers, ...(init.body === undefined ? {} : { "content-type": "application/json" }) },
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      body: init.form ?? (init.body === undefined ? undefined : JSON.stringify(init.body)),
       signal: anySignal(signals),
     });
   } catch (e) {
@@ -209,11 +210,26 @@ export async function generateImage(id: ServiceId, model: string, prompt: string
 
 /**
  * Pictures changed by words: the pictures go with the prompt, one picture comes back (Reshape's views;
- * design, "Reshape"). Gemini only for now. `aspect` is the picture's shape, such as "1:1".
+ * design, "Reshape"). `aspect` is the picture's shape, such as "1:1"; OpenAI takes a size instead,
+ * square at `size` (default 1024) pixels.
  */
-export async function editImage(id: ServiceId, model: string, prompt: string, images: { bytes: Buffer; mime: string }[], opts: CallOptions & { aspect?: string }): Promise<GeneratedImage> {
+export async function editImage(id: ServiceId, model: string, prompt: string, images: { bytes: Buffer; mime: string }[], opts: CallOptions & { aspect?: string; size?: number; quality?: Quality }): Promise<GeneratedImage> {
   const s = Services[id];
-  if (id !== "gemini") throw new ImageServiceError(`${s.name} cannot change pictures in EDGEmat yet; use Google Gemini.`);
+  if (id === "openai") {
+    // OpenAI's Images API: the pictures as files, image[] each.
+    const form = new FormData();
+    form.append("model", model);
+    form.append("prompt", prompt);
+    form.append("n", "1");
+    form.append("size", `${opts.size ?? 1024}x${opts.size ?? 1024}`);
+    form.append("quality", opts.quality ?? "high");
+    form.append("output_format", "png");
+    images.forEach((img, i) => form.append("image[]", new Blob([new Uint8Array(img.bytes)], { type: img.mime }), `picture${i + 1}.${img.mime === "image/png" ? "png" : "jpg"}`));
+    const j = await call(s, "v1/images/edits", opts, { headers: openaiHeaders(opts), form });
+    const b64 = j?.data?.[0]?.b64_json;
+    if (!b64) throw new ImageServiceError(`${s.name} sent no image.`);
+    return { bytes: Buffer.from(b64, "base64"), mime: "image/png", service: id, model, prompt };
+  }
   const path = `v1beta/models/${encodeURIComponent(model)}:generateContent`;
   const ask = (text: string) =>
     call(s, path, opts, {
