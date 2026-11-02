@@ -15,8 +15,10 @@
 //
 // --until stops after that step (default: views, so nothing is paid for until asked). --again asks Gemini
 // once more for the same words. --task reuses a finished Tripo task. --faces is the retopology's face
-// count (0: none). --front is the direction the garment faces in the exported .glb, --model-front the
-// one Tripo's model faces; --flipv reads the textures upside down. Keys come from the shared key store
+// count (0: none). --front is the direction the garment faces in the exported .glb (-z; files made with
+// +z before 2026-11-02 need --front +z to be read the same), --model-front the one Tripo's model faces.
+// --anchor centres the top of the fitted garment (that share of its height, 0.3) on the game's: a
+// hat's crown on the head. --flipv reads the textures upside down. Keys come from the shared key store
 // (gemini, tripo), never printed. Gemini: a few US cents a round. Tripo: 30 credits a model, and the
 // retopology's.
 
@@ -471,7 +473,8 @@ try {
   const scale = (Size * 0.5) / Math.max(...box.size);
   console.log(`  size ${box.size.map((x) => x.toFixed(3)).join(" x ")} m; drawn at ${scale.toFixed(0)} px a metre`);
 
-  const front = axis(opt("front", "+z"));
+  // WolvenKit's export turns the game's forward (+Y) into glTF's -Z.
+  const front = axis(opt("front", "-z"));
   const vs = views(front);
   const drawn = vs.map((v) => draw(lod0, v.cam, center, scale, Size));
   vs.forEach((v, i) => fs.writeFileSync(path.join(work, `view_${v.view}.png`), core.writePng(drawn[i])));
@@ -629,6 +632,28 @@ try {
     return { ...p, pos, nrm };
   };
   const placed = res.map(place);
+  // The box comes from the whole outline, so a brim reaching further one way than the pictures show moves
+  // the crown off the head. The part that sits on the body decides where it goes across and front to back:
+  // for a hat, its top (the crown, above `--anchor` of its height), centred where the game's crown is.
+  const anchor = Number(opt("anchor", "0.3"));
+  if (anchor > 0) {
+    const topCentre = (ps) => {
+      const b = bbox(ps);
+      const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+      for (const p of ps) for (let k = 0; k < p.pos.length; k += 3) {
+        if (p.pos[k + 1] < b.hi[1] - anchor * b.size[1]) continue;
+        for (let c = 0; c < 3; c++) {
+          lo[c] = Math.min(lo[c], p.pos[k + c]);
+          hi[c] = Math.max(hi[c], p.pos[k + c]);
+        }
+      }
+      return { centre: lo.map((l, c) => (l + hi[c]) / 2), size: hi.map((h, c) => h - lo[c]) };
+    };
+    const was = topCentre(lod0), now = topCentre(placed);
+    const shift = [was.centre[0] - now.centre[0], 0, was.centre[2] - now.centre[2]];
+    for (const p of placed) for (let k = 0; k < p.pos.length; k += 3) for (const c of [0, 2]) p.pos[k + c] += shift[c];
+    console.log(`  the top ${Math.round(anchor * 100)}% centred on the game's: moved ${(shift[0] * 100).toFixed(1)} cm across, ${(shift[2] * 100).toFixed(1)} cm front to back; its size there ${(now.size[0] * 100).toFixed(1)} x ${(now.size[2] * 100).toFixed(1)} cm, the game's ${(was.size[0] * 100).toFixed(1)} x ${(was.size[2] * 100).toFixed(1)} cm`);
+  }
   const fitSheet = path.join(work, `fit_${slug}_views.png`);
   fs.writeFileSync(fitSheet, core.writePng(grid(vs.map((v) => draw(placed, v.cam, center, scale, Size)))));
   console.log(`Fitted, drawn as the changed views: ${fitSheet}`);
