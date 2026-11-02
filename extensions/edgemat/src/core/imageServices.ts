@@ -114,7 +114,8 @@ const openaiHeaders = (o: CallOptions) => ({ authorization: `Bearer ${o.key}` })
 
 /** Newest-looking first: names with higher version numbers sort ahead; "preview" and "lite" after the rest. */
 function byPreference(a: ImageModel, b: ImageModel): number {
-  const rank = (m: ImageModel) => (/preview|exp/i.test(m.id) ? 2 : 0) + (/lite|mini/i.test(m.id) ? 1 : 0);
+  // Whole name parts only: every "gemini" holds "mini".
+  const rank = (m: ImageModel) => (/preview|exp/i.test(m.id) ? 2 : 0) + (/(^|[-_.])(lite|mini)([-_.]|$)/i.test(m.id) ? 1 : 0);
   return rank(a) - rank(b) || b.id.localeCompare(a.id, undefined, { numeric: true });
 }
 
@@ -204,6 +205,33 @@ export async function generateImage(id: ServiceId, model: string, prompt: string
   const b64 = j?.data?.[0]?.b64_json;
   if (!b64) throw new ImageServiceError(`${s.name} sent no image.`);
   return { bytes: Buffer.from(b64, "base64"), mime: "image/png", service: id, model, prompt };
+}
+
+/**
+ * Pictures changed by words: the pictures go with the prompt, one picture comes back (Reshape's views;
+ * design, "Reshape"). Gemini only for now. `aspect` is the picture's shape, such as "1:1".
+ */
+export async function editImage(id: ServiceId, model: string, prompt: string, images: { bytes: Buffer; mime: string }[], opts: CallOptions & { aspect?: string }): Promise<GeneratedImage> {
+  const s = Services[id];
+  if (id !== "gemini") throw new ImageServiceError(`${s.name} cannot change pictures in EDGEmat yet; use Google Gemini.`);
+  const path = `v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const ask = (text: string) =>
+    call(s, path, opts, {
+      headers: geminiHeaders(opts),
+      body: {
+        contents: [{ parts: [...images.map((i) => ({ inlineData: { mimeType: i.mime, data: i.bytes.toString("base64") } })), { text }] }],
+        generationConfig: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: opts.aspect ?? "1:1" } },
+      },
+    });
+  let used = prompt;
+  let j = await ask(used);
+  if (!findInline(j) && !j?.promptFeedback?.blockReason && /RECITATION|OTHER/i.test(String(j?.candidates?.[0]?.finishReason ?? ""))) {
+    used = `${prompt} An original design, newly made.`;
+    j = await ask(used);
+  }
+  const img = findInline(j);
+  if (!img) throw new ImageServiceError(`${s.name} sent no image: ${noImageWhy(j)}.`);
+  return { bytes: Buffer.from(img.data, "base64"), mime: img.mime, service: id, model, prompt: used };
 }
 
 /** A texture from words: EDGEmat's texture prompt (or `prompt`), on `model` or the newest image model the key can use. */

@@ -20,6 +20,7 @@ Last updated 2026-10-26.
 | [New Material](#new-material) | By hand, F5, with an image service key | M3 | 2026-10-20 | Pass |
 | [Generate round trip](#generate-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V |
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
+| [Reshape check](#reshape-check) | From `node scripts/reshape-check.mjs`, with Gemini and Tripo keys; then in the game | W3 | 2026-11-02 | Steps 1 to 3 run by Claude: the views, Gemini's change and Tripo's model all work. The fit (step 4) and the game are open |
 | [Paint check](#paint-check) | From `npm run paint-check`, with a Tripo key; then in the game | W2 | 2026-10-31 | **Passed** (owner, dev PC): Tripo keeps the garment's vertices and UVs, and its paint shows in the game as painted. It paints no repeating pattern |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
@@ -245,6 +246,29 @@ The open question "A tiled texture on a game garment" (design, "Open questions")
 | 3 | In the game, Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Pants_01_basic_01", 1)` and `Game.AddToInventory("Items.Pants_01_basic_02", 1)`. Equip the first; look in photo mode from the front, the back and each side | The colored squares on the pants. Note which numbers show on the front of the thighs, the back, the waist; whether the numbers read normally, mirrored or upside down; whether squares stay square or stretch; where the seams cut squares |
 | 4 | Equip the second | Unknown, which is what the test finds out: the squares four times smaller and repeated (LayerTile tiles the texture), the same as the first (it does nothing here), or something else. Also whether the folds from the normal map repeat too |
 | 5 | Screenshots of both pants, front and back | Shared with the session; kept outside the repo |
+
+### Reshape check
+
+Added 2026-11-02 (owner: W3 next): design, "Reshape: a garment's shape changed by words", "A reshape check first". Can a garment's shape be changed by words, through pictures, on a stiff garment? `extensions\edgemat\scripts\reshape-check.mjs` runs Reshape's steps one at a time, keeping each step's files in the project's `source\raw\edgemat\reshape\<item>` folder and reusing them, so each can be looked at before paying for the next:
+
+| Step | What it does | `--until` | Cost |
+|---|---|---|---|
+| 1. Views | Exports the item's meshes as `.glb`, draws them front, left, back and right (orthographic, the look's colors from EDGEmat's color maps, soft light, white), the garment half the square so a change has room. `views.png` (two by two) and `views.json` (scale, centre, box) | `views` (default) | None |
+| 2. Change | Sends `views.png` to Gemini with the words; cuts the answer into four views; prints each view's outline before and after, in metres | `edit` | A few US cents. The same words reuse the picture; `--again` asks again; `--model` picks Gemini's model |
+| 3. Model | Uploads the four changed views to Tripo's multiview to model (`v3.1-20260211`), downloads the `.glb` and Tripo's preview, and draws the model the same way | `model` | 30 credits (US$0.30) on 2026-11-02 |
+| 4. Fit | Not built yet | | |
+
+Run it as `node extensions\edgemat\scripts\reshape-check.mjs "<your Projects folder>\EDGEmat_ReshapeCheck" --until edit --what "cowboy hat"` after `npm run build` in `extensions\edgemat`. Defaults: the Cowboy hat with hardened-leather band (`Items.Hat_02_basic_01`, `h1_021_pwa_hat__cowboy_sheriff.mesh`, look `white`), feminine, "make the brim twice as wide".
+
+**Run 2026-11-02 by Claude on the dev PC, steps 1 to 3.** The hat: 1 mesh, 4 parts, 2,538 triangles, 0.31 × 0.19 × 0.35 m. WolvenKit names the most detailed level `LOD_1`. The `.glb` faces +Z (the front brim dips, the buckle is at the back).
+
+| Try | Model | What came back |
+|---|---|---|
+| 1 | Nano Banana 2 Lite (picked by mistake: the "mini" in "Gemini", fixed) | Brim 14% wider, not twice; the back's buckle copied onto the front |
+| 2 | Nano Banana Pro, prompt "the same size" | Nearly unchanged (the hat filled 80% of each square, and the prompt said to keep its size) |
+| 3 | Nano Banana Pro, the hat half the square, "the same camera and scale; it may grow" | **Brim 1.6 times as wide in all four views, the crown unchanged, the views in step**; the buckle only at the back. 14 s |
+
+Tripo, task `080581f8-…`, from try 3: 130 s, 30 credits. A believable cowboy hat with the wide brim, the band and the back buckle, in the hat's colors; a small loose piece beside it. **1,484,202 triangles** (the game's: 2,538): the next run asks for fewer. Tripo's model faces +X, scaled to 1 m. Open: step 4, the fit (place it on the original, the head's bone weights, LODs, import over the mesh), then the game.
 
 ### Paint check
 

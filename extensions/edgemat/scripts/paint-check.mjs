@@ -20,6 +20,8 @@ import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import * as path from "node:path";
 import { getKey } from "../src/core/keys.mjs";
+import { bbox, imageOf, primitives, readGlb, writeGlb } from "./glb.mjs";
+import { makeTripo } from "./tripo.mjs";
 
 const require = createRequire(import.meta.url);
 const core = require("../dist/core.js");
@@ -47,10 +49,6 @@ if (style && !fs.existsSync(style)) {
 const flip = args.includes("--flip");
 const dry = args.includes("--dry");
 
-// Tripo has two regions with their own accounts and keys: the global site (tripo3d.ai) and China's
-// (tripo3d.com). Global first; a key the global API refuses is tried once on China's.
-const Regions = ["https://openapi.tripo3d.ai/v3", "https://openapi.tripo3d.com/v3"];
-let Api = Regions[0];
 const TextureModel = "v3.5-20260815";
 
 const settings = core.vscodeUserSettings();
@@ -60,6 +58,7 @@ if (!game) fail("no game folder found");
 if (!choice) fail("REDbridge.exe not found");
 const needKey = !dry && !opt("result");
 const key = needKey ? getKey("tripo", { tool: "EDGEmat" }) : undefined;
+const { tripo, upload, waitFor, download } = makeTripo(key);
 if (!key && needKey) {
   console.error("No Tripo key. Make one in Tripo's developer console (API Keys), then in PowerShell:");
   console.error(`  New-Item -ItemType Directory -Force "$env:APPDATA\\Edgemodders\\keys" | Out-Null; Read-Host 'Key' -AsSecureString | ConvertFrom-SecureString | Set-Content "$env:APPDATA\\Edgemodders\\keys\\tripo.txt"`);
@@ -76,180 +75,6 @@ const archive = path.join(projDir, "source", "archive");
 const raw = path.join(projDir, "source", "raw");
 const work = path.join(raw, "edgemat", "tripo");
 
-// ---- Tripo ----
-
-async function tripo(method, route, body) {
-  const res = await fetch(`${Api}${route}`, {
-    method,
-    headers: { Authorization: `Bearer ${key}`, ...(body ? { "Content-Type": "application/json" } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const text = await res.text();
-  let json;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    throw new Error(`Tripo ${route}: HTTP ${res.status}, not JSON: ${text.slice(0, 200)}`);
-  }
-  if (json.code !== 0 && /invalid api key/i.test(json.message ?? "") && Api === Regions[0]) {
-    Api = Regions[1];
-    console.log("  the global API refused the key; trying Tripo China's");
-    return tripo(method, route, body);
-  }
-  if (json.code !== 0) throw new Error(`Tripo ${route}: ${json.code} ${json.message ?? ""}${json.suggestion ? ` (${json.suggestion})` : ""}`);
-  return json.data;
-}
-
-async function upload(file) {
-  const format = path.extname(file).slice(1).toLowerCase();
-  const { presigned_url, file_token } = await tripo("POST", "/files/presign", { format });
-  const put = await fetch(presigned_url, { method: "PUT", headers: { "Content-Type": "application/octet-stream" }, body: fs.readFileSync(file) });
-  if (!put.ok) throw new Error(`Upload: HTTP ${put.status}`);
-  return file_token;
-}
-
-async function waitFor(taskId) {
-  const start = Date.now();
-  let last = "";
-  for (;;) {
-    const t = await tripo("GET", `/tasks/${taskId}`);
-    const line = `${t.status} ${t.progress ?? ""}`.trim();
-    if (line !== last) console.log(`  ${taskId}: ${line} (${Math.round((Date.now() - start) / 1000)} s)`);
-    last = line;
-    if (t.status === "success") return t;
-    if (["failed", "cancelled", "banned", "expired", "unknown"].includes(t.status)) throw new Error(`Tripo task ${taskId} ${t.status}${t.error ? `: ${JSON.stringify(t.error)}` : ""}`);
-    if (Date.now() - start > 15 * 60_000) throw new Error(`Tripo task ${taskId} still ${t.status} after 15 minutes; run again with --task ${taskId}`);
-    await new Promise((r) => setTimeout(r, 3000));
-  }
-}
-
-async function download(url, file) {
-  if (fs.existsSync(file)) return fs.readFileSync(file);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Download ${url.split("?")[0]}: HTTP ${res.status}`);
-  const bytes = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync(file, bytes);
-  return bytes;
-}
-
-// ---- GLB ----
-
-const Comps = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
-
-function readGlb(bytes) {
-  const jsonLen = bytes.readUInt32LE(12);
-  const json = JSON.parse(bytes.subarray(20, 20 + jsonLen).toString("utf8"));
-  const bin = bytes.length > 20 + jsonLen + 8 ? bytes.subarray(20 + jsonLen + 8, 20 + jsonLen + 8 + bytes.readUInt32LE(20 + jsonLen)) : Buffer.alloc(0);
-  return { json, bin };
-}
-
-function writeGlb(json, bin) {
-  let text = Buffer.from(JSON.stringify(json), "utf8");
-  text = Buffer.concat([text, Buffer.alloc((4 - (text.length % 4)) % 4, 0x20)]);
-  const binPadded = Buffer.concat([bin, Buffer.alloc((4 - (bin.length % 4)) % 4)]);
-  const head = Buffer.alloc(12);
-  head.write("glTF", 0, "ascii");
-  head.writeUInt32LE(2, 4);
-  head.writeUInt32LE(12 + 8 + text.length + 8 + binPadded.length, 8);
-  const chunk = (len, type) => {
-    const b = Buffer.alloc(8);
-    b.writeUInt32LE(len, 0);
-    b.write(type, 4, "ascii");
-    return b;
-  };
-  return Buffer.concat([head, chunk(text.length, "JSON"), text, chunk(binPadded.length, "BIN\0"), binPadded]);
-}
-
-function accessor({ json, bin }, i) {
-  const a = json.accessors[i];
-  const n = Comps[a.type];
-  const out = new Float64Array(a.count * n);
-  if (a.bufferView == null) return out;
-  const view = json.bufferViews[a.bufferView];
-  const size = { 5126: 4, 5125: 4, 5123: 2, 5122: 2, 5121: 1, 5120: 1 }[a.componentType];
-  const stride = view.byteStride ?? size * n;
-  const off = (view.byteOffset ?? 0) + (a.byteOffset ?? 0);
-  const norm = a.normalized ? { 5123: 65535, 5121: 255, 5122: 32767, 5120: 127 }[a.componentType] : 1;
-  for (let k = 0; k < a.count; k++) {
-    for (let c = 0; c < n; c++) {
-      const p = off + k * stride + c * size;
-      const value =
-        a.componentType === 5126 ? bin.readFloatLE(p)
-        : a.componentType === 5125 ? bin.readUInt32LE(p)
-        : a.componentType === 5123 ? bin.readUInt16LE(p)
-        : a.componentType === 5122 ? bin.readInt16LE(p)
-        : a.componentType === 5121 ? bin[p]
-        : bin.readInt8(p);
-      out[k * n + c] = value / norm;
-    }
-  }
-  return out;
-}
-
-/** The world matrix of each node, column-major, from the scene's roots. */
-function worldMatrices(json) {
-  const out = new Map();
-  const mul = (a, b) => {
-    const r = new Array(16).fill(0);
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) for (let k = 0; k < 4; k++) r[j * 4 + i] += a[k * 4 + i] * b[j * 4 + k];
-    return r;
-  };
-  const local = (n) => {
-    if (n.matrix) return n.matrix;
-    const [x, y, z, w] = n.rotation ?? [0, 0, 0, 1];
-    const [sx, sy, sz] = n.scale ?? [1, 1, 1];
-    const [tx, ty, tz] = n.translation ?? [0, 0, 0];
-    return [
-      (1 - 2 * (y * y + z * z)) * sx, 2 * (x * y + z * w) * sx, 2 * (x * z - y * w) * sx, 0,
-      2 * (x * y - z * w) * sy, (1 - 2 * (x * x + z * z)) * sy, 2 * (y * z + x * w) * sy, 0,
-      2 * (x * z + y * w) * sz, 2 * (y * z - x * w) * sz, (1 - 2 * (x * x + y * y)) * sz, 0,
-      tx, ty, tz, 1,
-    ];
-  };
-  const walk = (i, parent) => {
-    const m = mul(parent, local(json.nodes[i]));
-    out.set(i, m);
-    for (const c of json.nodes[i].children ?? []) walk(c, m);
-  };
-  const id = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-  const scene = json.scenes?.[json.scene ?? 0];
-  for (const r of scene?.nodes ?? json.nodes.map((_, i) => i)) walk(r, id);
-  return out;
-}
-
-/** Every primitive of a GLB: world positions, UVs, triangles, and its material. */
-function primitives(glb) {
-  const out = [];
-  const world = worldMatrices(glb.json);
-  glb.json.nodes.forEach((node, ni) => {
-    if (node.mesh == null) return;
-    const mesh = glb.json.meshes[node.mesh];
-    const m = node.skin != null ? [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] : (world.get(ni) ?? [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-    for (const p of mesh.primitives) {
-      const local = accessor(glb, p.attributes.POSITION);
-      const pos = new Float64Array(local.length);
-      for (let k = 0; k < local.length; k += 3) {
-        const [x, y, z] = [local[k], local[k + 1], local[k + 2]];
-        pos[k] = m[0] * x + m[4] * y + m[8] * z + m[12];
-        pos[k + 1] = m[1] * x + m[5] * y + m[9] * z + m[13];
-        pos[k + 2] = m[2] * x + m[6] * y + m[10] * z + m[14];
-      }
-      const uv = p.attributes.TEXCOORD_0 != null ? accessor(glb, p.attributes.TEXCOORD_0) : null;
-      const idx = p.indices != null ? accessor(glb, p.indices) : Float64Array.from({ length: pos.length / 3 }, (_, i) => i);
-      out.push({ mesh: mesh.name ?? `mesh ${node.mesh}`, pos, uv, idx, material: p.material });
-    }
-  });
-  return out;
-}
-
-const bbox = (prims) => {
-  const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
-  for (const p of prims) for (let k = 0; k < p.pos.length; k += 3) for (let c = 0; c < 3; c++) {
-    lo[c] = Math.min(lo[c], p.pos[k + c]);
-    hi[c] = Math.max(hi[c], p.pos[k + c]);
-  }
-  return { lo, hi, size: hi.map((h, c) => h - lo[c]) };
-};
 const fmt = (v) => v.map((x) => x.toFixed(3)).join(", ");
 
 /** How much of the UV square two or more triangles share (mirrored or stacked islands), at 512 px. */
@@ -338,16 +163,6 @@ function compare(orig, result, transform, eps) {
 }
 
 // ---- images ----
-
-function imageOf(glb, textureIndex) {
-  const tex = glb.json.textures?.[textureIndex];
-  const img = tex != null ? glb.json.images?.[tex.source ?? tex.extensions?.EXT_texture_webp?.source] : undefined;
-  if (!img || img.bufferView == null) return undefined;
-  const v = glb.json.bufferViews[img.bufferView];
-  const bytes = glb.bin.subarray(v.byteOffset ?? 0, (v.byteOffset ?? 0) + v.byteLength);
-  const ext = img.mimeType === "image/png" ? ".png" : img.mimeType === "image/webp" ? ".webp" : ".jpg";
-  return { bytes: Buffer.from(bytes), ext };
-}
 
 const flipImage = (img) => {
   const row = img.width * 4;
