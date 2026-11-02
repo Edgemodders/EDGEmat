@@ -296,6 +296,15 @@ try {
   for (let y = 0; y < 301; y++) for (let x = 0; x < 301; x++) ramp.data.set([Math.round((x * 255) / 300), Math.round((y * 255) / 300), 128, 255], (y * 301 + x) * 4);
   const before = core.seamScore(ramp), after = core.seamScore(core.makeSeamless(ramp));
   check(before > 50 && after < 2, `seamless: a colour ramp's wrap seam goes from ${before.toFixed(0)} to ${after.toFixed(2)} times the step inside (odd size, 301 px)`);
+  // Dots on a 128 px lattice: 512 px wide tiles across; 560 px tall cuts dots at the bottom edge.
+  const dots = { width: 512, height: 560, data: new Uint8Array(512 * 560 * 4) };
+  for (let y = 0; y < 560; y++) for (let x = 0; x < 512; x++) {
+    const dx = (x % 128) - 64, dy = (y % 128) - 64;
+    dots.data.set(dx * dx + dy * dy < 38 * 38 ? [20, 20, 20, 255] : [250, 220, 30, 255], (y * 512 + x) * 4);
+  }
+  const dotsTile = core.tiling(dots), rampTile = core.tiling(ramp), seamTile = core.tiling(core.makeSeamless(ramp));
+  check(dotsTile.across && !dotsTile.down && !rampTile.across && !rampTile.down && seamTile.across && seamTile.down,
+    `tiling: dots tile across, not down (cut at the bottom); a ramp neither way; the ramp made seamless both ways`);
   t3 = Date.now();
   const newMat = await core.makeMaterial(bridge, project.archive, { name: "Smoke Test Ramp", image: core.writePng(ramp), repeat: 3, shine: "glossy", made: { words: "a ramp" } }, [{ mesh: slim, material: "flames_blue_pink" }]);
   const readRoot = async (p) => JSON.parse((await bridge.fileToJson(path.join(project.archive, p))).json).Data.RootChunk;
@@ -329,6 +338,8 @@ try {
         const j = JSON.parse(body);
         if (j.contents[0].parts[0].text.includes("blocked")) return send(200, { promptFeedback: { blockReason: "SAFETY" } });
         if (j.generationConfig.imageConfig.imageSize) return send(400, { error: { message: "imageSize is not supported for this model" } });
+        const text = j.contents[0].parts[0].text;
+        if (text.includes("recite") && (text.includes("always") || !text.includes("original design"))) return send(200, { candidates: [{ finishReason: "IMAGE_RECITATION" }] });
         return send(200, { candidates: [{ content: { parts: [{ text: "here" }, { inlineData: { mimeType: "image/png", data: onePng } }] } }] });
       }
       if (req.url === "/v1/models") return send(200, { data: [{ id: "gpt-image-1-mini" }, { id: "gpt-4o" }, { id: "gpt-image-2.5-flare" }] });
@@ -351,6 +362,10 @@ try {
       && blocked.includes("blocked (SAFETY)") && om.map((m) => m.id).join() === "gpt-image-2.5-flare,gpt-image-1-mini" && core.readPng(oi.bytes).width === 4
       && JSON.parse(seen.find((s) => s.url === "/v1/images/generations").body).quality === "low" && refused.includes("refused the key") && refused.includes("Incorrect API key") && slow.includes("No answer"),
       `image services (stand-in): Gemini lists ${gm.length} image models and retries without a size; a blocked prompt says why; OpenAI lists ${om.length}; a bad key: "${refused}"; a slow answer: "${slow}"`);
+    const recited = await core.generateImage("gemini", "gemini-2.5-flash-image", "recite dots", { key: "k1", base });
+    const always = await core.generateImage("gemini", "gemini-2.5-flash-image", "recite dots always", { key: "k1", base }).then(() => "", (e) => e.message);
+    check(core.readPng(recited.bytes).width === 4 && recited.prompt.includes("original design") && always.includes("IMAGE_RECITATION"),
+      `image services (stand-in): Gemini's IMAGE_RECITATION is asked once more, reworded; twice says why: "${always}"`);
   } finally {
     server.closeAllConnections?.();
     server.close();

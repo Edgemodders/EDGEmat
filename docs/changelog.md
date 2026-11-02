@@ -36,6 +36,8 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 - A material of a mesh in your project opened the game's setup even when your project held its own copy, such as one saved with Save to Project. It now opens your project's copy.
 - The setup editor lost its unsaved edits from view when you switched to another tab and back (the edits were kept, and the tab still showed them as unsaved).
 - **Save to Project** › **As a new setup** looked for the meshes that use the setup only in the setup's own folder. A garment that uses a setup kept with another garment (V's slim-fits use the citizen jeans' setup) had the other garment's game meshes copied into the project instead of its own. It now looks at every mesh in your project too, and ticks only your project's meshes when any of them use the setup. The MCP server's `mat_edit` does the same.
+- **New Material** blended the edges of every picture so it would tile, which showed faded copies of sharp shapes near the edges (ghost dots on a polka-dot print). A picture that already tiles, as the image services are asked to make, is now used as it is, and one that tiles only one way is blended only the other way. The seamless preview shows the same.
+- When Google Gemini sent no image because its answer came too close to a picture it knows (`IMAGE_RECITATION`), Generate stopped. It now asks once more with slightly changed words before saying why.
 
 ## 0.3.1 (2026-10-21)
 

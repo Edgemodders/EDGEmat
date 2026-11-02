@@ -110,7 +110,7 @@ export const RestyleBrief = [
   "Each layer change may set: surface (a template's game path is safest; a material word such as 'denim' or 'leather' picks the game's plain version of it), color, roughness and metal (a finish in words, such as 'glossy' or 'rough'), bumps, microblend (a game path, a name, or 'plain'), tile and opacity (numbers).",
   "Prints and patterns (polka dots, stripes, checks, plaid, camo, florals, leopard): add an entry to patterns instead of layer edits for that material. A pattern is a generated texture over the whole material, replacing all of its layers (other fabrics, trims, dirt and wear on it), while the garment keeps its folds. So put it only on the material the words mean, usually the largest, and give that material no layer edits.",
   "A pattern's words describe only the pattern and its colors, for an image generator: 'bright yellow with large black polka dots', 'red and black tartan', 'green woodland camo'. Its repeat is how many times the image repeats across the garment's texture: 2 to 3 for large shapes, 4 by default, 8 or more for small ones. Its shine is matte, satin or glossy.",
-  "A material with wears already wears a pattern: wears gives its words, repeat and shine, and its listed layers are hidden under it. To change that pattern ('bigger dots', 'make the dots blue'), give a new pattern that starts from wears' words and changes only what is asked: bigger means a smaller repeat, smaller a larger one, and the colors stay unless the words name new ones. Layer changes to it take the pattern off, so its layers show again with the colors listed. A logo or a picture in one place is not supported: say so in notes.",
+  "A material with wears already wears a pattern: wears gives its words, repeat and shine, and its listed layers are hidden under it. To change that pattern ('bigger dots', 'make the dots blue'), give a new pattern that starts from wears' words and changes only what is asked: bigger means a smaller repeat, smaller a larger one, and the colors stay unless the words name new ones. When only the size or shine changes, give wears' words exactly as they are: the same picture is then kept, with no new image. Layer changes to it take the pattern off, so its layers show again with the colors listed. A logo or a picture in one place is not supported: say so in notes.",
 ].join("\n");
 
 /** The words a recipe's layer change may use: mat_edit's, and nothing else. */
@@ -207,6 +207,19 @@ function patternRecord(archive: string, mi: string): LookMaterial["wears"] {
   }
 }
 
+/** The picture a pattern was made from and how, from source\raw beside it; undefined when it is gone. */
+function patternSource(archive: string, mi: string): { png: Buffer; made: MadeBy } | undefined {
+  const folder = path.win32.dirname(mi);
+  const dir = path.join(path.resolve(archive, "..", "raw"), folder), slug = path.win32.basename(folder);
+  try {
+    const png = fs.readFileSync(path.join(dir, `${slug}_source.png`));
+    const r = JSON.parse(fs.readFileSync(path.join(dir, `${slug}.edgemat.json`), "utf8")) as MadeBy;
+    return { png, made: { service: r.service, model: r.model, prompt: r.prompt, words: r.words, file: r.file } };
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Applies a recipe to a look into the project at `archive`. Each layer change is checked as mat_edit
  * checks it; one that cannot be made is skipped and said in the notes, and the rest still go in. A setup
@@ -292,12 +305,25 @@ export async function applyPatterns(bridge: BridgeClient, look: Look, patterns: 
     const repeat = Math.min(32, Math.max(1, Math.round(Number(p.repeat) || 4)));
     const shine: Shine = p.shine === "matte" || p.shine === "glossy" ? p.shine : "satin";
     try {
-      const { png, made } = await image(words);
+      // The same words as the pattern it wears (only the repeat or shine changed): its picture is kept,
+      // with no call to the image service.
+      const kept = material.pattern && material.wears?.words?.trim().toLowerCase() === words.toLowerCase() ? patternSource(archive, material.pattern) : undefined;
+      const { png, made } = kept ?? (await image(words));
       // The item in the name, so two items with the same words keep their own images.
       const name = `${materialSlug(look.item.id.replace(/^Items\./i, ""))} ${words}`;
       const r = await makeMaterial(bridge, archive, { name, image: png, repeat, shine, made }, material.uses);
+      // The same folder as the pattern it wore: the old repeat's files go, so they are not packed.
+      if (material.pattern && same(path.win32.dirname(material.pattern), r.folder)) {
+        const dir = path.join(archive, r.folder);
+        for (const f of fs.readdirSync(dir)) if (!r.written.some((w) => same(w, `${r.folder}\\${f}`))) fs.rmSync(path.join(dir, f), { force: true });
+      }
+      if (kept) {
+        const changed = [material.wears?.repeat !== repeat ? `repeat ${repeat}` : "", material.wears?.shine !== shine ? shine : ""].filter(Boolean).join(", ");
+        result.notes.push(`${material.name}: the same picture as before${changed ? `, now ${changed}` : ""}; the image service was not asked.`);
+      }
       for (const f of r.written) if (!result.written.includes(f)) result.written.push(f);
       for (const a of r.applied) result.applied.push({ setup: material.setup, material: a.material, mi: a.mi, words, repeat });
+      if (r.blended.length) result.notes.push(`${material.name}: the picture did not tile ${r.blended.join(" or ")}, so its edges were blended that way; a sharp pattern can look faded near them.`);
       if (r.applied.some((a) => a.how === "LayerTile")) result.notes.push(`${material.name}: no normal map of its own was found, so its folds are flat.`);
       const gone = dropPattern(archive, look, material, r.folder);
       if (gone) result.notes.push(`${material.name}: the pattern before it was removed (${gone}).`);

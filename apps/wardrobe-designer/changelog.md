@@ -16,7 +16,7 @@ How to keep it, as EDGEmat's own changelog (`docs/changelog.md`):
 - **Restore** puts an item back to the game's own look. A **\*** marks the items you restyled.
 - Restyles stay after a restart: they are one archive, `WardrobeDesigner.archive`, in the game's `archive\pc\mod` folder.
 - The first time, it builds EDGEmat's material library from your game (about half a minute), and again after a game update. No VS Code needed.
-- **Patterns and prints**: "yellow with large black polka dots", "red and black tartan", "woodland camo". REDagent picks the material the pattern goes on and its size, Google Gemini makes the pattern as a texture with your own key and credits, and it goes over that whole material with the garment's folds kept. Plain words afterwards ("red leather") take the pattern off again. The first time, REDnode asks for your Gemini key in its own window (aistudio.google.com > Get API key); it stays in REDnode's Keys for every EDGE tool.
+- **Patterns and prints**: "yellow with large black polka dots", "red and black tartan", "woodland camo". REDagent picks the material the pattern goes on and its size, Google Gemini makes the pattern as a texture with your own key and credits, and it goes over that whole material with the garment's folds kept. Plain words afterwards ("red leather") take the pattern off again. The first time, REDnode asks for your Gemini key in its own window (aistudio.google.com > Get API key); it stays in REDnode's Keys for every EDGE tool. "Make the dots bigger" or "make it glossy" keeps the same picture and changes only its size or shine, with no new image and no cost; a picture that already tiles is used as it is, so dots stay sharp up to the edges.
 
 **Other**
 

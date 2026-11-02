@@ -9,7 +9,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  checkKey, generateImage, hasKey, imageAsPng, listModels, sharedKeys, makeMaterial, makeSeamless, materialSlug, readPng, resize, squareCrop, writePng, Services,
+  checkKey, generateImage, hasKey, imageAsPng, listModels, sharedKeys, makeMaterial, makeSeamless, materialSlug, readPng, resize, squareCrop, tiling, writePng, Services,
   type BridgeClient, type DetailSize, type MadeBy, type MaterialTarget, type Project, type Quality, type ServiceId, type Shine,
 } from "./core";
 
@@ -213,7 +213,9 @@ export class MaterialPage {
     this.takes.set(take, { png, made, name });
     while (this.takes.size > MaxTakes) this.takes.delete(this.takes.keys().next().value!);
     const uri = (b: Buffer) => `data:image/png;base64,${b.toString("base64")}`;
-    return { take, image: uri(writePng(small)), seamless: uri(writePng(makeSeamless(small))), about, name };
+    // As makeMaterial does: only the directions the image does not tile in already are blended.
+    const tiles = tiling(img);
+    return { take, image: uri(writePng(small)), seamless: uri(writePng(makeSeamless(small, undefined, { across: !tiles.across, down: !tiles.down }))), about, name };
   }
 
   private async add(req: Extract<MaterialRequest, { op: "add" }>): Promise<unknown> {

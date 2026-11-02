@@ -10,7 +10,7 @@ import * as path from "node:path";
 import type { BridgeClient } from "./bridgeClient";
 import { applyMaterial, writeTexture, writeTexturedMaterial } from "./apply";
 import { namedMaterials } from "./find";
-import { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, squareCrop, writePng } from "./maps";
+import { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, squareCrop, tiling, writePng } from "./maps";
 
 export type Shine = "matte" | "satin" | "glossy";
 
@@ -64,6 +64,8 @@ export interface MaterialResult {
   written: string[];
   /** Files written into source\raw (the image and the record), as paths on disk. */
   raw: string[];
+  /** The directions the image's edges were blended in to tile; none when it tiled already. */
+  blended: ("across" | "down")[];
 }
 
 /** A file name from a material's words: lower case, letters, digits and underscores, at most 40. */
@@ -98,10 +100,14 @@ export async function makeMaterial(bridge: BridgeClient, archive: string, m: New
   const folder = `edgemat\\materials\\${slug}`;
   const n = Math.min(32, Math.max(1, Math.round(m.repeat ?? 4)));
   const shine = ShineValues[m.shine ?? "satin"];
-  const result: MaterialResult = { folder, mi: `${folder}\\${slug}.mi`, applied: [], written: [], raw: [] };
+  const result: MaterialResult = { folder, mi: `${folder}\\${slug}.mi`, applied: [], written: [], raw: [], blended: [] };
 
-  // The image, square and seamless, at 1024 px for the maps.
-  const seamless = makeSeamless(squareCrop(readPng(m.image)));
+  // The image, square and seamless, at 1024 px for the maps. Only the directions it does not tile in
+  // already are blended: blending fades shifted copies of a sharp pattern (dots) into each other.
+  const square = squareCrop(readPng(m.image));
+  const tiles = tiling(square);
+  result.blended = [...(tiles.across ? [] : ["across" as const]), ...(tiles.down ? [] : ["down" as const])];
+  const seamless = result.blended.length ? makeSeamless(square, undefined, { across: !tiles.across, down: !tiles.down }) : square;
   const base = resize(seamless, 1024, 1024);
   const rough = roughnessMap(base);
   const common = { roughnessScale: shine.scale, roughnessBias: shine.bias, ...(m.metal ? { metalness: 1 } : {}) };
@@ -143,7 +149,7 @@ export async function makeMaterial(bridge: BridgeClient, archive: string, m: New
   fs.mkdirSync(rawDir, { recursive: true });
   const source = path.join(rawDir, `${slug}_source.png`), record = path.join(rawDir, `${slug}.edgemat.json`);
   fs.writeFileSync(source, m.image);
-  const made = { made: new Date().toISOString(), tool: "EDGEmat", name: m.name, ...m.made, repeat: n, bumps: m.bumps ?? 1, shine: m.shine ?? "satin", metal: !!m.metal, material: result.mi, applied: result.applied, files: result.written };
+  const made = { made: new Date().toISOString(), tool: "EDGEmat", name: m.name, ...m.made, repeat: n, bumps: m.bumps ?? 1, shine: m.shine ?? "satin", metal: !!m.metal, blended: result.blended, material: result.mi, applied: result.applied, files: result.written };
   fs.writeFileSync(record, JSON.stringify(made, null, 2));
   result.raw.push(source, record);
   return result;

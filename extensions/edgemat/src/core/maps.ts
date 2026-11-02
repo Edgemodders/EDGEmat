@@ -87,9 +87,10 @@ export function resize(img: Image, width: number, height: number, wrap = true): 
  * The image made to tile: near each edge it fades into a copy shifted by half (whose middle is
  * continuous across the wrap), first across, then down. The blend keeps the image's contrast
  * (variance-preserving), so the edges do not turn grey. `band` is the width of the fade, as a share
- * of the image.
+ * of the image. `only` blends just the directions that need it (see tiling): a sharp pattern blended
+ * where it tiled already gets faded copies of itself.
  */
-export function makeSeamless(img: Image, band = 0.25): Image {
+export function makeSeamless(img: Image, band = 0.25, only: { across: boolean; down: boolean } = { across: true, down: true }): Image {
   const pass = (src: Image, across: boolean): Image => {
     const { width: w, height: h } = src;
     const mean = [0, 0, 0];
@@ -112,7 +113,8 @@ export function makeSeamless(img: Image, band = 0.25): Image {
     }
     return out;
   };
-  return pass(pass(img, true), false);
+  const across = only.across ? pass(img, true) : img;
+  return only.down ? pass(across, false) : across;
 }
 
 /** The image laid out `n` × `n` in a `size` px square: the repeat baked into one texture. */
@@ -209,4 +211,32 @@ export function seamScore(img: Image): number {
     inner += diff(((my - 1) * w + x) * 4, (my * w + x) * 4);
   }
   return edge / Math.max(1, inner);
+}
+
+/**
+ * Whether the image already tiles: the mean colour step across its wrap (right edge to left, bottom to
+ * top) is at most `limit` times the mean step between neighbours inside. Steadier than seamScore, which
+ * looks at one line: a sharp pattern (dots, stripes) made seamless by the service stays sharp, where
+ * makeSeamless would fade copies of it into each other near the edges.
+ */
+export function tilesAlready(img: Image, limit = 2): boolean {
+  const t = tiling(img, limit);
+  return t.across && t.down;
+}
+
+/** tilesAlready for each direction: `across` when the right edge runs on into the left, `down` when the bottom runs on into the top. */
+export function tiling(img: Image, limit = 2): { across: boolean; down: boolean } {
+  const { width: w, height: h, data } = img;
+  if (w < 8 || h < 8) return { across: false, down: false };
+  const diff = (a: number, b: number) => Math.abs(data[a] - data[b]) + Math.abs(data[a + 1] - data[b + 1]) + Math.abs(data[a + 2] - data[b + 2]);
+  let wrapX = 0, wrapY = 0, inner = 0;
+  for (let y = 0; y < h; y++) wrapX += diff((y * w + w - 1) * 4, y * w * 4);
+  for (let x = 0; x < w; x++) wrapY += diff(((h - 1) * w + x) * 4, x * 4);
+  for (let y = 0; y < h - 1; y++) for (let x = 0; x < w - 1; x++) {
+    const i = (y * w + x) * 4;
+    inner += diff(i, i + 4) + diff(i, i + w * 4);
+  }
+  // A floor for flat images, where a step of a few levels is noise, not a seam.
+  const most = limit * Math.max(inner / (2 * (w - 1) * (h - 1)), 2);
+  return { across: wrapX / h <= most, down: wrapY / w <= most };
 }

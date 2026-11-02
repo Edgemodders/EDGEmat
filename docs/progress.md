@@ -19,6 +19,7 @@ Last updated 2026-10-29.
 
 | To-do | Why | Since |
 |---|---|---|
+| Run [Wardrobe Designer W2 pattern fixes](testing.html#wardrobe-designer-w2-pattern-fixes) in the game | Built 2026-11-01 from the W2 run's findings | 2026-11-01 |
 | Update to 0.3.1 from the Marketplace in a normal VS Code (not the development host), check the Library, Find and New Material open, then run Connect an Assistant | The release's install test and the new one ([Tests](testing.html#install-of-the-release), [Connect an assistant](testing.html#connect-an-assistant)) | 2026-10-21 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: the Nexus page has the owner's nine. Screenshots 1 to 5 and 8 show a Windows user name in VS Code's Output panel (`C:\Users\...`); replace them on Nexus if that matters. Still open: the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)). The tutorials' in-game shots are in (2026-10-20); their UI shots still wait | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
@@ -52,6 +53,7 @@ Last updated 2026-10-29.
 
 | What | Detail |
 |---|---|
+| **W2 pattern fixes built** | From the run's findings, the owner's go. A picture that already tiles is used as it is, and one that tiles one way only is blended only the other way: Gemini's two polka-dot pictures measured today, one tiled both ways and one across only. The same words at a new size or shine keep the picture: no Gemini call, no cost, the same dots. Gemini's `IMAGE_RECITATION` gets one more try with slightly changed words. New Material in VS Code gets the first and third too. Checked outside the game on V's Pants; the in-game test is open |
 | **W2 patterns passed in the game** | The owner's rerun: yellow pants with black dots, then "make the dots bigger" kept them yellow (the fix holds), then "red leather" took the pattern off, then Restore. Two findings. Faded dots near the tile edges: EDGEmat's seamless step blends each edge with a shifted copy, which shows on sharp patterns. And Gemini once sent no image (`IMAGE_RECITATION`); pressing again worked |
 
 ### 2026-10-31

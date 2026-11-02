@@ -169,22 +169,33 @@ function noImageWhy(j: any): string {
 export async function generateImage(id: ServiceId, model: string, prompt: string, opts: CallOptions & { quality?: Quality }): Promise<GeneratedImage> {
   const s = Services[id];
   if (id === "gemini") {
-    const body = (size: boolean, modalities: string[]) => ({
-      contents: [{ parts: [{ text: prompt }] }],
+    const body = (text: string, size: boolean, modalities: string[]) => ({
+      contents: [{ parts: [{ text }] }],
       generationConfig: { responseModalities: modalities, imageConfig: { aspectRatio: "1:1", ...(size ? { imageSize: "2K" } : {}) } },
     });
     const path = `v1beta/models/${encodeURIComponent(model)}:generateContent`;
-    let j: any;
-    try {
-      j = await call(s, path, opts, { headers: geminiHeaders(opts), body: body(true, ["IMAGE"]) });
-    } catch (e) {
-      // Older models take no image size, or want text beside the image: ask once more without.
-      if (!(e instanceof ImageServiceError) || e.status !== 400) throw e;
-      j = await call(s, path, opts, { headers: geminiHeaders(opts), body: body(false, ["TEXT", "IMAGE"]) });
+    let sized = true;
+    const ask = async (text: string): Promise<any> => {
+      try {
+        return await call(s, path, opts, { headers: geminiHeaders(opts), body: body(text, sized, sized ? ["IMAGE"] : ["TEXT", "IMAGE"]) });
+      } catch (e) {
+        // Older models take no image size, or want text beside the image: ask once more without.
+        if (!sized || !(e instanceof ImageServiceError) || e.status !== 400) throw e;
+        sized = false;
+        return call(s, path, opts, { headers: geminiHeaders(opts), body: body(text, false, ["TEXT", "IMAGE"]) });
+      }
+    };
+    let used = prompt;
+    let j = await ask(used);
+    // Gemini sometimes stops short of an image (IMAGE_RECITATION: too close to a picture it knows; OTHER):
+    // the same words asked again a little differently usually get one. A blocked prompt is not retried.
+    if (!findInline(j) && !j?.promptFeedback?.blockReason && /RECITATION|OTHER/i.test(String(j?.candidates?.[0]?.finishReason ?? ""))) {
+      used = `${prompt} An original design, newly made.`;
+      j = await ask(used);
     }
     const img = findInline(j);
     if (!img) throw new ImageServiceError(`${s.name} sent no image: ${noImageWhy(j)}.`);
-    return { bytes: Buffer.from(img.data, "base64"), mime: img.mime, service: id, model, prompt };
+    return { bytes: Buffer.from(img.data, "base64"), mime: img.mime, service: id, model, prompt: used };
   }
   const j = await call(s, "v1/images/generations", opts, {
     headers: openaiHeaders(opts),
