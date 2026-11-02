@@ -489,8 +489,8 @@ Added 2026-10-30: the release zip in the game, as a player gets it (Vortex or ex
 | Step | Do | Expect |
 |---|---|---|
 | 1 | In the game: **F10** › the **REDNODE** tab › the gear › **Developer mode** › **Development folders**: remove `E:\Modding\Cyberpunk 2077\EDGEmat\apps`, so only the installed copy runs. Then close the game | |
-| 2 | Install the zip with Vortex, or extract it into the game folder | `red4ext\plugins\REDnode\apps\wardrobe-designer\` has `rednode-app.json`, `dist\mod.mjs`, `LICENSE.txt` and `THIRD-PARTY-NOTICES.txt` |
-| 3 | Start the game, load a save, **F10** › **Mod Manager** › **Wardrobe Designer** | It is off, with its version and its three permissions (REDbridge, REDagent, archives) to allow. Allow them and switch it on |
+| 2 | Install the zip with EDGEdeck (**Deploy**; the mod `wardrobe-designer`), Vortex, or extract it into the game folder | `red4ext\plugins\REDnode\apps\wardrobe-designer\` has `rednode-app.json`, `dist\mod.mjs`, `LICENSE.txt` and `THIRD-PARTY-NOTICES.txt` |
+| 3 | Start the game, load a save, **F10** › **Mod Manager** › **Wardrobe Designer** | It is off, with its version and its four permissions (REDbridge, REDagent, archives, the Gemini key) to allow. Allow them and switch it on |
 | 4 | Open the inventory, press a slot, restyle it, then **Restore** | As in Wardrobe Designer W1, steps 2, 3 and 7 |
 | 5 | Tell Claude | Claude reads the log and records the version and the result |
 
