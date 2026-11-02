@@ -53,6 +53,7 @@ Last updated 2026-11-02.
 | What | Detail |
 |---|---|
 | **W2 pattern fixes passed in the game** | The owner's run on V's Pants: `yellow with large black polka dots` (one Gemini picture), then "make the dots bigger" (repeat 3 to 2) and "make it glossy" each said "the same picture as before; the image service was not asked", with no Gemini call. Restore worked. This picture tiled across but not down, so it was blended down only: the photo-mode shots show sharp dots with a few faded ones in horizontal bands, where the tile's top and bottom edges meet |
+| **Blending left as it is for now** | Owner: it looks fine; revisit later. The idea for then: a regular pattern (dots, checks, stripes) that does not tile one way is cropped to whole rows of its repeat instead of blended; blending stays for irregular pictures such as camo. Testable on the saved pictures, no Gemini cost |
 
 ### 2026-11-01
 
