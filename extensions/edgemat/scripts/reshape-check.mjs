@@ -676,7 +676,7 @@ try {
   fs.mkdirSync(packed, { recursive: true });
   const p = await bridge.pack(archive, packed, name);
   console.log(`packed ${p.files} files into ${p.archive}`);
-  console.log(`In the game: ${item.cet ?? `Game.AddToInventory("${item.id}", 1)`}`);
+  console.log(`In the game, REDnode's Console (F10): addItem("${item.id}")`);
 } catch (e) {
   if (e !== "stop") {
     failed = true;

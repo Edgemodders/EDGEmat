@@ -264,7 +264,7 @@ Run it as `node extensions\edgemat\scripts\reshape-check.mjs "<your Projects fol
 | # | In the game | Expected |
 |---|---|---|
 | 1 | With the game closed, copy `<project>\packed\archive\pc\mod\EDGEmat_ReshapeCheck.archive` into `<game>\archive\pc\mod` | |
-| 2 | Start the game, load a save with a feminine V. Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Hat_02_basic_01", 1)`. Inventory › **Head**: equip the **Cowboy hat with hardened-leather band** | The inventory's preview shows the wide-brimmed hat |
+| 2 | Start the game, load a save with a feminine V. **F10** › REDnode's launcher › **Console**: `addItem("Items.Hat_02_basic_01")`. Inventory › **Head**: equip the **Cowboy hat with hardened-leather band** | The inventory's preview shows the wide-brimmed hat |
 | 3 | Photo mode: front, each side, back, and a look up and down | The hat sits on the head as the game's did: not floating, not sunk into the forehead; hair not through the crown; the brim about 1.6 times as wide; the band dark, the buckle at the back; the texture the right way up (as `fit_..._views.png`). It moves with the head |
 | 4 | Screenshots; take the archive out of `archive\pc\mod` afterwards | Shared with the session | Defaults: the Cowboy hat with hardened-leather band (`Items.Hat_02_basic_01`, `h1_021_pwa_hat__cowboy_sheriff.mesh`, look `white`), feminine, "make the brim twice as wide".
 
