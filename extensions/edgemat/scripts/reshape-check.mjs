@@ -15,7 +15,7 @@
 //        [--model-front +x] [--bone Head] [--flipv] [--size 768]
 //
 // --until stops after that step (default: views, so nothing is paid for until asked). --service and
-// --model choose who changes the pictures (Gemini's gemini-3-pro-image, or OpenAI's gpt-image-2.5-sunburst);
+// --model choose who changes the pictures (OpenAI's gpt-image-2.5-sunburst by default, or Gemini's gemini-3-pro-image);
 // each model keeps its own picture. --again asks once more for the same words; --edit uses a picture made
 // before. --task reuses a finished Tripo task. --faces is the retopology's face
 // count (0: none). --front is the direction the garment faces in the exported .glb (-z; files made with
@@ -489,9 +489,11 @@ try {
 
   // 2. The views changed by words, as one picture. Each service and model keeps its own picture, so they
   // can be set side by side; --edit picks a picture made before for the next steps.
-  const service = opt("service", "gemini");
+  const service = opt("service", "openai");
   if (!["gemini", "openai"].includes(service)) throw new Error("--service is gemini or openai");
-  // Gemini's Pro follows a change best (2026-11-02); OpenAI's sunburst is its model for exact edits.
+  // OpenAI's GPT Image 2.5 (sunburst, its model for exact edits) is the default: on the cowboy hat it
+  // drew the change alike from all four sides, where Gemini kept the old brim or changed one side (owner,
+  // 2026-11-02).
   const model = opt("model", service === "gemini" ? "gemini-3-pro-image" : "gpt-image-2.5-sunburst");
   const slug = core.materialSlug(words);
   const editFile = opt("edit") ? path.resolve(opt("edit")) : path.join(work, `edit_${slug}_${core.materialSlug(model)}.png`);
