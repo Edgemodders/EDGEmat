@@ -115,7 +115,7 @@ Wardrobe Designer (`apps/wardrobe-designer`, a REDnode app) has its own release,
 2. Raise `version` in `apps/wardrobe-designer/rednode-app.json` and `package.json`. In its changelog, rename **Unreleased** to `## <version> (<date>)` and start a new empty **Unreleased** above it. Check: `node tools/release/notes.mjs --wardrobe`.
 3. Update `apps/wardrobe-designer/nexus/description.bbcode` for what changed (`npm run wardrobe:nexus:status` first: if the live description changed on Nexus, `npm run wardrobe:nexus:pull` and merge). Check it with `node tools/check-bbcode.mjs apps/wardrobe-designer/nexus/description.bbcode`. Commit and push to `main`.
 4. **Actions** › **Release Wardrobe Designer** › **Run workflow** › branch `main`, tick **Make a release** and **Update Nexus Mods** (or `npm run wardrobe:release -- -f nexus=true`). Without the ticks, it builds the draft zip as the run's artifact `Wardrobe-Designer-build`.
-5. Install the release's zip in the game (Vortex, or extracted into the game folder) and check the app starts, as the test "Wardrobe Designer install" says. Then `npm run wardrobe:nexus:pull` and commit, until [REDnode #30](https://github.com/Edgemodders/REDnode/issues/30) lets the Nexus tool know this page's own tags.
+5. Install the release's zip in the game (Vortex, or extracted into the game folder) and check the app starts, as the test "Wardrobe Designer install" says.
 
 ```powershell
 npm run wardrobe:zip            # builds the app and dist/Wardrobe-Designer-<version>-draft.zip

@@ -23,7 +23,7 @@ The release workflow `.github/workflows/release-wardrobe.yml` (Actions tab, **Re
 
 Edits made on the Nexus page itself: `npm run wardrobe:nexus:pull` writes the live description here, then merge and commit before the next release, or the release stops before it uploads anything.
 
-**Known limit:** `tools/nexus/nexus.mjs` recognizes a description pushed by an earlier release only at `v*` tags, which are EDGEmat's. Wardrobe Designer's tags are `wardrobe-designer-v*`. So after a release that pushed the description, run `npm run wardrobe:nexus:pull` and commit, or the next release that changes the description stops (it cannot tell the release's push from an edit on Nexus). Asked of REDnode, which owns the tool, as [REDnode #30](https://github.com/Edgemodders/REDnode/issues/30).
+**Release tags:** `nexus.json`'s `"tag": "wardrobe-designer-v"` tells `tools/nexus/nexus.mjs` this page's own release tags, so it knows a description an earlier release pushed ([REDnode #30](https://github.com/Edgemodders/REDnode/issues/30), copied 2026-11-03). No pull is needed after a release.
 
 ## Before posting: the placeholders
 
