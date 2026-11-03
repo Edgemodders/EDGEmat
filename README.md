@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://edgemodders.github.io/EDGEmat/"><img src="docs/assets/brand/badges/docs.svg" alt="docs: read the docs"></a>
-  <img src="docs/assets/brand/badges/status.svg" alt="status: scaffold">
+  <img src="docs/assets/brand/badges/status.svg" alt="status: 0.3.1 preview">
   <img src="docs/assets/brand/badges/game.svg" alt="game: Cyberpunk 2077">
   <img src="docs/assets/brand/badges/files.svg" alt="edits: .mi .mt .mlsetup">
   <a href="LICENSE"><img src="docs/assets/brand/badges/license.svg" alt="license: MIT"></a>
@@ -17,7 +17,7 @@ It edits multilayered materials (`.mlsetup`, `.mltemplate`, `.mlmask`) first, th
 **[Read the docs](https://edgemodders.github.io/EDGEmat/)** &middot; [Design](docs/design.md) &middot; [Dev setup](docs/dev-setup.md)
 
 > [!NOTE]
-> **Status: 0.3.1 preview released** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat). A Library of every surface and microblend in your game, built from the game (M1). Surface pages, the setup editor, Find and View in 3D (M2). Editing and Save to Project, and New Material from words or a photo (M3), each seen in the game. Assistants get all of it through MCP; since 0.3.1 the MCP server comes with the extension (**Connect an Assistant (MCP)...**). Next: materials for new meshes (M4). The manual, with two tutorials: [edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/).
+> **Status: 0.3.1 preview released on 2026-10-21** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat), with its MCP server on npm (`@edgemodders/edgemat-mcp`) and a page on [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35422). A Library of every surface and microblend in your game, built from the game (M1). Surface pages, the setup editor, Find and View in 3D (M2). Editing and Save to Project, and New Material from words or a photo (M3), each seen in the game. Assistants get all of it through MCP; since 0.3.1 the MCP server comes with the extension (**Connect an Assistant (MCP)...**). Built since 0.3.1, not released yet: the Desk, colors closer to the game (a microblend cuts its mask), `mat_restyle` and `mat_reshape` for assistants, and the Wardrobe Designer, a REDnode app with its own release. Next: materials for new meshes (M4). The manual, with two tutorials: [edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/).
 
 ## Repository layout
 
