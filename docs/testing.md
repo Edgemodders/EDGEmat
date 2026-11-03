@@ -578,7 +578,7 @@ Added 2026-11-02: W3's first version in the app, with the keys (owner: the missi
 | 9 | Inventory, **Head**, **Restore** | The game's hat again |
 | 10 | Press the pants' button (**Legs ...: ...**), then **Reshape** | The pants drawn; the line says it can be changed in pictures but not made yet ("it moves with 31 bones..."); **Make it** stays off |
 | 11 | Press **Keys** | The window changes to **your keys**, both **Ready**, and **Continue** goes back to the main view, in the same place |
-| 12 | Close the window with its close button, then press **Refresh**... (it is closed: reopen it from the launcher) | It stays closed when the app reads V again; the launcher opens it again. Then tell Claude, who reads the log |
+| 12 | Close the window with its close button, then load a save (the app reads V again after a load) | It stays closed. Open it again from REDnode's launcher (**Wardrobe Designer**): it shows the main view. Then tell Claude, who reads the log |
 
 ### Wardrobe Designer install
 
