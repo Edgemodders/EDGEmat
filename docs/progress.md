@@ -2,7 +2,7 @@
 
 What has been done on EDGEmat, what was decided and why, and what is open. Newest first within each section. Read this to catch up without asking. The [design](design.html) and the [behavior spec](design/behavior.html) hold the full detail.
 
-Last updated 2026-11-02.
+Last updated 2026-11-03.
 
 ## At a glance
 
@@ -48,6 +48,12 @@ Last updated 2026-11-02.
 | [EDGEfab #3](https://github.com/Edgemodders/EDGEfab/issues/3) | Fit a generated mesh onto a game garment, replacing it: weights from the original garment, out of V's body, garment support, both bodies, at the original's path; callable outside VS Code, for Wardrobe Designer's Reshape | Filed 2026-10-31 (owner's ask). Not urgent: fits EDGEfab's F4 Clothing. **2026-11-02 (owner):** EDGEmat builds the fit itself for Wardrobe Designer (core, no VS Code), and it moves into EDGEfab when EDGEfab's development resumes |
 
 ## Log
+
+### 2026-11-03
+
+| What | Detail |
+|---|---|
+| **The README says each release** | Owner's rule for every Edgemodders repo: a release updates the README's status line and status badge, and `release.yml` stops before building when they do not name the version (`tools/release/readme-check.mjs`, copied from REDnode). The README now says 0.3.1 released on 2026-10-21 and what is built since; the badge said 0.3 and its alt "scaffold". Wardrobe Designer's release workflow has no such check: the README's status is EDGEmat's. |
 
 ### 2026-11-02
 
