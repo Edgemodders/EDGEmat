@@ -41,6 +41,35 @@ What words do:
 | A finish: "glossy", "matte", "shinier" | The closest finish that surface has; the log says which |
 | A pattern: "yellow with large black polka dots", "red and black tartan", "woodland camo" | REDagent picks the material and the pattern's size; OpenAI's GPT Image makes it as a texture with your key; it covers that whole material, the garment's folds kept. "Larger dots" or "smaller checks" changes the size, with the same picture and no new cost; plain words afterwards ("red leather") take the pattern off. The first time, REDnode asks for your OpenAI key in its own window (platform.openai.com > API keys). **Patterns: GPT Image** switches to Google Gemini, for a Gemini key instead (aistudio.google.com > Get API key) |
 
+### Reshape: change its shape
+
+A first version. It changes a piece of clothing's shape by words, through pictures you can refine before anything is made.
+
+| Do | What happens |
+|---|---|
+| Press a slot, then **Reshape** | The item is drawn from four sides (front, left, back, right) in its look as V wears it. The Reshape line says whether it can be made yet |
+| Type the change in **Change its shape** ("make the brim twice as wide"), press **Change** | OpenAI's GPT Image changes the pictures with your key (about half a minute, a few tens of US cents). Look at them before going on: the model follows the pictures, mistakes included |
+| Change again ("a little narrower") | It builds on the last change |
+| **Back** | Takes the last change away |
+| **Make it**, then **Make it** again within 10 seconds | Tripo makes the 3D model from the pictures and brings it to the game's size (about 60 of your Tripo credits, about 4 minutes), then it is fitted on V and swapped in, as a restyle is. **Restore** takes it away |
+
+| | |
+|---|---|
+| What can be made | Clothing that moves with one bone: hats, helmets, glasses. Other clothing can be changed in pictures; making it waits for the fit to bend with the body, which comes next |
+| The pictures | Until REDnode's windows can show pictures, the Reshape line says where each one is saved, in the app's data folder |
+| Only this body | A reshape changes the look for V's body; the other body's version and the item's other colors stay as they were, for now |
+
+## Your keys
+
+The first time, and whenever a key the app uses is missing, a short **Keys** panel opens. Each key shows **Ready** or **Needed**; **Set** opens REDnode's own window, where you type the key (never in Wardrobe Designer), and it is kept for every EDGE tool. **Keys** in the window opens the panel again.
+
+| Key | For | Where to make it |
+|---|---|---|
+| OpenAI | GPT Image: patterns and Reshape's pictures | platform.openai.com > API keys |
+| Tripo | Reshape's 3D models | Tripo's developer console > API Keys |
+| Google Gemini | Patterns, only after **Patterns: GPT Image** is switched to Gemini | aistudio.google.com > Get API key |
+| Anthropic | REDagent, which plans every restyle | Set in REDagent |
+
 ## Good to know
 
 | | |

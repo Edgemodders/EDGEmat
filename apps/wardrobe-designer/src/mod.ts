@@ -18,6 +18,9 @@ import { generateTexture } from "../../../extensions/edgemat/src/core/imageServi
 import { buildLibrary, isCurrent, loadLibrary, type Library } from "../../../extensions/edgemat/src/core/library";
 import { imageAsPng } from "../../../extensions/edgemat/src/core/material";
 import { applyPatterns, applyRecipe, describeLook, RestyleBrief, type Look, type PatternImage, type Recipe } from "../../../extensions/edgemat/src/core/restyle";
+import { materialSlug } from "../../../extensions/edgemat/src/core/material";
+import { loadReshape, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, ReshapeDefaults, type ReshapeViews } from "../../../extensions/edgemat/src/core/reshape";
+import { Tripo } from "../../../extensions/edgemat/src/core/tripo";
 
 /** The clothing slots, as the game's equipment areas, with the words the window shows. */
 const Slots = [
@@ -87,7 +90,7 @@ let words = "";
 const wordsInput = ui.input({ label: "How should it look?", placeholder: "red leather, yellow denim...", onChange: (v) => (words = v), onSubmit: (v) => { words = v; void restyle(); } });
 const restyleButton = ui.button("Restyle", () => void restyle(), { disabled: true });
 const restoreButton = ui.button("Restore", () => void restore(), { variant: "ghost", disabled: true });
-const log = ui.list({ height: 280, keep: 1000 });
+const log = ui.list({ height: 200, keep: 1000 });
 const patternsButton = ui.button(`Patterns: ${ServiceNames[patternService]}`, () => switchPatterns(), { variant: "ghost" });
 
 function switchPatterns(): void {
@@ -102,10 +105,24 @@ function switchPatterns(): void {
   say(`Patterns are now made with ${ServiceNames[patternService]} (your ${KeyHelp[patternService]})`);
 }
 
+// Reshape (W3): the picked item's shape changed by words, through pictures, then made 3D.
+let shapeWords = "";
+const shapeText = ui.text("Pick a piece of clothing, then press Reshape to see it from four sides.", { tone: "dim" });
+const shapeInput = ui.input({ label: "Change its shape", placeholder: "make the brim twice as wide...", onChange: (v) => (shapeWords = v), onSubmit: (v) => { shapeWords = v; void changeShape(); } });
+const reshapeButton = ui.button("Reshape", () => void startReshape(), { variant: "ghost", disabled: true });
+const changeButton = ui.button("Change", () => void changeShape(), { disabled: true });
+const backButton = ui.button("Back", () => backShape(), { variant: "ghost", disabled: true });
+const makeButton = ui.button("Make it", () => void makeShape(), { variant: "ghost", disabled: true });
+// The pictures, side by side, once REDnode's window kit shows pictures (REDnode #37); until then the
+// shape line says where they are.
+const canShow = typeof ui.image === "function";
+const beforeImage = canShow ? ui.image!("", { width: 210, alt: "As it is, from four sides" }) : undefined;
+const afterImage = canShow ? ui.image!("", { width: 210, alt: "Changed, from four sides" }) : undefined;
+
 ui.window({
   title: "Wardrobe Designer",
   width: 480,
-  height: 600,
+  height: canShow ? 900 : 760,
   anchor: "left",
   x: 40,
   children: [
@@ -115,7 +132,12 @@ ui.window({
     picked,
     wordsInput,
     ui.row(restyleButton, restoreButton, ui.button("Refresh", () => void readWorn(), { variant: "ghost" })),
-    ui.row(patternsButton),
+    ui.row(patternsButton, ui.button("Keys", () => void showKeys(), { variant: "ghost" })),
+    ui.heading("Reshape"),
+    shapeText,
+    ...(beforeImage && afterImage ? [ui.row(beforeImage, afterImage)] : []),
+    shapeInput,
+    ui.row(reshapeButton, changeButton, backButton, makeButton),
     log,
   ],
 });
@@ -138,6 +160,7 @@ const setBusy = (on: boolean) => {
   restyleButton.set({ disabled: on || !current });
   restoreButton.set({ disabled: on || !current || !readState().restyles[current.item.id] });
   slotButtons.forEach((b, i) => b.set({ disabled: on || !worn[i]?.item }));
+  shapeButtons();
 };
 
 // ---------- the work project's record ----------
@@ -287,6 +310,8 @@ async function pick(i: number, quiet = false): Promise<void> {
   try {
     const t = Date.now();
     current = undefined;
+    shape = undefined;
+    showShape();
     pickedSlot = i;
     restyleButton.set({ disabled: true });
     restoreButton.set({ disabled: true });
@@ -302,6 +327,9 @@ async function pick(i: number, quiet = false): Promise<void> {
     }
     for (const o of look.other) say(`    ${o}`);
     current = look;
+    // A reshape started on this item before (its pictures and changes) is picked up where it was.
+    shape = loadReshape(reshapeWork(look));
+    showShape();
     const restyled = readState().restyles[item.id];
     picked.set({ text: `${item.name ?? item.id}: ${look.materials.length} layered material(s)${restyled ? `, restyled (${restyled.words.join(", then ")})` : ""}, read in ${seconds(t)}`, tone: "normal" });
     say(`Read in ${seconds(t)}`);
@@ -374,12 +402,12 @@ async function plan(look: Look, want: string): Promise<Recipe | undefined> {
  * allowed and a key is saved; else REDnode's own Key request window asks the player (to allow it, and
  * to paste a key when none is saved). Null when the player says no.
  */
-async function imageKey(service: ImageService): Promise<string | null> {
+async function imageKey(service: ImageService, why = `To make the pattern you asked for as a texture with ${ServiceNames[service]}, with your own key and credits`): Promise<string | null> {
   const key = await secrets.shared(service);
   if (key) return key;
   status.set({ text: `REDnode is asking for your ${service === "openai" ? "OpenAI" : "Gemini"} key, in its own window...`, tone: "dim" });
-  say(`Patterns need an image service: REDnode asks for your ${KeyHelp[service]}`);
-  return secrets.askShared(service, { reason: `To make the pattern you asked for as a texture with ${ServiceNames[service]}, with your own key and credits` });
+  say(`${ServiceNames[service]} needs your ${KeyHelp[service]}: REDnode asks for it in its own window`);
+  return secrets.askShared(service, { reason: why });
 }
 
 /** A pattern's image from the chosen service: a seamless texture from its words, as PNG. */
@@ -544,19 +572,208 @@ async function restore(): Promise<void> {
   }
 }
 
+// ---------- reshape ----------
+
+/** The reshape of the picked item: its pictures and changes, kept in the work project's raw folder. */
+let shape: ReshapeViews | undefined;
+const rawDir = path.join(pkg.dataDir, "work", "source", "raw");
+const reshapeWork = (look: Look) => path.join(rawDir, "edgemat", "reshape", materialSlug(`${look.item.id} ${look.body}`));
+const tripoCredits = ReshapeDefaults.credits.model + ReshapeDefaults.credits.retopology;
+/** Make it asks to be pressed twice: it spends the player's Tripo credits. */
+let confirmMake = false;
+
+function shapeButtons(): void {
+  reshapeButton.set({ disabled: busy || !current });
+  changeButton.set({ disabled: busy || !shape });
+  backButton.set({ disabled: busy || !shape?.changes.length });
+  makeButton.set({ disabled: busy || !shape?.changes.length || !shape.fit.ok, label: confirmMake ? `Sure? About ${tripoCredits} Tripo credits` : "Make it", variant: confirmMake ? "danger" : "ghost" });
+}
+
+/** The shape line and the pictures: the item as it is, and its latest change. */
+function showShape(): void {
+  const v = shape;
+  const last = v?.changes.at(-1);
+  if (!v || !current) {
+    shapeText.set({ text: current ? "Press Reshape to see it from four sides." : "Pick a piece of clothing, then press Reshape to see it from four sides.", tone: "dim" });
+  } else {
+    const now = last ? `changed: "${last.words}"${v.changes.length > 1 ? ` (${v.changes.length} changes)` : ""}` : "as it is; say how its shape should change";
+    const can = v.fit.ok ? `Make it puts it on V (about ${tripoCredits} Tripo credits).` : `It can be changed in pictures, but not made yet: ${v.fit.why}.`;
+    shapeText.set({ text: `${current.item.name ?? current.item.id}, ${now}. ${can}${canShow ? "" : ` Pictures: ${last?.sheet ?? v.sheet}`}`, tone: v.fit.ok ? "normal" : "dim" });
+    beforeImage?.set({ src: v.sheet, version: Date.now() });
+    afterImage?.set({ src: last?.sheet ?? v.sheet, version: Date.now() });
+  }
+  shapeButtons();
+}
+
+/** The picked item drawn from four sides, in its look as V wears it: the start of a reshape. */
+async function startReshape(): Promise<void> {
+  const look = current;
+  if (busy || !look) return;
+  const t = Date.now();
+  setBusy(true);
+  try {
+    status.set({ text: "Drawing it from four sides...", tone: "dim" });
+    shape = await reshapeViews(await getBridge(), await getLibrary(), dir, look.meshes, { archive: archiveDir, raw: rawDir }, reshapeWork(look), { log: (l) => say(`  ${l}`) });
+    say(`Reshape ${look.item.name ?? look.item.id}: drawn in ${seconds(t)}: ${shape.sheet}`);
+    status.set({ text: shape.fit.ok ? "Say how its shape should change, and press Change." : `This one can be changed in pictures, not made yet: ${shape.fit.why}.`, tone: "normal" });
+  } catch (e) {
+    failed("Drawing it", e);
+  } finally {
+    setBusy(false);
+    showShape();
+  }
+}
+
+/** The pictures changed by words with GPT Image, building on the last change. */
+async function changeShape(): Promise<void> {
+  const look = current, v = shape, want = shapeWords.trim();
+  if (busy || !look || !v) return;
+  if (!want) return void status.set({ text: "Say how its shape should change first.", tone: "danger" });
+  const t = Date.now();
+  setBusy(true);
+  try {
+    const key = await imageKey("openai", "To change the pictures of your clothing with GPT Image, with your own key and credits");
+    if (!key) return void status.set({ text: "Reshape's pictures need your OpenAI key: nothing was changed.", tone: "danger" });
+    status.set({ text: `GPT Image is changing the pictures: "${want}"...`, tone: "dim" });
+    const c = await reshapeChange(await getBridge(), v, want, { key, what: look.item.name ?? "garment", service: "openai", log: (l) => say(`  ${l}`) });
+    say(`Changed in ${seconds(t)}: ${c.sheet}`);
+    status.set({ text: v.fit.ok ? "Look at the pictures: change again, Back, or Make it." : "Look at the pictures: change again or Back.", tone: "accent" });
+  } catch (e) {
+    failed("Changing the pictures", e);
+  } finally {
+    setBusy(false);
+    showShape();
+  }
+}
+
+function backShape(): void {
+  if (busy || !shape?.changes.length) return;
+  const gone = reshapeBack(shape);
+  say(`Back: "${gone?.words}" taken away`);
+  confirmMake = false;
+  showShape();
+}
+
+/**
+ * The latest change made 3D by Tripo, fitted on V and swapped in. Asked twice, since it spends the
+ * player's Tripo credits; recorded as a restyle, so Restore takes it away.
+ */
+async function makeShape(): Promise<void> {
+  const look = current, v = shape, change = shape?.changes.at(-1);
+  if (busy || !look || !v || !change || !v.fit.ok) return;
+  if (!confirmMake) {
+    confirmMake = true;
+    shapeButtons();
+    status.set({ text: `Make it spends about ${tripoCredits} of your Tripo credits and takes about 4 minutes: press it again to go ahead.`, tone: "dim" });
+    setTimeout(() => {
+      confirmMake = false;
+      shapeButtons();
+    }, 10_000);
+    return;
+  }
+  confirmMake = false;
+  const t = Date.now();
+  setBusy(true);
+  try {
+    const key = (await secrets.shared("tripo")) ?? (await secrets.askShared("tripo", { reason: "To make a 3D model of your changed clothing with Tripo, with your own key and credits" }));
+    if (!key) return void status.set({ text: "Make it needs your Tripo key: nothing was made.", tone: "danger" });
+    const tripo = new Tripo(key, { log: (l) => say(`  ${l}`) });
+    const made = await reshapeModel(tripo, v, change, {
+      log: (l) => say(`  ${l}`),
+      progress: (step, p) => status.set({ text: `Tripo is ${step === "model" ? "making the model" : "bringing it to the game's size"}: ${Math.round(p)}%...`, tone: "dim" }),
+    });
+    status.set({ text: "Fitting it on V...", tone: "dim" });
+    const r = await reshapeFit(await getBridge(), v, change, made, { archive: archiveDir, raw: rawDir }, { folder: `edgemat\\reshape\\${materialSlug(change.words)}`, log: (l) => say(`  ${l}`) });
+    for (const n of r.notes) say(`  ${n}`);
+    say(`Made in ${seconds(t)} (${made.credits} Tripo credits): ${r.written.length} file(s)`);
+    const s = readState();
+    const had = s.restyles[look.item.id];
+    const files = [...(had?.files ?? [])];
+    for (const f of r.written) if (!files.some((x) => sameFile(x, f))) files.push(f);
+    s.restyles[look.item.id] = { name: look.item.name, words: [...(had?.words ?? []), `reshaped: ${change.words}`], files, when: new Date().toISOString() };
+    const kept = Object.values(s.restyles).flatMap((x) => x.files);
+    for (const f of s.originals) if (!kept.some((x) => sameFile(x, f))) removeFile(f);
+    s.originals = [];
+    writeState(s);
+    status.set({ text: "Packing and swapping it in...", tone: "dim" });
+    await packAndSwap(look.item.id);
+    status.set({ text: `Made and put on V in ${seconds(t)}. Restore takes it away.`, tone: "accent" });
+    labelSlots();
+    if (pickedSlot !== undefined) await pick(pickedSlot, true);
+  } catch (e) {
+    failed("Making it", e);
+  } finally {
+    setBusy(false);
+    showShape();
+  }
+}
+
+// ---------- keys ----------
+
+/** The keys the app's features use, kept by REDnode for every EDGE tool. */
+const KeyLines = (): { service: string; what: string; where: string }[] => [
+  { service: "openai", what: "OpenAI: GPT Image makes patterns and Reshape's pictures", where: "platform.openai.com > API keys. A few US cents a pattern, a few tens of cents a picture" },
+  { service: "tripo", what: "Tripo: makes Reshape's 3D models", where: "Tripo's developer console > API Keys. About 60 credits (US$0.60) a model" },
+  ...(patternService === "gemini" ? [{ service: "gemini", what: "Google Gemini: makes patterns (your choice)", where: "aistudio.google.com > Get API key. A few US cents a pattern" }] : []),
+];
+
+let keysWindow: { close(): void } | undefined;
+
+/**
+ * The Keys panel: each key Ready or Needed, with Set, which opens REDnode's own Key request window
+ * (the key is typed there, never in this app). `onlyIfMissing`: shown only when a key is needed, as on
+ * the first start. A key saved but not yet allowed for this app shows as Needed; Set asks to allow it.
+ */
+async function showKeys(onlyIfMissing = false): Promise<void> {
+  const lines = KeyLines();
+  const ready = await Promise.all(lines.map(async (l) => !!(await secrets.shared(l.service).catch(() => null))));
+  if (onlyIfMissing && ready.every(Boolean)) return;
+  keysWindow?.close();
+  const rows = lines.flatMap((l, i) => {
+    const state = ui.text(ready[i] ? "Ready" : "Needed", { tone: ready[i] ? "accent" : "danger" });
+    const set = ui.button(ready[i] ? "Set" : "Set...", async () => {
+      const key = await secrets.askShared(l.service, { reason: l.what });
+      state.set(key ? { text: "Ready", tone: "accent" } : { text: "Needed", tone: "danger" });
+      set.set({ disabled: !!key });
+    }, { variant: "ghost", disabled: ready[i] });
+    return [ui.text(l.what), ui.text(l.where, { tone: "dim" }), ui.row(state, set)];
+  });
+  keysWindow = ui.window({
+    id: "keys",
+    title: "Wardrobe Designer: your keys",
+    width: 460,
+    anchor: "right",
+    x: -40,
+    children: [
+      ui.text("Your own keys and credits, kept by REDnode for every EDGE tool. Set opens REDnode's window: type the key there, never here.", { tone: "dim" }),
+      ...rows,
+      ui.text("REDagent plans every restyle with your Anthropic key, set in REDagent.", { tone: "dim" }),
+      ui.button("Continue", () => keysWindow?.close()),
+    ],
+    onClose: () => (keysWindow = undefined),
+  });
+}
+
 // ---------- start ----------
 
 let started = false;
+// The keys first (owner, 2026-11-02): once a session, the panel shows if a key the app uses is missing.
+let keysAsked = false;
+const askKeysOnce = () => {
+  if (keysAsked) return;
+  keysAsked = true;
+  void showKeys(true).catch((e) => say(`Keys: ${message(e)}`));
+};
 game.onState((s) => {
   if (s.world && !started) {
     started = true;
-    void readWornSoon();
+    void readWornSoon().then(askKeysOnce);
   }
   if (!s.world) started = false;
 });
 void game.state().then((s) => {
   if (s.world && !started) {
     started = true;
-    void readWornSoon();
+    void readWornSoon().then(askKeysOnce);
   }
 });

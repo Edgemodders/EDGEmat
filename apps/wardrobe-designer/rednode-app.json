@@ -11,6 +11,7 @@
     "agent",
     "archives",
     "keys:openai",
+    "keys:tripo",
     "keys:gemini"
   ],
   "requires": {
