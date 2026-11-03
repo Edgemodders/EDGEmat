@@ -19,7 +19,8 @@ Last updated 2026-11-03.
 
 | To-do | Why | Since |
 |---|---|---|
-| Run [Wardrobe Designer Reshape and keys](testing.html#wardrobe-designer-reshape-and-keys) in the game | W3's first version in the app | 2026-11-02 |
+| Run [Wardrobe Designer Reshape and keys](testing.html#wardrobe-designer-reshape-and-keys) in the game, on REDnode 0.56.1 (the dev PC has it since 2026-11-03) | W3's first version in the app; with [Wardrobe Designer install](testing.html#wardrobe-designer-install), the gate for Wardrobe Designer's first release | 2026-11-02 |
+| For Wardrobe Designer's Nexus page: three screenshots (the window beside V with the pants restyled; one item in four looks; the reshaped cowboy hat), and check that the Equipment-EX link (`mods/6945`) opens psiberx's mod | The placeholders in `apps/wardrobe-designer/nexus/README.md` | 2026-11-03 |
 | Update to 0.3.1 from the Marketplace in a normal VS Code (not the development host), check the Library, Find and New Material open, then run Connect an Assistant | The release's install test and the new one ([Tests](testing.html#install-of-the-release), [Connect an assistant](testing.html#connect-an-assistant)) | 2026-10-21 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: the Nexus page has the owner's nine. Screenshots 1 to 5 and 8 show a Windows user name in VS Code's Output panel (`C:\Users\...`); replace them on Nexus if that matters. Still open: the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)). The tutorials' in-game shots are in (2026-10-20); their UI shots still wait | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
@@ -55,6 +56,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
+| **Wardrobe Designer needs REDnode 0.56.1** | Raised from 0.48.1 (manifest `requires`, Nexus page, upload description, guide). 0.56.1, released 2026-11-03, is the first REDnode whose Keys know Tripo and whose UI builder shows pictures (`ui.image`, #37); the app asks `keys:tripo` and shows Reshape's pictures. The dev PC runs 0.56.1 (its log, 2026-11-03). The path fallback for an older REDnode stays, for a development copy. Wardrobe Designer's first release, with Reshape for one-bone clothing, waits on two tests: Reshape and keys, and the install |
 | **The README says each release** | Owner's rule for every Edgemodders repo: a release updates the README's status line and status badge, and `release.yml` stops before building when they do not name the version (`tools/release/readme-check.mjs`, copied from REDnode). The README now says 0.3.1 released on 2026-10-21 and what is built since; the badge said 0.3 and its alt "scaffold". Wardrobe Designer's release workflow has no such check: the README's status is EDGEmat's. |
 
 ### 2026-11-03

@@ -12,7 +12,7 @@ It is a [REDnode](https://edgemodders.github.io/REDnode/) app for players, built
 
 | Needs | Why |
 |---|---|
-| [REDnode](https://www.nexusmods.com/cyberpunk2077/mods/35419) 0.48.1 or later (0.55.0 or later for Reshape's pictures in the window), with REDswap (installed with it) | Runs the app, and swaps its archive into the game |
+| [REDnode](https://www.nexusmods.com/cyberpunk2077/mods/35419) 0.56.1 or later, with REDswap (installed with it) | Runs the app, and swaps its archive into the game |
 | REDbridge, from REDnode's Mod Manager (**Get REDbridge**; it installs .NET 10 if missing) | Reads the game's clothing and writes the new materials |
 | [REDagent](https://www.nexusmods.com/cyberpunk2077/mods/35670), with your Anthropic key | Plans each restyle |
 | An OpenAI key, for patterns and Reshape; a Tripo key, for Reshape | Your own accounts and credits; the [Keys](#your-keys) panel asks for them |
@@ -59,7 +59,7 @@ A first version. It changes a piece of clothing's shape by words, through pictur
 | | |
 |---|---|
 | What can be made | Clothing that moves with one bone: hats, helmets, glasses. Other clothing can be changed in pictures; making it waits for the fit to bend with the body, which comes next |
-| The pictures | Side by side in the window, as it is and changed; a click opens one larger. They need REDnode 0.55.0 or later; with an older one, the Reshape line says where each is saved, in the app's data folder |
+| The pictures | Side by side in the window, as it is and changed; a click opens one larger. Each is also kept in the app's data folder |
 | Only this body | A reshape changes the look for V's body; the other body's version and the item's other colors stay as they were, for now |
 
 ## Your keys

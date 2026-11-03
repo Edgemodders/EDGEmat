@@ -128,8 +128,9 @@ const reshapeButton = ui.button("Reshape", () => void startReshape(), { variant:
 const changeButton = ui.button("Change", () => void changeShape(), { disabled: true });
 const backButton = ui.button("Back", () => backShape(), { variant: "ghost", disabled: true });
 const makeButton = ui.button("Make it", () => void makeShape(), { variant: "ghost", disabled: true });
-// The pictures, side by side (REDnode 0.55.0's ui.image); a click opens one larger. With an older
-// REDnode the shape line says where they are instead.
+// The pictures, side by side (ui.image, REDnode 0.55.0); a click opens one larger. The manifest needs
+// 0.56.1, so the guard matters only for a development copy on an older REDnode: the shape line
+// then says where they are instead.
 const canShow = typeof ui.image === "function";
 /** A white square, for a picture slot before there is a picture (an empty path shows an error). */
 const blank = `data:image/png;base64,${writePng({ width: 4, height: 4, data: new Uint8Array(64).fill(255) }).toString("base64")}`;

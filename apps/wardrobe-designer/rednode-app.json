@@ -15,7 +15,7 @@
     "keys:gemini"
   ],
   "requires": {
-    "rednode": ">=0.48.1",
+    "rednode": ">=0.56.1",
     "redbridge": ">=0.10"
   }
 }
