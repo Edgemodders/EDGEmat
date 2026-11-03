@@ -59,7 +59,7 @@ A first version. It changes a piece of clothing's shape by words, through pictur
 | | |
 |---|---|
 | What can be made | Clothing that moves with one bone: hats, helmets, glasses. Other clothing can be changed in pictures; making it waits for the fit to bend with the body, which comes next |
-| The pictures | Side by side in the window, as it is and changed; a click opens one larger. Each is also kept in the app's data folder |
+| The pictures | Side by side in the window, as it is and changed, on a dark background; a click opens one larger. Each is also kept in the app's data folder, on white (the background the image service and the fit work with) |
 | Only this body | A reshape changes the look for V's body; the other body's version and the item's other colors stay as they were, for now |
 
 ## Your keys

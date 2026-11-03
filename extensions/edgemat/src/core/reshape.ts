@@ -257,6 +257,52 @@ function outline(img: Image): { x0: number; y0: number; x1: number; y1: number; 
   return x1 < 0 ? undefined : { x0, y0, x1, y1, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
 
+/** The background a picture is shown on in a dark window (REDnode's HUD look). */
+export const ReshapeDark = [12, 14, 18] as const;
+
+/**
+ * A copy of a reshape picture for a dark window: the white background around the garment, flooded in
+ * from the picture's edges, turned dark, and the light fringe at the garment's edge blended into it. The
+ * picture itself stays white: the image service is asked for a white background, and the fit reads the
+ * outline against it. Written beside it as `<name>.dark.png` (again only when the picture is newer).
+ */
+export function reshapeOnDark(sheet: string): string {
+  const out = sheet.replace(/\.png$/i, "") + ".dark.png";
+  if (fs.existsSync(out) && fs.statSync(out).mtimeMs >= fs.statSync(sheet).mtimeMs) return out;
+  const img = readPng(fs.readFileSync(sheet));
+  const { width: W, height: H, data } = img;
+  const light = (i: number) => Math.min(data[i * 4], data[i * 4 + 1], data[i * 4 + 2]);
+  const bg = new Uint8Array(W * H);
+  const stack: number[] = [];
+  const seed = (i: number) => {
+    if (!bg[i] && light(i) > 225) (bg[i] = 1), stack.push(i);
+  };
+  for (let x = 0; x < W; x++) seed(x), seed((H - 1) * W + x);
+  for (let y = 0; y < H; y++) seed(y * W), seed(y * W + W - 1);
+  while (stack.length) {
+    const i = stack.pop()!;
+    const x = i % W;
+    if (x > 0) seed(i - 1);
+    if (x < W - 1) seed(i + 1);
+    if (i >= W) seed(i - W);
+    if (i < (H - 1) * W) seed(i + W);
+  }
+  const dark = new Uint8Array(data);
+  for (let i = 0; i < W * H; i++) {
+    let t = 0;
+    if (bg[i]) t = 1;
+    else {
+      const x = i % W;
+      const near = (x > 0 && bg[i - 1]) || (x < W - 1 && bg[i + 1]) || (i >= W && bg[i - W]) || (i < (H - 1) * W && bg[i + W]);
+      if (near && light(i) > 160) t = (light(i) - 160) / 95;
+    }
+    if (t) for (let q = 0; q < 3; q++) dark[i * 4 + q] = Math.round(data[i * 4 + q] * (1 - t) + ReshapeDark[q] * t);
+    dark[i * 4 + 3] = 255;
+  }
+  fs.writeFileSync(out, writePng({ width: W, height: H, data: dark }));
+  return out;
+}
+
 // ---------- the work folder ----------
 
 const stateFile = (work: string) => path.join(work, "reshape.json");

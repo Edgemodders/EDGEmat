@@ -20,7 +20,7 @@ import { imageAsPng } from "../../../extensions/edgemat/src/core/material";
 import { applyPatterns, applyRecipe, describeLook, RestyleBrief, type Look, type PatternImage, type Recipe } from "../../../extensions/edgemat/src/core/restyle";
 import { materialSlug } from "../../../extensions/edgemat/src/core/material";
 import { writePng } from "../../../extensions/edgemat/src/core/maps";
-import { loadReshape, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, ReshapeDefaults, type ReshapeViews } from "../../../extensions/edgemat/src/core/reshape";
+import { loadReshape, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeOnDark, reshapeViews, ReshapeDark, ReshapeDefaults, type ReshapeViews } from "../../../extensions/edgemat/src/core/reshape";
 import { Tripo } from "../../../extensions/edgemat/src/core/tripo";
 
 /**
@@ -132,8 +132,17 @@ const makeButton = ui.button("Make it", () => void makeShape(), { variant: "ghos
 // 0.56.1, so the guard matters only for a development copy on an older REDnode: the shape line
 // then says where they are instead.
 const canShow = typeof ui.image === "function";
-/** A white square, for a picture slot before there is a picture (an empty path shows an error). */
-const blank = `data:image/png;base64,${writePng({ width: 4, height: 4, data: new Uint8Array(64).fill(255) }).toString("base64")}`;
+/** A dark square, for a picture slot before there is a picture (an empty path shows an error). */
+const blank = `data:image/png;base64,${writePng({ width: 4, height: 4, data: new Uint8Array(Array.from({ length: 16 }, () => [...ReshapeDark, 255]).flat()) }).toString("base64")}`;
+/** A picture as the window shows it: on a dark background (the picture itself stays white for the AI and the fit). */
+function shown(sheet: string): string {
+  try {
+    return reshapeOnDark(sheet);
+  } catch (e) {
+    say(`Could not darken ${path.basename(sheet)}: ${(e as Error).message}`);
+    return sheet;
+  }
+}
 const beforeImage = canShow ? ui.image!(blank, { width: 210, alt: "As it is, from four sides", onClick: () => showLarger("before") }) : undefined;
 const afterImage = canShow ? ui.image!(blank, { width: 210, alt: "Changed, from four sides", onClick: () => showLarger("after") }) : undefined;
 let largerWindow: { close(): void } | undefined;
@@ -151,7 +160,7 @@ function showLarger(which: "before" | "after"): void {
     height: 700,
     anchor: "right",
     x: -40,
-    children: [ui.text("Front and left side above, back and right side below.", { tone: "dim" }), ui.image(file, { width: 600, alt: which === "before" ? "As it is" : "Changed" }), ui.button("Close", () => largerWindow?.close(), { variant: "ghost" })],
+    children: [ui.text("Front and left side above, back and right side below.", { tone: "dim" }), ui.image(shown(file), { width: 600, alt: which === "before" ? "As it is" : "Changed" }), ui.button("Close", () => largerWindow?.close(), { variant: "ghost" })],
     onClose: () => (largerWindow = undefined),
   });
 }
@@ -318,16 +327,34 @@ let pickedSlot: number | undefined;
 /** Thrown while the game is still putting V together after a load: worth a try again. */
 class NotReady extends Error {}
 
-/** Whether Equipment-EX is installed: its outfit slots are in TweakDB. Asked once a session. */
-let equipmentEx: Promise<boolean> | undefined;
-const hasEquipmentEx = () =>
-  (equipmentEx ??= (async () => {
-    try {
-      return !!(await api.TweakDBInterface.GetAttachmentSlotRecord("OutfitSlots.Head"));
-    } catch {
-      return false;
-    }
-  })());
+type Ts = Awaited<ReturnType<typeof api.GameInstance.GetTransactionSystem>>;
+
+/**
+ * The item in each slot on a puppet, by its TweakDB id, a few calls at a time (each waits for the game
+ * thread). Every slot is asked, Equipment-EX's too: a slot the game does not know (Equipment-EX not
+ * installed) reads empty. Looking its slot record up in TweakDB first did not find it in the game, with
+ * Equipment-EX 1.2.10 installed and its slots registered by TweakXL (2026-11-03).
+ */
+async function itemsInSlots(ts: Ts, puppet: unknown, slots: string[]): Promise<{ slot: string; id?: { id?: string }; hash?: string }[]> {
+  const out: { slot: string; id?: { id?: string }; hash?: string }[] = [];
+  for (let i = 0; i < slots.length; i += 16) {
+    const part = slots.slice(i, i + 16);
+    const ids = await Promise.all(
+      part.map(async (slot) => {
+        const item = await ts.GetItemInSlot(puppet, slot).catch(() => null);
+        return item ? ((await item.GetItemID().catch(() => null)) as { id?: string } | null) : null;
+      }),
+    );
+    part.forEach((slot, n) => {
+      const id = ids[n] ?? undefined;
+      const hash = id?.id && !/^0x0+$/i.test(String(id.id)) ? String(id.id).toUpperCase().replace(/^0X/, "0x") : undefined;
+      out.push({ slot, id, hash });
+    });
+  }
+  return out;
+}
+const AllSlots = [...BaseSlots, ...ExSlots];
+const exSlot = (slot: string) => slot.startsWith("OutfitSlots.");
 
 /**
  * Reads what V visibly wears, from the attachment slots on V's body (the base game's, and Equipment-EX's
@@ -344,16 +371,14 @@ async function readWorn(soon = false): Promise<void> {
     const gender = String(await player.GetResolvedGenderName());
     body = gender === "Female" ? "feminine" : gender === "Male" ? "masculine" : "any";
     const index = await getItems();
-    const ex = await hasEquipmentEx();
     const restyled = readState().restyles;
     const found: Worn[] = [];
-    for (const [slot, label] of [...BaseSlots, ...(ex ? ExSlots : [])]) {
-      const item = await ts.GetItemInSlot(player, slot);
-      const id = item ? ((await item.GetItemID()) as { id?: string } | null) : null;
-      const hash = id?.id && !/^0x0+$/i.test(String(id.id)) ? String(id.id).toUpperCase().replace(/^0X/, "0x") : undefined;
-      if (!hash || found.some((w) => w.hash === hash)) continue;
-      found.push({ slot, label, hash, item: index.get(hash) });
-    }
+    const held = await itemsInSlots(ts, player, AllSlots.map(([slot]) => slot));
+    held.forEach(({ slot, hash }, n) => {
+      if (!hash || found.some((w) => w.hash === hash)) return;
+      found.push({ slot, label: AllSlots[n][1], hash, item: index.get(hash) });
+    });
+    const ex = found.some((w) => exSlot(w.slot));
     if (soon && !found.length) throw new NotReady("V wears nothing yet.");
     worn = found;
     say(`V (${body} body) wears ${worn.length} item(s)${ex ? ", with Equipment-EX's slots" : ""}, read in ${seconds(t)}`);
@@ -526,9 +551,7 @@ async function refreshPreview(itemId: string): Promise<string> {
   const preview = await menu?.GetPuppet("inventory");
   if (!preview) return "no preview (the inventory has not made one yet)";
   // Equipment-EX dresses the preview in its outfit slots too.
-  for (const [slot] of [...BaseSlots, ...((await hasEquipmentEx()) ? ExSlots : [])]) {
-    const item = await ts.GetItemInSlot(preview, slot);
-    const id = item ? await item.GetItemID() : null;
+  for (const { slot, id } of await itemsInSlots(ts, preview, AllSlots.map(([s]) => s))) {
     if (id && String(id.id).toLowerCase() === hash) {
       await ts.ResetItemAppearance(preview, id);
       return slot;
@@ -690,8 +713,8 @@ function showShape(): void {
     const can = v.fit.ok ? `Make it puts it on V (about ${tripoCredits} Tripo credits).` : `It can be changed in pictures, but not made yet: ${v.fit.why}.`;
     shapeText.set({ text: `${current.item.name ?? current.item.id}, ${now}. ${can}${canShow ? "" : ` Pictures: ${last?.sheet ?? v.sheet}`}`, tone: v.fit.ok ? "normal" : "dim" });
     // A path set again shows the file as it is now (REDnode serves it by its time and size).
-    beforeImage?.set({ src: v.sheet });
-    afterImage?.set({ src: last?.sheet ?? v.sheet });
+    beforeImage?.set({ src: shown(v.sheet) });
+    afterImage?.set({ src: shown(last?.sheet ?? v.sheet) });
   }
   shapeButtons();
 }
