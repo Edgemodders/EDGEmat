@@ -354,6 +354,21 @@ async function itemsInSlots(ts: Ts, puppet: unknown, slots: string[]): Promise<{
   return out;
 }
 const AllSlots = [...BaseSlots, ...ExSlots];
+
+/**
+ * Whether Equipment-EX's outfit is on: then it hides every base slot's item (they stay equipped, so the base
+ * slots still hold them) and V wears only what is in its own slots. Asked of its OutfitSystem
+ * (`IsActive()`, Equipment-EX 1.2.10). Undefined when it cannot be asked (not installed): the base slots count.
+ */
+async function equipmentExActive(): Promise<boolean | undefined> {
+  try {
+    const systems = await api.GameInstance.GetScriptableSystemsContainer(game.instance);
+    const outfits = await systems?.Get("EquipmentEx.OutfitSystem");
+    return outfits ? !!(await outfits.IsActive()) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 const exSlot = (slot: string) => slot.startsWith("OutfitSlots.");
 
 /**
@@ -373,15 +388,17 @@ async function readWorn(soon = false): Promise<void> {
     const index = await getItems();
     const restyled = readState().restyles;
     const found: Worn[] = [];
-    const held = await itemsInSlots(ts, player, AllSlots.map(([slot]) => slot));
+    const outfit = await equipmentExActive();
+    const slots = outfit ? ExSlots : AllSlots;
+    const held = await itemsInSlots(ts, player, slots.map(([slot]) => slot));
     held.forEach(({ slot, hash }, n) => {
       if (!hash || found.some((w) => w.hash === hash)) return;
-      found.push({ slot, label: AllSlots[n][1], hash, item: index.get(hash) });
+      found.push({ slot, label: slots[n][1], hash, item: index.get(hash) });
     });
-    const ex = found.some((w) => exSlot(w.slot));
+    const ex = outfit || found.some((w) => exSlot(w.slot));
     if (soon && !found.length) throw new NotReady("V wears nothing yet.");
     worn = found;
-    say(`V (${body} body) wears ${worn.length} item(s)${ex ? ", with Equipment-EX's slots" : ""}, read in ${seconds(t)}`);
+    say(`V (${body} body) wears ${worn.length} item(s)${outfit ? ", in Equipment-EX's outfit (the base slots it hides left out)" : ex ? ", with Equipment-EX's slots" : ""}, read in ${seconds(t)}`);
     for (const w of worn) say(`  ${w.label}: ${w.item ? `${w.item.name ?? "(no name)"}, ${w.item.id}${restyled[w.item.id] ? `, restyled: ${restyled[w.item.id].words.join(", then ")}` : ""}` : `${w.hash}, not in EDGEmat's item index`}`);
     status.set({ text: "Pick a piece of clothing, then say how it should look. * marks one you restyled.", tone: "normal" });
     openMain();
