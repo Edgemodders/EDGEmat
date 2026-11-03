@@ -19,6 +19,7 @@ import {
   addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, hasKey, imageAsPng, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
+  loadReshape, readPng, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, resize, Tripo, writePng,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type PatternImage, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
@@ -403,6 +404,94 @@ server.registerTool(
         next: changed ? "Pack the project and install it (REDcode: Pack and Try), then look at the item in the game." : "Nothing changed: see notes.",
         notes: notes.length ? notes : undefined,
       });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+// ---- Reshape (design, "Reshape"; Wardrobe Designer's twin) ------------------------------------------------
+
+/** A picture for the assistant to look at: a PNG file scaled to `side` pixels across. */
+function picture(file: string, side = 768): { type: "image"; data: string; mimeType: string } {
+  const img = readPng(fs.readFileSync(file));
+  const small = img.width > side ? resize(img, side, Math.round((img.height * side) / img.width), false) : img;
+  return { type: "image", data: writePng(small).toString("base64"), mimeType: "image/png" };
+}
+
+server.registerTool(
+  "mat_reshape",
+  {
+    description:
+      "Changes a clothing item's shape by words, as Wardrobe Designer's Reshape does, a step at a time into a WolvenKit project. step views: draws the item's look from four sides (front, left, back, right) as one picture and says whether it can be fitted yet " +
+      "(garments that move with one bone, such as hats, helmets and glasses, for now). step change: an AI image service changes that picture by words ('make the brim twice as wide'); OpenAI's GPT Image by default, from the EDGE tools' shared key store, spending the user's credits " +
+      "(a few tens of US cents); each change builds on the last unless from is 'game'. Look at the picture it returns before going on: Tripo and the fit follow it faithfully, mistakes included (an old part kept beside the new one). step back: takes the last change away. " +
+      "step make: Tripo makes a 3D model from the last change's four views and brings it to a game's face count (about 60 Tripo credits and 4 minutes, the user's Tripo key), then fits it onto the garment and imports it over the look's mesh in the project with Tripo's texture as its material. " +
+      "Pack and install the project afterwards (REDcode: Pack and Try), or let Wardrobe Designer swap it in. Only the chosen body's mesh and its look's material are changed.",
+    inputSchema: {
+      item: z.string().describe("A clothing record id (Items.Hat_02_basic_01), or words matching one item"),
+      body: z.enum(["masculine", "feminine"]).default("feminine"),
+      project: z.string().describe("The project folder, its .cpmodproj, or its source\\archive folder: the pictures and the model are kept in its source\\raw\\edgemat\\reshape folder"),
+      step: z.enum(["views", "change", "back", "make"]),
+      words: z.string().optional().describe("For change: what to change, in plain words"),
+      what: z.string().optional().describe("What the garment is, for the image service ('cowboy hat'); default its in-game name"),
+      from: z.enum(["last", "game"]).default("last").describe("For change: build on the last change, or change the game's look"),
+      service: z.enum(["openai", "gemini"]).default("openai"),
+      task: z.string().optional().describe("For make: a finished Tripo multiview task to reuse instead of paying for a new one"),
+    },
+  },
+  async ({ item, body, project, step, words, what, from, service, task }) => {
+    try {
+      const b = await getBridge();
+      const items = await loadItems(b, cacheDir);
+      const exact = items.find((i) => i.id.toLowerCase() === item.toLowerCase());
+      const found = exact ? [exact] : searchItems(items, item);
+      if (found.length !== 1 && !(found.length && found.every((i) => i.entityName === found[0].entityName && i.appearanceName === found[0].appearanceName))) {
+        return text({ found: false, matches: found.length, candidates: found.slice(0, 30).map((i) => ({ id: i.id, name: i.name, slot: i.slot })), hint: found.length ? "Several items fit: pass one id." : "No item fits: try mat_find with query." });
+      }
+      const it = found[0];
+      const p = projectFor(project);
+      const raw = path.join(path.dirname(p.archive), "raw");
+      const look = (await itemMaterials(b, it)).looks.find((l) => l.body === body) ?? (await itemMaterials(b, it)).looks.find((l) => l.body === "any");
+      if (!look) return failure(new Error(`${it.name ?? it.id} has no ${body} look.`));
+      const work = path.join(raw, "edgemat", "reshape", materialSlug(`${it.id} ${look.body}`));
+      const proj = { archive: p.archive, raw };
+      let v = step === "views" ? undefined : loadReshape(work);
+      if (!v) v = await reshapeViews(b, await library(), cacheDir, look.meshes.map((m) => ({ mesh: m.mesh, appearance: m.appearance })), proj, work, { log });
+      const fit = v.fit.ok ? { canFit: true, bone: v.fit.bone } : { canFit: false, why: v.fit.why };
+      if (step === "views") {
+        return { content: [text({ item: { id: it.id, name: it.name }, body: look.body, picture: v.sheet, ...fit, next: "Call again with step change and words." }).content[0], picture(v.sheet)] };
+      }
+      if (step === "back") {
+        const gone = reshapeBack(v);
+        const now = v.changes.at(-1);
+        return { content: [text({ removed: gone?.words ?? null, now: now ? { words: now.words, picture: now.sheet } : "the game's look" }).content[0], picture(now?.sheet ?? v.sheet)] };
+      }
+      if (step === "change") {
+        if (!words?.trim()) return failure(new Error("Pass words: what to change."));
+        const { key } = await imageKey(service);
+        const c = await reshapeChange(b, v, words, { key, what: what ?? it.name ?? "garment", service, from, log });
+        return {
+          content: [
+            text({ words: c.words, model: c.model, picture: c.sheet, builtOn: c.from ?? "the game's look", outline: c.outline, ...fit, next: fit.canFit ? "Look at it: change again, step back, or step make (about 60 Tripo credits)." : "It cannot be fitted yet, so make is refused; the picture is kept." }).content[0],
+            picture(c.sheet),
+          ],
+        };
+      }
+      // make
+      const change = v.changes.at(-1);
+      if (!change) return failure(new Error("No change yet: call step change with words first."));
+      if (!v.fit.ok) return failure(new Error(`${it.name ?? it.id} cannot be fitted yet: ${v.fit.why}. Tripo was not asked.`));
+      const tripoKey = await sharedKeys.getKey("tripo", { tool: "EDGEmat MCP" });
+      if (!tripoKey) return failure(new Error("No Tripo key: set one in REDnode's Keys (or any EDGE tool), or TRIPO_API_KEY in the MCP server's environment."));
+      const made = await reshapeModel(new Tripo(tripoKey, { log }), v, change, { task, log });
+      const r = await reshapeFit(b, v, change, made, proj, { folder: `edgemat\\reshape\\${materialSlug(change.words)}`, log });
+      return {
+        content: [
+          text({ saved: { project: p.dir, mesh: r.mesh, material: r.material, written: r.written }, tripo: { task: made.task, credits: made.credits }, notes: r.notes.length ? r.notes : undefined, next: "Pack the project and install it (REDcode: Pack and Try), then wear the item in the game." }).content[0],
+          picture(r.sheet),
+        ],
+      };
     } catch (e) {
       return failure(e);
     }

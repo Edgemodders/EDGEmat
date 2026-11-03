@@ -43,6 +43,7 @@ The material library is built from your own game the first time, and kept in `%L
 | `mat_describe` | A setup's layers in plain words |
 | `mat_edit` | Recolor a setup's layers in words, and save it into a project |
 | `mat_restyle` | Restyle a clothing item in one call: its look's layers to plan on, then a recipe of layer changes saved into a project with its meshes |
+| `mat_reshape` | Change a clothing item's shape by words, a step at a time: its four views, a change by an image service (GPT Image by default), back, then a Tripo model fitted into the project (one-bone garments such as hats so far) |
 | `mat_generate` | A material from words, through Google Gemini or OpenAI with your key |
 | `mat_from_image` | A material from an image file, no key |
 | `mat_apply` | Put a material on a garment's mesh materials |
