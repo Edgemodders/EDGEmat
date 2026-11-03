@@ -6,7 +6,8 @@
 //
 // Options win, then the variables EDGEMAT_GAME_PATH, REDBRIDGE_EXE, EDGEMAT_CACHE (EDGEchat passes these); without them
 // (or with empty ones) it finds the game and REDbridge as the extension does, from the VS Code settings (edgemat.*, then
-// redcode.*). Image keys: GEMINI_API_KEY, OPENAI_API_KEY. The bridge starts only when a tool needs it.
+// redcode.*). Image keys: GEMINI_API_KEY, OPENAI_API_KEY. The bridge starts only when a tool needs it; inside REDnode
+// (REDNODE_BRIDGE_URL and REDNODE_BRIDGE_TOKEN set) it uses REDnode's REDbridge instead of starting its own.
 // stdout is the MCP channel; logs go to stderr.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -19,7 +20,7 @@ import {
   addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, hasKey, imageAsPng, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
-  loadReshape, readPng, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, resize, Tripo, writePng,
+  bridgeOver, loadReshape, readPng, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, resize, Tripo, writePng,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type PatternImage, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
@@ -45,7 +46,27 @@ const desk = new Desk(cacheDir);
 
 let bridge: BridgeClient | undefined;
 
+/**
+ * REDnode's shared REDbridge, when REDnode started this server and offers it (REDNODE_BRIDGE_URL and
+ * REDNODE_BRIDGE_TOKEN): calls go to the host, which runs one REDbridge for the game, so no second
+ * REDbridge runs beside it while the player plays. A POST of { method, params } answers { result } or
+ * { error }. Undefined elsewhere (Claude Code, VS Code), where this server starts its own.
+ */
+function rednodeBridge(): BridgeClient | undefined {
+  const url = env("REDNODE_BRIDGE_URL"), token = env("REDNODE_BRIDGE_TOKEN");
+  if (!url || !token) return undefined;
+  log(`using REDnode's REDbridge (${url})`);
+  return bridgeOver(async (method, params) => {
+    const res = await fetch(url, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ method, params }) });
+    const answer = (await res.json().catch(() => ({ error: `REDnode's REDbridge answered HTTP ${res.status}` }))) as { result?: unknown; error?: string | { message?: string } };
+    if (!res.ok || answer.error) throw new Error(typeof answer.error === "string" ? answer.error : answer.error?.message ?? `REDnode's REDbridge answered HTTP ${res.status}`);
+    return answer.result;
+  });
+}
+const shared = rednodeBridge();
+
 async function getBridge(): Promise<BridgeClient> {
+  if (shared) return shared;
   if (bridge?.running) return bridge;
   const game = await resolveGame(settings, {}, true);
   if (!game || !isGameFolder(game.path)) throw new Error("No Cyberpunk 2077 folder found. Pass --game, or set edgemat.gamePath or redcode.gamePath in VS Code.");

@@ -45,6 +45,8 @@ Last updated 2026-11-03.
 | [REDnode #28](https://github.com/Edgemodders/REDnode/issues/28) | `archives.reload` refreshes the inventory's preview even when nothing on V was refreshed (V's base-slot items read `empty_appearance_default` with the inventory open) | Filed 2026-10-30 from the first W1 run. **Built in REDnode 0.49.1** (the preview refreshed on its own), waiting for REDnode's in-game test; it already refreshed the preview in the owner's later W1 runs. Wardrobe Designer resets the restyled item on the preview itself until it ships; then that copy goes |
 | [REDnode #29](https://github.com/Edgemodders/REDnode/issues/29) | REDswap: when it replaces an archive, also clear the cached files the old archive had and the new one lacks | Filed 2026-10-30 from W1's step 7. Wardrobe Designer's Restore puts the game's own meshes in their place until then |
 | [REDnode #30](https://github.com/Edgemodders/REDnode/issues/30) | `tools/nexus`: an optional tag prefix in `nexus.json`, so Wardrobe Designer's page (tags `wardrobe-designer-v*`) knows its own releases' descriptions | Filed 2026-10-30. Until then, pull and commit after each Wardrobe release |
+| [REDnode #38](https://github.com/Edgemodders/REDnode/issues/38) | Title-bar buttons and swapping a window's content, for ui-builder windows (Wardrobe Designer's keys view) | Filed 2026-11-02. Until then the app closes and opens its window to switch views |
+| [REDnode #40](https://github.com/Edgemodders/REDnode/issues/40) | EDGEmat's in-game MCP server uses REDnode's shared REDbridge (`REDNODE_BRIDGE_URL`, `REDNODE_BRIDGE_TOKEN`) | Filed 2026-11-03. EDGEmat's side built and checked against a stand-in; ships with the next EDGEmat release and REDnode's pin |
 | [EDGEfab #3](https://github.com/Edgemodders/EDGEfab/issues/3) | Fit a generated mesh onto a game garment, replacing it: weights from the original garment, out of V's body, garment support, both bodies, at the original's path; callable outside VS Code, for Wardrobe Designer's Reshape | Filed 2026-10-31 (owner's ask). Not urgent: fits EDGEfab's F4 Clothing. **2026-11-02 (owner):** EDGEmat builds the fit itself for Wardrobe Designer (core, no VS Code), and it moves into EDGEfab when EDGEfab's development resumes |
 
 ## Log
@@ -54,6 +56,12 @@ Last updated 2026-11-03.
 | What | Detail |
 |---|---|
 | **The README says each release** | Owner's rule for every Edgemodders repo: a release updates the README's status line and status badge, and `release.yml` stops before building when they do not name the version (`tools/release/readme-check.mjs`, copied from REDnode). The README now says 0.3.1 released on 2026-10-21 and what is built since; the badge said 0.3 and its alt "scaffold". Wardrobe Designer's release workflow has no such check: the README's status is EDGEmat's. |
+
+### 2026-11-03
+
+| What | Detail |
+|---|---|
+| **EDGEmat's in-game tools on REDnode's REDbridge** | Owner: EDGEmat needs REDnode anyway, so the copy REDnode runs for in-game assistants (E1, `@edgemodders/edgemat-mcp`, pinned at 0.3.1) should use REDnode's REDbridge instead of starting a second one. Built on EDGEmat's side: with `REDNODE_BRIDGE_URL` and `REDNODE_BRIDGE_TOKEN` set, the MCP server sends its REDbridge calls to REDnode's host and starts none; without them, as before. Checked against a stand-in for the host: `mat_find` answered through it, 6 calls, no REDbridge of its own. Asked of REDnode with that shape: [REDnode #40](https://github.com/Edgemodders/REDnode/issues/40). Reaches players in the next EDGEmat release, once REDnode moves its pin (which also brings the shared keys, `mat_restyle` and `mat_reshape` to in-game REDagent) |
 
 ### 2026-11-02
 
