@@ -20,11 +20,10 @@ import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import * as path from "node:path";
 import { getKey } from "../src/core/keys.mjs";
-import { bbox, imageOf, primitives, readGlb, writeGlb } from "./glb.mjs";
-import { makeTripo } from "./tripo.mjs";
 
 const require = createRequire(import.meta.url);
 const core = require("../dist/core.js");
+const { bbox, imageOf, primitives, readGlb, writeGlb } = core;
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => {
@@ -58,7 +57,12 @@ if (!game) fail("no game folder found");
 if (!choice) fail("REDbridge.exe not found");
 const needKey = !dry && !opt("result");
 const key = needKey ? getKey("tripo", { tool: "EDGEmat" }) : undefined;
-const { tripo, upload, waitFor, download } = makeTripo(key);
+// Tripo through the core: its calls, uploads, waits (each change logged) and downloads.
+const client = key ? new core.Tripo(key, { log: (l) => console.log(`  ${l}`) }) : undefined;
+const tripo = (method, route, body) => client.call(method, route, body);
+const upload = (file) => client.upload(file);
+const waitFor = (id) => client.wait(id, (p, s) => console.log(`  ${id}: ${s} ${p}`));
+const download = (url, file) => client.download(url, file);
 if (!key && needKey) {
   console.error("No Tripo key. Make one in Tripo's developer console (API Keys), then in PowerShell:");
   console.error(`  New-Item -ItemType Directory -Force "$env:APPDATA\\Edgemodders\\keys" | Out-Null; Read-Host 'Key' -AsSecureString | ConvertFrom-SecureString | Set-Content "$env:APPDATA\\Edgemodders\\keys\\tripo.txt"`);

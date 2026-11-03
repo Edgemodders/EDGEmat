@@ -1,16 +1,42 @@
-// GLB reading and writing for the checks (paint check, reshape check): the binary glTF that WolvenKit's
-// export writes and Tripo returns. Positions, normals, UVs, triangles and node transforms; no animation.
+// Binary glTF (.glb), as WolvenKit's export writes it and Tripo returns it: positions, normals, UVs,
+// triangles and node transforms, read into plain arrays; and written back. No animation.
 
-const Comps = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
+export interface Glb {
+  json: any;
+  bin: Buffer;
+}
 
-export function readGlb(bytes) {
+/** One primitive of a GLB, in world space (a skinned node's mesh in its bind pose). */
+export interface GlbPart {
+  /** The glTF mesh's name, such as WolvenKit's submesh_00_LOD_1. */
+  mesh: string;
+  node: number;
+  meshIndex: number;
+  primitive: number;
+  pos: Float64Array;
+  nrm: Float64Array | null;
+  uv: Float64Array | null;
+  idx: Float64Array;
+  material?: number;
+}
+
+export interface Box {
+  lo: number[];
+  hi: number[];
+  size: number[];
+}
+
+const Comps: Record<string, number> = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
+const Identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
+export function readGlb(bytes: Buffer): Glb {
   const jsonLen = bytes.readUInt32LE(12);
   const json = JSON.parse(bytes.subarray(20, 20 + jsonLen).toString("utf8"));
   const bin = bytes.length > 20 + jsonLen + 8 ? bytes.subarray(20 + jsonLen + 8, 20 + jsonLen + 8 + bytes.readUInt32LE(20 + jsonLen)) : Buffer.alloc(0);
   return { json, bin };
 }
 
-export function writeGlb(json, bin) {
+export function writeGlb(json: any, bin: Buffer): Buffer {
   let text = Buffer.from(JSON.stringify(json), "utf8");
   text = Buffer.concat([text, Buffer.alloc((4 - (text.length % 4)) % 4, 0x20)]);
   const binPadded = Buffer.concat([bin, Buffer.alloc((4 - (bin.length % 4)) % 4)]);
@@ -18,7 +44,7 @@ export function writeGlb(json, bin) {
   head.write("glTF", 0, "ascii");
   head.writeUInt32LE(2, 4);
   head.writeUInt32LE(12 + 8 + text.length + 8 + binPadded.length, 8);
-  const chunk = (len, type) => {
+  const chunk = (len: number, type: string) => {
     const b = Buffer.alloc(8);
     b.writeUInt32LE(len, 0);
     b.write(type, 4, "ascii");
@@ -27,16 +53,17 @@ export function writeGlb(json, bin) {
   return Buffer.concat([head, chunk(text.length, "JSON"), text, chunk(binPadded.length, "BIN\0"), binPadded]);
 }
 
-export function accessor({ json, bin }, i) {
+/** An accessor's values as numbers, normalized ones scaled to 0..1 (or -1..1). */
+export function accessor({ json, bin }: Glb, i: number): Float64Array {
   const a = json.accessors[i];
   const n = Comps[a.type];
   const out = new Float64Array(a.count * n);
   if (a.bufferView == null) return out;
   const view = json.bufferViews[a.bufferView];
-  const size = { 5126: 4, 5125: 4, 5123: 2, 5122: 2, 5121: 1, 5120: 1 }[a.componentType];
+  const size = ({ 5126: 4, 5125: 4, 5123: 2, 5122: 2, 5121: 1, 5120: 1 } as Record<number, number>)[a.componentType];
   const stride = view.byteStride ?? size * n;
   const off = (view.byteOffset ?? 0) + (a.byteOffset ?? 0);
-  const norm = a.normalized ? { 5123: 65535, 5121: 255, 5122: 32767, 5120: 127 }[a.componentType] : 1;
+  const norm = a.normalized ? ({ 5123: 65535, 5121: 255, 5122: 32767, 5120: 127 } as Record<number, number>)[a.componentType] : 1;
   for (let k = 0; k < a.count; k++) {
     for (let c = 0; c < n; c++) {
       const p = off + k * stride + c * size;
@@ -53,17 +80,15 @@ export function accessor({ json, bin }, i) {
   return out;
 }
 
-const Identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-
 /** The world matrix of each node, column-major, from the scene's roots. */
-export function worldMatrices(json) {
-  const out = new Map();
-  const mul = (a, b) => {
+export function worldMatrices(json: any): Map<number, number[]> {
+  const out = new Map<number, number[]>();
+  const mul = (a: number[], b: number[]) => {
     const r = new Array(16).fill(0);
     for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) for (let k = 0; k < 4; k++) r[j * 4 + i] += a[k * 4 + i] * b[j * 4 + k];
     return r;
   };
-  const local = (n) => {
+  const local = (n: any): number[] => {
     if (n.matrix) return n.matrix;
     const [x, y, z, w] = n.rotation ?? [0, 0, 0, 1];
     const [sx, sy, sz] = n.scale ?? [1, 1, 1];
@@ -75,25 +100,25 @@ export function worldMatrices(json) {
       tx, ty, tz, 1,
     ];
   };
-  const walk = (i, parent) => {
+  const walk = (i: number, parent: number[]) => {
     const m = mul(parent, local(json.nodes[i]));
     out.set(i, m);
     for (const c of json.nodes[i].children ?? []) walk(c, m);
   };
   const scene = json.scenes?.[json.scene ?? 0];
-  for (const r of scene?.nodes ?? json.nodes.map((_, i) => i)) walk(r, Identity);
+  for (const r of scene?.nodes ?? json.nodes.map((_: unknown, i: number) => i)) walk(r, Identity);
   return out;
 }
 
-/** Every primitive of a GLB: world positions and normals, UVs, triangles, and its material. A skinned node's mesh is taken as it is (its bind pose). */
-export function primitives(glb) {
-  const out = [];
+/** Every primitive of a GLB: world positions and normals, UVs, triangles, and its material. */
+export function primitives(glb: Glb): GlbPart[] {
+  const out: GlbPart[] = [];
   const world = worldMatrices(glb.json);
-  glb.json.nodes.forEach((node, ni) => {
+  glb.json.nodes.forEach((node: any, ni: number) => {
     if (node.mesh == null) return;
     const mesh = glb.json.meshes[node.mesh];
     const m = node.skin != null ? Identity : (world.get(ni) ?? Identity);
-    mesh.primitives.forEach((p, pi) => {
+    mesh.primitives.forEach((p: any, pi: number) => {
       const local = accessor(glb, p.attributes.POSITION);
       const pos = new Float64Array(local.length);
       for (let k = 0; k < local.length; k += 3) {
@@ -102,7 +127,7 @@ export function primitives(glb) {
         pos[k + 1] = m[1] * x + m[5] * y + m[9] * z + m[13];
         pos[k + 2] = m[2] * x + m[6] * y + m[10] * z + m[14];
       }
-      let nrm = null;
+      let nrm: Float64Array | null = null;
       if (p.attributes.NORMAL != null) {
         const n = accessor(glb, p.attributes.NORMAL);
         nrm = new Float64Array(n.length);
@@ -123,17 +148,17 @@ export function primitives(glb) {
   return out;
 }
 
-export const bbox = (prims) => {
+export function bbox(parts: { pos: Float64Array }[]): Box {
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
-  for (const p of prims) for (let k = 0; k < p.pos.length; k += 3) for (let c = 0; c < 3; c++) {
+  for (const p of parts) for (let k = 0; k < p.pos.length; k += 3) for (let c = 0; c < 3; c++) {
     lo[c] = Math.min(lo[c], p.pos[k + c]);
     hi[c] = Math.max(hi[c], p.pos[k + c]);
   }
   return { lo, hi, size: hi.map((h, c) => h - lo[c]) };
-};
+}
 
 /** The image a texture index points at, as bytes and a file extension. */
-export function imageOf(glb, textureIndex) {
+export function imageOf(glb: Glb, textureIndex: number): { bytes: Buffer; ext: string } | undefined {
   const tex = glb.json.textures?.[textureIndex];
   const img = tex != null ? glb.json.images?.[tex.source ?? tex.extensions?.EXT_texture_webp?.source] : undefined;
   if (!img || img.bufferView == null) return undefined;

@@ -31,4 +31,10 @@ export { imageAsPng, makeMaterial, materialSlug, type MadeBy, type MaterialResul
 export { applyMaterial, texturedMaterialJson, uvTestPattern, writeTexture, writeTexturedMaterial, MetalBase, TextureTemplates, type TexturedMaterial, type TextureKind } from "./apply";
 export { checkKey, envName, hasKey, keysDir, sharedKeys } from "./sharedKeys";
 export { bridgeOver, type BridgeCall } from "./kernelBridge";
+export { accessor, bbox, imageOf, primitives, readGlb, worldMatrices, writeGlb, type Box, type Glb, type GlbPart } from "./glb";
+export { Tripo, type TripoTask } from "./tripo";
+export {
+  axis, loadReshape, reshapeAddPicture, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapePrompt, reshapeViews, ReshapeDefaults,
+  type ReshapeChange, type ReshapeFit, type ReshapeMesh, type ReshapeModel, type ReshapeViews, type ViewName,
+} from "./reshape";
 export { applyPatterns, applyRecipe, describeLook, RestyleBrief, type Look, type LookLayer, type LookMaterial, type PatternImage, type PatternPlan, type PatternResult, type Recipe, type RestyleResult } from "./restyle";
