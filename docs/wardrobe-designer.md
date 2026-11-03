@@ -28,7 +28,7 @@ Not needed: Cyber Engine Tweaks, ArchiveXL, TweakXL, WolvenKit.
 
 | Do | What happens |
 |---|---|
-| Open the inventory (**I**), with V in view. Press **F10** until the window takes input | The window shows one button for each slot with what V wears there: **Head**, **Face**, **Outer torso**, **Inner torso**, **Legs**, **Feet**, **Outfit**. A **\*** marks one you restyled |
+| Open the inventory (**I**), with V in view. Press **F10** until the window takes input | The window shows one button for each piece V visibly wears, named by where it is worn (**Head**, **Outer torso**, **Legs**...). With Equipment-EX, its slots too (**Torso outer**, **Necklace short**, **Hands**...). A **\*** marks one you restyled |
 | Press a slot | The log lists that item's layered materials: each layer's surface, color and share of the garment |
 | Type how it should look in **How should it look?**, press **Restyle** | REDagent's plan (a few seconds, one to five US cents), the materials saved, packed and swapped in. V and the inventory's preview show it |
 | Restyle it again | It builds on the first: "make it glossier" keeps the red |
@@ -64,7 +64,7 @@ A first version. It changes a piece of clothing's shape by words, through pictur
 
 ## Your keys
 
-The first time, and whenever a key the app uses is missing, a short **Keys** panel opens. Each key shows **Ready** or **Needed**; **Set** opens REDnode's own window, where you type the key (never in Wardrobe Designer), and it is kept for every EDGE tool. **Keys** in the window opens the panel again.
+While a key the app uses is missing, the window opens on **your keys**. Each key shows **Ready** or **Needed**; **Set** opens REDnode's own window, where you type the key (never in Wardrobe Designer), and it is kept for every EDGE tool. When every key is ready, the window goes on to the main view by itself; **Continue without them** goes on anyway, and a feature that needs a missing key says so. **Keys** in the main view comes back to it.
 
 | Key | For | Where to make it |
 |---|---|---|

@@ -31,6 +31,7 @@ Edits made on the Nexus page itself: `npm run wardrobe:nexus:pull` writes the li
 |---|---|
 | `Screenshot 1`, `Screenshot 2` and `Screenshot 3` (cyan italics) | Upload each picture to the page's Images tab, then replace its line with `[img]<the image's Nexus URL>[/img]` and a one-line caption. Before publishing a picture, check it for personal data. Screenshot 3 can be one of the owner's photo-mode shots of the reshaped cowboy hat (2026-11-02) |
 | `0.48.1` (REDnode) | The REDnode the app needs, from `requires` in `apps/wardrobe-designer/rednode-app.json`, when it changes. Also in `nexus.json`'s upload description |
+| Equipment-EX's link (`mods/6945`) | Unverified: check it opens psiberx's Equipment-EX |
 | Reshape, "the window draws the item from four sides" | The pictures need REDnode 0.55.0 or later ([REDnode #37](https://github.com/Edgemodders/REDnode/issues/37), built 2026-11-02); the requirement line says so. If `requires` is raised to 0.55.0, drop that note |
 
 ## The Nexus form

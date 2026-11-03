@@ -9,7 +9,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as zlib from "node:zlib";
-import { agent, api, archives, game, kernel, pkg, secrets, ui, type GameRef } from "rednode";
+import { agent, api, archives, game, kernel, pkg, secrets, ui, type ButtonProps, type GameRef, type UiNode } from "rednode";
 import type { BridgeClient } from "../../../extensions/edgemat/src/core/bridgeClient";
 import { defaultCacheDir } from "../../../extensions/edgemat/src/core/config";
 import { loadItems, type ItemEntry, type ItemLook } from "../../../extensions/edgemat/src/core/find";
@@ -23,16 +23,29 @@ import { writePng } from "../../../extensions/edgemat/src/core/maps";
 import { loadReshape, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, ReshapeDefaults, type ReshapeViews } from "../../../extensions/edgemat/src/core/reshape";
 import { Tripo } from "../../../extensions/edgemat/src/core/tripo";
 
-/** The clothing slots, as the game's equipment areas, with the words the window shows. */
-const Slots = [
-  ["Head", "Head"],
-  ["Face", "Face"],
-  ["OuterChest", "Outer torso"],
-  ["InnerChest", "Inner torso"],
-  ["Legs", "Legs"],
-  ["Feet", "Feet"],
-  ["Outfit", "Outfit"],
-] as const;
+/**
+ * Where V wears clothing: the attachment slots on V's body, so the window lists what V visibly wears,
+ * with the words it shows. The base game's slots, then Equipment-EX's outfit slots when it is installed
+ * (its EquipmentEx.reds, OutfitSlots()): with its outfit on, Equipment-EX hides the base equipment and
+ * wears the outfit's items in these, so the game's equipment system names items V is not wearing.
+ */
+const BaseSlots: [string, string][] = [
+  ["AttachmentSlots.Head", "Head"],
+  ["AttachmentSlots.Eyes", "Face"],
+  ["AttachmentSlots.Torso", "Outer torso"],
+  ["AttachmentSlots.Chest", "Inner torso"],
+  ["AttachmentSlots.Legs", "Legs"],
+  ["AttachmentSlots.Feet", "Feet"],
+  ["AttachmentSlots.Outfit", "Outfit"],
+];
+const ExSlots: [string, string][] = [
+  "Head", "Balaclava", "Mask", "Glasses", "Eyes", "EyeLeft", "EyeRight", "Wreath", "EarLeft", "EarRight",
+  "Neckwear", "NecklaceTight", "NecklaceShort", "NecklaceLong", "TorsoUnder", "TorsoInner", "TorsoMiddle", "TorsoOuter", "TorsoAux",
+  "Back", "Waist", "ShoulderLeft", "ShoulderRight", "ElbowLeft", "ElbowRight", "WristLeft", "WristRight",
+  "Hands", "HandLeft", "HandRight", "HandPropLeft", "HandPropRight", "FingersLeft", "FingersRight", "FingernailsLeft", "FingernailsRight",
+  "LegsInner", "LegsMiddle", "LegsOuter", "ThighLeft", "ThighRight", "KneeLeft", "KneeRight", "AnkleLeft", "AnkleRight",
+  "Feet", "ToesLeft", "ToesRight", "ToenailsLeft", "ToenailsRight", "BodyUnder", "BodyInner", "BodyMiddle", "BodyOuter",
+].map((n) => [`OutfitSlots.${n}`, n.replace(/([a-z])([A-Z])/g, (_, a: string, b: string) => `${a} ${b.toLowerCase()}`)]);
 
 /** The most layered materials described for one item, so a plan stays quick and cheap. */
 const MaxMaterials = 4;
@@ -85,7 +98,8 @@ interface State {
 // ---------- the window ----------
 
 const status = ui.text("Waiting for V to be in the world...", { tone: "dim" });
-const slotButtons = Slots.map(([, label], i) => ui.button(label, () => void pick(i), { variant: "ghost", disabled: true }));
+/** One button for each item V wears, made again each time the window reads V (see mainView). */
+let slotButtons: UiNode<ButtonProps>[] = [];
 const picked = ui.text("Pick a piece of clothing V wears.", { tone: "dim" });
 let words = "";
 const wordsInput = ui.input({ label: "How should it look?", placeholder: "red leather, yellow denim...", onChange: (v) => (words = v), onSubmit: (v) => { words = v; void restyle(); } });
@@ -141,28 +155,63 @@ function showLarger(which: "before" | "after"): void {
   });
 }
 
-ui.window({
-  title: "Wardrobe Designer",
-  width: 480,
-  height: canShow ? 900 : 760,
-  anchor: "left",
-  x: 40,
-  children: [
+// ---------- the window's two views ----------
+// One window, two views: the keys (first, while a key is missing) and the main view. The window kit
+// cannot swap a window's content, so a view change closes the window and opens it again with the same
+// id and size: REDnode keeps its place by both, so it stays where the player put it.
+
+const WindowSize = { width: 480, height: canShow ? 900 : 760 };
+let view: "main" | "keys" | undefined;
+let mainWindow: { close(): void } | undefined;
+const refreshButton = ui.button("Refresh", () => void readWorn(), { variant: "ghost" });
+const keysButton = ui.button("Keys", () => void openKeys(), { variant: "ghost" });
+
+/** The main view: the items V wears as buttons, three to a row, then Restyle and Reshape. */
+function mainView() {
+  slotButtons = worn.map((w, i) => ui.button(slotLabel(w), () => void pick(i), { variant: w.item ? "primary" : "ghost", disabled: busy || !w.item }));
+  const rows = [];
+  for (let i = 0; i < slotButtons.length; i += 3) rows.push(ui.row(...slotButtons.slice(i, i + 3)));
+  return [
     status,
-    ui.row(...slotButtons.slice(0, 4)),
-    ui.row(...slotButtons.slice(4)),
+    ...(rows.length ? rows : [ui.text("What V wears shows here, one button for each piece.", { tone: "dim" })]),
     picked,
     wordsInput,
-    ui.row(restyleButton, restoreButton, ui.button("Refresh", () => void readWorn(), { variant: "ghost" })),
-    ui.row(patternsButton, ui.button("Keys", () => void showKeys(), { variant: "ghost" })),
+    ui.row(restyleButton, restoreButton, refreshButton),
+    ui.row(patternsButton, keysButton),
     ui.heading("Reshape"),
     shapeText,
     ...(beforeImage && afterImage ? [ui.row(beforeImage, afterImage)] : []),
     shapeInput,
     ui.row(reshapeButton, changeButton, backButton, makeButton),
     log,
-  ],
-});
+  ];
+}
+
+function show(next: "main" | "keys", children: UiNode<any>[]): void {
+  mainWindow?.close();
+  view = next;
+  mainWindow = ui.window({
+    id: "main",
+    title: next === "main" ? "Wardrobe Designer" : "Wardrobe Designer: your keys",
+    ...WindowSize,
+    anchor: "left",
+    x: 40,
+    children,
+    onClose: () => {
+      mainWindow = undefined;
+      view = undefined;
+    },
+  });
+}
+
+/**
+ * The main view, made again (its item buttons follow what V wears). Only while it shows, unless
+ * `force`: not over the keys view, and not again after the player closed the window.
+ */
+function openMain(force = false): void {
+  if (view !== "main" && !force) return;
+  show("main", mainView());
+}
 
 const say = (line: string) => {
   log.push(line);
@@ -182,6 +231,7 @@ const setBusy = (on: boolean) => {
   restyleButton.set({ disabled: on || !current });
   restoreButton.set({ disabled: on || !current || !readState().restyles[current.item.id] });
   slotButtons.forEach((b, i) => b.set({ disabled: on || !worn[i]?.item }));
+  refreshButton.set({ disabled: on });
   shapeButtons();
 };
 
@@ -267,9 +317,21 @@ let pickedSlot: number | undefined;
 /** Thrown while the game is still putting V together after a load: worth a try again. */
 class NotReady extends Error {}
 
+/** Whether Equipment-EX is installed: its outfit slots are in TweakDB. Asked once a session. */
+let equipmentEx: Promise<boolean> | undefined;
+const hasEquipmentEx = () =>
+  (equipmentEx ??= (async () => {
+    try {
+      return !!(await api.TweakDBInterface.GetAttachmentSlotRecord("OutfitSlots.Head"));
+    } catch {
+      return false;
+    }
+  })());
+
 /**
- * Reads what V wears and labels the slot buttons. `soon`: just after a load, when the game may not
- * have dressed V yet, so a NotReady is passed on for readWornSoon to try again instead of shown.
+ * Reads what V visibly wears, from the attachment slots on V's body (the base game's, and Equipment-EX's
+ * when it is installed), and makes the main view's item buttons again. `soon`: just after a load, when the
+ * game may not have dressed V yet, so a NotReady is passed on for readWornSoon to try again.
  */
 async function readWorn(soon = false): Promise<void> {
   try {
@@ -277,23 +339,26 @@ async function readWorn(soon = false): Promise<void> {
     status.set({ text: "Reading what V wears...", tone: "dim" });
     const player = await api.GetPlayer(game.instance);
     if (!player) throw new NotReady("V is not in the world.");
-    const data = await api.EquipmentSystem.GetData(player);
-    if (!data) throw new NotReady("The game gave no equipment data for V.");
+    const ts = await api.GameInstance.GetTransactionSystem(game.instance);
     const gender = String(await player.GetResolvedGenderName());
     body = gender === "Female" ? "feminine" : gender === "Male" ? "masculine" : "any";
     const index = await getItems();
+    const ex = await hasEquipmentEx();
     const restyled = readState().restyles;
-    worn = [];
-    for (const [area, label] of Slots) {
-      const id = (await (data as GameRef).$call("GetItemInEquipSlot;gamedataEquipmentAreaInt32", area, 0)) as { id?: string } | null;
-      const hash = id?.id && !/^0x0+$/i.test(id.id) ? id.id.toUpperCase().replace(/^0X/, "0x") : undefined;
-      worn.push({ slot: area, label, hash, item: hash ? index.get(hash) : undefined });
+    const found: Worn[] = [];
+    for (const [slot, label] of [...BaseSlots, ...(ex ? ExSlots : [])]) {
+      const item = await ts.GetItemInSlot(player, slot);
+      const id = item ? ((await item.GetItemID()) as { id?: string } | null) : null;
+      const hash = id?.id && !/^0x0+$/i.test(String(id.id)) ? String(id.id).toUpperCase().replace(/^0X/, "0x") : undefined;
+      if (!hash || found.some((w) => w.hash === hash)) continue;
+      found.push({ slot, label, hash, item: index.get(hash) });
     }
-    labelSlots();
-    const count = worn.filter((w) => w.hash).length;
-    say(`V (${body} body) wears ${count} item(s), read in ${seconds(t)}`);
-    for (const w of worn) if (w.hash) say(`  ${w.label}: ${w.item ? `${w.item.name ?? "(no name)"}, ${w.item.id}${restyled[w.item.id] ? `, restyled: ${restyled[w.item.id].words.join(", then ")}` : ""}` : `${w.hash}, not in EDGEmat's item index`}`);
+    if (soon && !found.length) throw new NotReady("V wears nothing yet.");
+    worn = found;
+    say(`V (${body} body) wears ${worn.length} item(s)${ex ? ", with Equipment-EX's slots" : ""}, read in ${seconds(t)}`);
+    for (const w of worn) say(`  ${w.label}: ${w.item ? `${w.item.name ?? "(no name)"}, ${w.item.id}${restyled[w.item.id] ? `, restyled: ${restyled[w.item.id].words.join(", then ")}` : ""}` : `${w.hash}, not in EDGEmat's item index`}`);
     status.set({ text: "Pick a piece of clothing, then say how it should look. * marks one you restyled.", tone: "normal" });
+    openMain();
   } catch (e) {
     if (soon && e instanceof NotReady) throw e;
     failed("Reading what V wears", e);
@@ -313,14 +378,15 @@ async function readWornSoon(): Promise<void> {
   }
 }
 
+/** A slot button's words: where V wears it, what it is, and * for an item restyled. */
+function slotLabel(w: Worn): string {
+  const name = w.item?.name ?? w.item?.id ?? "(not in the index)";
+  return `${w.label}: ${name}${w.item && readState().restyles[w.item.id] ? " *" : ""}`;
+}
+
 /** Each slot button names what V wears there, with * for an item restyled. */
 function labelSlots(): void {
-  const restyled = readState().restyles;
-  worn.forEach((w, i) => {
-    const name = w.item?.name ?? w.item?.id ?? (w.hash ? "(not in the index)" : undefined);
-    const mark = w.item && restyled[w.item.id] ? " *" : "";
-    slotButtons[i].set({ label: name ? `${w.label}: ${name}${mark}` : `${w.label}: none`, disabled: busy || !w.item, variant: w.item ? "primary" : "ghost" });
-  });
+  worn.forEach((w, i) => slotButtons[i]?.set({ label: slotLabel(w), disabled: busy || !w.item, variant: w.item ? "primary" : "ghost" }));
 }
 
 // ---------- one item's materials ----------
@@ -444,8 +510,6 @@ const patternImage = (service: ImageService, key: string): PatternImage => async
 
 // ---------- restyle, pack and swap ----------
 
-/** The base clothing slots the inventory's preview wears items in. */
-const PreviewSlots = ["Head", "Eyes", "Chest", "Torso", "Legs", "Feet", "Outfit"].map((s) => `AttachmentSlots.${s}`);
 
 /**
  * Applies the item's appearance again on the inventory's preview of V, so it loads the swapped files.
@@ -460,7 +524,8 @@ async function refreshPreview(itemId: string): Promise<string> {
   const menu = await layer?.GetGameController();
   const preview = await menu?.GetPuppet("inventory");
   if (!preview) return "no preview (the inventory has not made one yet)";
-  for (const slot of PreviewSlots) {
+  // Equipment-EX dresses the preview in its outfit slots too.
+  for (const [slot] of [...BaseSlots, ...((await hasEquipmentEx()) ? ExSlots : [])]) {
     const item = await ts.GetItemInSlot(preview, slot);
     const id = item ? await item.GetItemID() : null;
     if (id && String(id.id).toLowerCase() === hash) {
@@ -742,63 +807,64 @@ const KeyLines = (): { service: string; what: string; where: string }[] => [
   ...(patternService === "gemini" ? [{ service: "gemini", what: "Google Gemini: makes patterns (your choice)", where: "aistudio.google.com > Get API key. A few US cents a pattern" }] : []),
 ];
 
-let keysWindow: { close(): void } | undefined;
+/** Each key's state: whether this app has it (set, and allowed). A key saved but not yet allowed reads as missing. */
+const keyReady = async () => {
+  const lines = KeyLines();
+  return { lines, ready: await Promise.all(lines.map(async (l) => !!(await secrets.shared(l.service).catch(() => null)))) };
+};
 
 /**
- * The Keys panel: each key Ready or Needed, with Set, which opens REDnode's own Key request window
- * (the key is typed there, never in this app). `onlyIfMissing`: shown only when a key is needed, as on
- * the first start. A key saved but not yet allowed for this app shows as Needed; Set asks to allow it.
+ * The keys view, in the main window (owner, 2026-11-02: the first view while a key is missing, so it is
+ * not overlooked). Each key Ready or Needed, with Set, which opens REDnode's own Key request window (the
+ * key is typed there, never in this app). When every key is Ready it goes on to the main view by itself;
+ * Continue goes on without the missing ones (their features say so when pressed).
  */
-async function showKeys(onlyIfMissing = false): Promise<void> {
-  const lines = KeyLines();
-  const ready = await Promise.all(lines.map(async (l) => !!(await secrets.shared(l.service).catch(() => null))));
-  if (onlyIfMissing && ready.every(Boolean)) return;
-  keysWindow?.close();
+async function openKeys(): Promise<void> {
+  const { lines, ready } = await keyReady();
+  const goOn = ui.button(ready.every(Boolean) ? "Continue" : "Continue without them", () => openMain(true), { variant: ready.every(Boolean) ? "primary" : "ghost" });
   const rows = lines.flatMap((l, i) => {
     const state = ui.text(ready[i] ? "Ready" : "Needed", { tone: ready[i] ? "accent" : "danger" });
-    const set = ui.button(ready[i] ? "Set" : "Set...", async () => {
+    const set: UiNode<ButtonProps> = ui.button(ready[i] ? "Set" : "Set...", async () => {
       const key = await secrets.askShared(l.service, { reason: l.what });
+      ready[i] = !!key;
       state.set(key ? { text: "Ready", tone: "accent" } : { text: "Needed", tone: "danger" });
       set.set({ disabled: !!key });
-    }, { variant: "ghost", disabled: ready[i] });
-    return [ui.text(l.what), ui.text(l.where, { tone: "dim" }), ui.row(state, set)];
+      if (ready.every(Boolean)) {
+        say("Keys: every key is ready");
+        openMain(true);
+      } else goOn.set({ label: "Continue without them" });
+    }, { variant: ready[i] ? "ghost" : "primary", disabled: ready[i] });
+    return [ui.heading(l.what), ui.text(l.where, { tone: "dim" }), ui.row(state, set)];
   });
-  keysWindow = ui.window({
-    id: "keys",
-    title: "Wardrobe Designer: your keys",
-    width: 460,
-    anchor: "right",
-    x: -40,
-    children: [
-      ui.text("Your own keys and credits, kept by REDnode for every EDGE tool. Set opens REDnode's window: type the key there, never here.", { tone: "dim" }),
-      ...rows,
-      ui.text("REDagent plans every restyle with your Anthropic key, set in REDagent.", { tone: "dim" }),
-      ui.button("Continue", () => keysWindow?.close()),
-    ],
-    onClose: () => (keysWindow = undefined),
-  });
+  show("keys", [
+    ui.text("Wardrobe Designer uses AI services on your own accounts and credits. REDnode keeps the keys for every EDGE tool: Set opens REDnode's window, where you type the key. Wardrobe Designer never sees you type it.", { tone: "dim" }),
+    ...rows,
+    ui.text("REDagent plans every restyle with your Anthropic key, set in REDagent. Only restyling colors and fabrics? Then you need no key here.", { tone: "dim" }),
+    goOn,
+  ]);
 }
 
 // ---------- start ----------
 
+// The first view: the keys while one is missing, else the main view. Keys reopens them any time.
+void keyReady()
+  .then(({ ready }) => (ready.every(Boolean) ? openMain(true) : openKeys()))
+  .catch((e) => {
+    console.log(`Keys: ${message(e)}`);
+    openMain(true);
+  });
+
 let started = false;
-// The keys first (owner, 2026-11-02): once a session, the panel shows if a key the app uses is missing.
-let keysAsked = false;
-const askKeysOnce = () => {
-  if (keysAsked) return;
-  keysAsked = true;
-  void showKeys(true).catch((e) => say(`Keys: ${message(e)}`));
-};
 game.onState((s) => {
   if (s.world && !started) {
     started = true;
-    void readWornSoon().then(askKeysOnce);
+    void readWornSoon();
   }
   if (!s.world) started = false;
 });
 void game.state().then((s) => {
   if (s.world && !started) {
     started = true;
-    void readWornSoon().then(askKeysOnce);
+    void readWornSoon();
   }
 });
