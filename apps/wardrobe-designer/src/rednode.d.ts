@@ -49,8 +49,11 @@ declare module "rednode" {
     row(...children: UiNode<any>[]): UiNode<Record<string, never>>;
     column(...children: UiNode<any>[]): UiNode<Record<string, never>>;
     progress(value: number, options?: { label?: string; max?: number }): UiNode<{ value: number; label?: string; max?: number }>;
-    /** A picture: asked of REDnode in #37, not there yet; check for it before use. */
-    image?(src: string, options?: { width?: number; alt?: string }): UiNode<{ src: string; width?: number; alt?: string; version?: number }>;
+    /**
+     * A picture (REDnode 0.55.0, #37): a PNG, JPEG, WebP or GIF file in the package's folder or
+     * `pkg.dataDir`, a `data:image/...` URL, or the bytes. Older REDnodes have none: check before use.
+     */
+    image?(src: string | Uint8Array, options?: { width?: number; alt?: string; onClick?: () => void }): UiNode<{ src: string | Uint8Array; width?: number; alt?: string; version?: number }>;
     window(options: { id?: string; title: string; width?: number; height?: number; anchor?: string; x?: number; y?: number; children: UiNode<any>[]; onClose?: () => void }): { close(): void };
   };
 

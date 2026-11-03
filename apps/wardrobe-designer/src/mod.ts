@@ -19,6 +19,7 @@ import { buildLibrary, isCurrent, loadLibrary, type Library } from "../../../ext
 import { imageAsPng } from "../../../extensions/edgemat/src/core/material";
 import { applyPatterns, applyRecipe, describeLook, RestyleBrief, type Look, type PatternImage, type Recipe } from "../../../extensions/edgemat/src/core/restyle";
 import { materialSlug } from "../../../extensions/edgemat/src/core/material";
+import { writePng } from "../../../extensions/edgemat/src/core/maps";
 import { loadReshape, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, ReshapeDefaults, type ReshapeViews } from "../../../extensions/edgemat/src/core/reshape";
 import { Tripo } from "../../../extensions/edgemat/src/core/tripo";
 
@@ -113,11 +114,32 @@ const reshapeButton = ui.button("Reshape", () => void startReshape(), { variant:
 const changeButton = ui.button("Change", () => void changeShape(), { disabled: true });
 const backButton = ui.button("Back", () => backShape(), { variant: "ghost", disabled: true });
 const makeButton = ui.button("Make it", () => void makeShape(), { variant: "ghost", disabled: true });
-// The pictures, side by side, once REDnode's window kit shows pictures (REDnode #37); until then the
-// shape line says where they are.
+// The pictures, side by side (REDnode 0.55.0's ui.image); a click opens one larger. With an older
+// REDnode the shape line says where they are instead.
 const canShow = typeof ui.image === "function";
-const beforeImage = canShow ? ui.image!("", { width: 210, alt: "As it is, from four sides" }) : undefined;
-const afterImage = canShow ? ui.image!("", { width: 210, alt: "Changed, from four sides" }) : undefined;
+/** A white square, for a picture slot before there is a picture (an empty path shows an error). */
+const blank = `data:image/png;base64,${writePng({ width: 4, height: 4, data: new Uint8Array(64).fill(255) }).toString("base64")}`;
+const beforeImage = canShow ? ui.image!(blank, { width: 210, alt: "As it is, from four sides", onClick: () => showLarger("before") }) : undefined;
+const afterImage = canShow ? ui.image!(blank, { width: 210, alt: "Changed, from four sides", onClick: () => showLarger("after") }) : undefined;
+let largerWindow: { close(): void } | undefined;
+
+/** One of the two pictures in its own, larger window. */
+function showLarger(which: "before" | "after"): void {
+  const v = shape;
+  if (!v || !ui.image) return;
+  const file = which === "before" ? v.sheet : v.changes.at(-1)?.sheet ?? v.sheet;
+  largerWindow?.close();
+  largerWindow = ui.window({
+    id: "picture",
+    title: which === "before" ? "As it is" : `Changed: ${v.changes.at(-1)?.words ?? "nothing yet"}`,
+    width: 640,
+    height: 700,
+    anchor: "right",
+    x: -40,
+    children: [ui.text("Front and left side above, back and right side below.", { tone: "dim" }), ui.image(file, { width: 600, alt: which === "before" ? "As it is" : "Changed" }), ui.button("Close", () => largerWindow?.close(), { variant: "ghost" })],
+    onClose: () => (largerWindow = undefined),
+  });
+}
 
 ui.window({
   title: "Wardrobe Designer",
@@ -595,12 +617,15 @@ function showShape(): void {
   const last = v?.changes.at(-1);
   if (!v || !current) {
     shapeText.set({ text: current ? "Press Reshape to see it from four sides." : "Pick a piece of clothing, then press Reshape to see it from four sides.", tone: "dim" });
+    beforeImage?.set({ src: blank });
+    afterImage?.set({ src: blank });
   } else {
     const now = last ? `changed: "${last.words}"${v.changes.length > 1 ? ` (${v.changes.length} changes)` : ""}` : "as it is; say how its shape should change";
     const can = v.fit.ok ? `Make it puts it on V (about ${tripoCredits} Tripo credits).` : `It can be changed in pictures, but not made yet: ${v.fit.why}.`;
     shapeText.set({ text: `${current.item.name ?? current.item.id}, ${now}. ${can}${canShow ? "" : ` Pictures: ${last?.sheet ?? v.sheet}`}`, tone: v.fit.ok ? "normal" : "dim" });
-    beforeImage?.set({ src: v.sheet, version: Date.now() });
-    afterImage?.set({ src: last?.sheet ?? v.sheet, version: Date.now() });
+    // A path set again shows the file as it is now (REDnode serves it by its time and size).
+    beforeImage?.set({ src: v.sheet });
+    afterImage?.set({ src: last?.sheet ?? v.sheet });
   }
   shapeButtons();
 }
