@@ -2,7 +2,7 @@
 
 [center][size=5][b][color=#fcee0a]Restyle what V wears in your own words, and see it change on the inventory screen.[/color][/b][/size][/center]
 
-[center][size=3]Wardrobe Designer is a window over the game. Pick a piece of clothing V wears, type how it should look, such as "red leather" or "yellow denim", and press Restyle. An AI plans the change on the garment's own materials, and a few seconds later V wears it, in the inventory and in the world. No modding tools, no restart.[/size][/center]
+[center][size=3]Wardrobe Designer is a window over the game. Pick a piece of clothing V wears, type how it should look, such as "red leather", "yellow with large black polka dots" or "make the brim twice as wide", and press a button. AI plans the change, makes the new materials, patterns or shapes, and V wears it within seconds or minutes, in the inventory and in the world. No modding tools, no restart.[/size][/center]
 
 [center][size=3]What changed in each version: [url=https://github.com/Edgemodders/EDGEmat/blob/main/apps/wardrobe-designer/changelog.md]the changelog[/url] · Guide: [url=https://edgemodders.github.io/EDGEmat/wardrobe-designer.html]Wardrobe Designer docs[/url][/size][/center]
 
@@ -10,7 +10,8 @@
 
 [quote][size=4][b][color=#fcee0a]STATUS: PREVIEW[/color][/b][/size]
 Built in the open and tested in the game, on game version 2.5. It is a [url=https://www.nexusmods.com/cyberpunk2077/mods/35419]REDnode[/url] app: you need REDnode first, with REDbridge and [url=https://www.nexusmods.com/cyberpunk2077/mods/35670]REDagent[/url].
-[b]It changes colors, fabrics and patterns, not shapes.[/b] Patterns are made by Google Gemini with your own key.[/quote]
+[b]Restyle and Patterns work on any clothing. Reshape is a first version:[/b] hats, helmets and glasses can be reshaped; other clothing can be changed in pictures for now.
+The AI services use your own keys and credits: Anthropic for every restyle, OpenAI for patterns and reshapes, Tripo for reshapes.[/quote]
 [line]
 
 [color=#19f3ff][i]Screenshot 1: the Wardrobe Designer window beside V on the inventory screen, the pants restyled[/i][/color]
@@ -24,7 +25,7 @@ Built in the open and tested in the game, on game version 2.5. It is a [url=http
 [*][url=https://www.nexusmods.com/cyberpunk2077/mods/35670]REDagent[/url], the AI in REDnode, plans the change on those layers, choosing from the game's own fabrics, colors and finishes. [url=https://www.nexusmods.com/cyberpunk2077/mods/35422]EDGEmat[/url]'s materials engine makes the new materials, and REDnode swaps them into the game.[/*]
 [*]V and the inventory's preview show it within seconds. A [b]*[/b] marks what you restyled.[/*]
 [/list]
-[color=#19f3ff][i]Screenshot 2: one item in four looks: as the game made it, red leather, yellow denim, blue[/i][/color]
+[color=#19f3ff][i]Screenshot 2: one item in four looks: as the game made it, red leather, yellow denim, yellow with black polka dots[/i][/color]
 
 [size=5][b][color=#fcee0a]What you can do[/color][/b][/size]
 
@@ -32,36 +33,63 @@ Built in the open and tested in the game, on game version 2.5. It is a [url=http
 [*][b]Recolor:[/b] "red", "dark blue", "pale green". It takes the closest color the game's fabric has.[/*]
 [*][b]Change the fabric:[/b] "denim", "leather", "cotton", "plastic". Every layer of the old fabric changes, and trims and dirt stay.[/*]
 [*][b]Change the finish:[/b] "glossy", "matte", "make it shinier".[/*]
+[*][b]Patterns and prints:[/b] "yellow with large black polka dots", "red and black tartan", "woodland camo". OpenAI's GPT Image makes the pattern with your key, and it covers the whole material it goes on, the garment's folds kept. "Make the dots bigger" or "make it glossy" keeps the same picture, at no new cost. A button switches patterns to Google Gemini, if you would rather use a Gemini key.[/*]
 [*][b]Build on it:[/b] a second restyle starts from the first.[/*]
 [*][b]Restore:[/b] one press puts the item back to the game's own look.[/*]
 [*][b]It stays:[/b] your restyles are one archive in the game's mod folder, so they are there after a restart.[/*]
 [/list]
+[size=5][b][color=#fcee0a]Reshape: change its shape (first version)[/color][/b][/size]
+
+[list=1]
+[*]Press a slot, then [b]Reshape[/b]: the window draws the item from four sides, in its look as V wears it.[/*]
+[*]Type the change, such as "make the brim twice as wide", and press [b]Change[/b]. GPT Image changes the four pictures together, with your key, in about half a minute. Change again to build on it, or press [b]Back[/b].[/*]
+[*]Happy with the pictures? Press [b]Make it[/b], twice: Tripo, an AI 3D service, makes the model from them with your key (about 60 credits, about 4 minutes). It is fitted on V and swapped in. [b]Restore[/b] takes it away.[/*]
+[/list]
+Look closely at the pictures before you make it: the model follows them, mistakes included. Hats, helmets and glasses can be made now; other clothing can be changed in pictures, and the window says why it cannot be made yet. Clothing that bends with the body comes next.
+
+[color=#19f3ff][i]Screenshot 3: the cowboy hat reshaped with a brim twice as wide, on V in photo mode[/i][/color]
+
+[size=5][b][color=#fcee0a]Your keys, asked for first[/color][/b][/size]
+
+The AI services run on your own accounts. The first time, and whenever a key is missing, a small [b]Keys[/b] panel shows each key as [b]Ready[/b] or [b]Needed[/b]. [b]Set[/b] opens REDnode's own window, where you type the key: Wardrobe Designer never sees you type it, and REDnode keeps it for every EDGE tool.
+
+[list]
+[*][b]Anthropic[/b], set in REDagent: plans every restyle.[/*]
+[*][b]OpenAI[/b] (platform.openai.com, API keys): patterns, and Reshape's pictures.[/*]
+[*][b]Tripo[/b] (Tripo's developer console, API Keys): Reshape's 3D models.[/*]
+[/list]
+Only restyling colors and fabrics? Then the Anthropic key is all you need.
+
 [size=5][b][color=#fcee0a]Good to know[/color][/b][/size]
 
 [list]
 [*][b]Everyone in that look changes:[/b] a restyle replaces the item's mesh, so NPCs wearing the same item look the same. A V-only version is planned.[/*]
 [*][b]Colors are the game's:[/b] each fabric offers its own set of colors and finishes, so "red" is the game's closest red on that fabric.[/*]
-[*][b]Patterns and prints[/b] ("yellow with large black polka dots", "woodland camo") are made by Google Gemini with your own key, and cover the whole material they go on. A logo or a picture in one place is not supported yet.[/*]
-[*][b]The AI costs a little:[/b] REDagent uses your own Anthropic key. A restyle's plan costs about one to five US cents. REDagent keeps a daily limit for each app, $0.25 at first: change it in REDagent, [b]Chats[/b], then the [b]Mods[/b] tab.[/*]
+[*][b]Patterns cover a whole material:[/b] a logo or a picture in one place is not supported yet.[/*]
+[*][b]A reshape is for V's body:[/b] the other body's version and the item's other colors stay as they were, for now.[/*]
+[*][b]What it costs:[/b] a restyle's plan about one to five US cents (REDagent keeps a daily limit for each app, $0.25 at first: change it in REDagent, [b]Chats[/b], then the [b]Mods[/b] tab). A pattern a few US cents. A reshape picture a few tens of US cents, and a reshape model about 60 Tripo credits. The services' own prices apply.[/*]
 [*][b]The first start takes half a minute:[/b] it reads your game's materials once (and again after a game update).[/*]
 [/list]
 [size=5][b][color=#fcee0a]Requirements[/color][/b][/size]
 
 [list]
-[*][url=https://www.nexusmods.com/cyberpunk2077/mods/35419]REDnode[/url] 0.48.1 or later, with what it needs (RED4ext, redscript, Codeware). REDswap comes with it.[/*]
-[*]REDbridge: get it from REDnode's Mod Manager ([b]Get REDbridge[/b]), if you have not already.[/*]
+[*][url=https://www.nexusmods.com/cyberpunk2077/mods/35419]REDnode[/url] 0.48.1 or later, with what it needs (RED4ext and redscript). REDswap comes with it.[/*]
+[*]REDbridge: get it from REDnode's Mod Manager ([b]Get REDbridge[/b] on Wardrobe Designer's line), if you have not already. It installs .NET 10 for you if it is missing.[/*]
 [*][url=https://www.nexusmods.com/cyberpunk2077/mods/35670]REDagent[/url], with your Anthropic API key.[/*]
+[*]For patterns and Reshape: an OpenAI API key. For Reshape's models: a Tripo API key.[/*]
 [*]Cyberpunk 2077 on PC, game version 2.5.[/*]
 [/list]
+Not needed: Cyber Engine Tweaks, ArchiveXL, TweakXL, WolvenKit.
+
 [size=5][b][color=#fcee0a]Install[/color][/b][/size]
 
 [list]
 [*][b]Vortex:[/b] Mod Manager Download, then enable and deploy.[/*]
 [*][b]By hand:[/b] extract the zip into the game folder, so the app lands in [i]red4ext/plugins/REDnode/apps/wardrobe-designer/[/i].[/*]
 [/list]
-In the game, press [b]F10[/b] and open the [b]Mod Manager[/b] from the launcher (the [b]REDNODE[/b] tab at the lower left). Select [b]Wardrobe Designer[/b], allow its three permissions ([b]REDbridge[/b], [b]REDagent[/b] and [b]swapping archives into the game[/b]), and switch it on. Press [b]Pin to launcher[/b] to keep it one press away.
+In the game, press [b]F10[/b] and open the [b]Mod Manager[/b] from the launcher (the [b]REDNODE[/b] tab at the lower left). Select [b]Wardrobe Designer[/b], allow what it asks for ([b]REDbridge[/b], [b]REDagent[/b], [b]swapping archives into the game[/b], and your [b]OpenAI[/b], [b]Tripo[/b] and [b]Gemini[/b] keys, each used only for the feature that needs it), and switch it on. Press [b]Pin to launcher[/b] to keep it one press away.
 
-[b]Uninstall:[/b] press [b]Restore[/b] on what you restyled, then remove it in your mod manager, or delete [i]red4ext/plugins/REDnode/apps/wardrobe-designer/[/i]. To drop every restyle at once, also delete [i]archive/pc/mod/WardrobeDesigner.archive[/i] with the game closed.
+[b]Uninstall:[/b] press [b]Restore[/b] on what you restyled or reshaped, then remove it in your mod manager, or delete [i]red4ext/plugins/REDnode/apps/wardrobe-designer/[/i]. To drop every restyle at once, also delete [i]archive/pc/mod/WardrobeDesigner.archive[/i] with the game closed.
 
 [size=5][b][color=#fcee0a]Questions[/color][/b][/size]
 
@@ -74,8 +102,11 @@ REDagent keeps a daily spending limit for each app. Raise it in REDagent: [b]Cha
 [b]An item does not change.[/b]
 Some items have no layered materials (only fixed textures), and the window says so when you pick them. Items added by other mods are not supported yet.
 
+[b]Make it is greyed out after Reshape.[/b]
+That piece of clothing bends with the body (pants, jackets, shoes): it can be changed in pictures, but not made yet. Hats, helmets and glasses can.
+
 [b]Is it free?[/b]
-Yes, and open source under the MIT license, in [url=https://github.com/Edgemodders/EDGEmat]EDGEmat's repo[/url]. The AI plans use your own Anthropic key.
+Yes, and open source under the MIT license, in [url=https://github.com/Edgemodders/EDGEmat]EDGEmat's repo[/url]. The AI services use your own keys and credits.
 
 [line]
 
@@ -88,4 +119,4 @@ Yes, and open source under the MIT license, in [url=https://github.com/Edgemodde
 [*]EDGEmodders: [url=https://edgemodders.ai/]edgemodders.ai[/url][/*]
 [*]Community Discord: [url=https://discord.gg/63qP3Erw43]discord.gg/63qP3Erw43[/url][/*]
 [/list]
-[size=2]Wardrobe Designer is not affiliated with CD PROJEKT RED or Anthropic. Cyberpunk 2077 is a trademark of CD PROJEKT. Claude is a trademark of Anthropic.[/size]
+[size=2]Wardrobe Designer is not affiliated with CD PROJEKT RED, Anthropic, OpenAI, Google or Tripo. Cyberpunk 2077 is a trademark of CD PROJEKT. Claude is a trademark of Anthropic. GPT Image is a trademark of OpenAI.[/size]

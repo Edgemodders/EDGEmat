@@ -29,8 +29,9 @@ Edits made on the Nexus page itself: `npm run wardrobe:nexus:pull` writes the li
 
 | In `description.bbcode` | Replace with |
 |---|---|
-| `Screenshot 1` and `Screenshot 2` (cyan italics) | Upload each picture to the page's Images tab, then replace its line with `[img]<the image's Nexus URL>[/img]` and a one-line caption. Before publishing a picture, check it for personal data |
-| `0.48.1` (REDnode) | The REDnode the app needs, from `requires` in `apps/wardrobe-designer/rednode-app.json`, when it changes |
+| `Screenshot 1`, `Screenshot 2` and `Screenshot 3` (cyan italics) | Upload each picture to the page's Images tab, then replace its line with `[img]<the image's Nexus URL>[/img]` and a one-line caption. Before publishing a picture, check it for personal data. Screenshot 3 can be one of the owner's photo-mode shots of the reshaped cowboy hat (2026-11-02) |
+| `0.48.1` (REDnode) | The REDnode the app needs, from `requires` in `apps/wardrobe-designer/rednode-app.json`, when it changes. Also in `nexus.json`'s upload description |
+| Reshape, "the window draws the item from four sides" | Written for the window showing the pictures, which needs REDnode's image element ([REDnode #37](https://github.com/Edgemodders/REDnode/issues/37)). Before posting: if the release still shows only the pictures' paths, say so and raise `requires` to the REDnode that has it, or both |
 
 ## The Nexus form
 
@@ -39,10 +40,10 @@ Edits made on the Nexus page itself: `npm run wardrobe:nexus:pull` writes the li
 | Mod name | Wardrobe Designer |
 | Version | The app's version, from `apps/wardrobe-designer/rednode-app.json` (0.1.0) |
 | Category | Utilities (or Appearance, the owner's choice) |
-| Brief overview | Restyle what V wears in your own words: pick a piece of clothing on the inventory screen, type "red leather" or "yellow denim", and see it change in seconds. A REDnode app, with an AI that plans the materials. (255 characters at most; this is 211) |
+| Brief overview | Restyle what V wears in your own words, from the inventory screen: "red leather", "yellow with black polka dots", "make the brim twice as wide". AI plans it and V wears it. A REDnode app, with your own AI keys. (255 characters at most; this is 210) |
 | Author | Edgemodders |
 | Language | English |
 | Primary image | `docs/assets/wardrobe-designer/nexus.png`, with the EDGEmodders header added by hand |
-| Requirements | On Nexus: REDnode (35419), REDagent (35670). REDbridge from REDnode's Mod Manager. Game version 2.5 |
+| Requirements | On Nexus: REDnode (35419), REDagent (35670). Off Nexus: REDbridge (from REDnode's Mod Manager, with .NET 10), an Anthropic key; for patterns and Reshape an OpenAI key; for Reshape a Tripo key. Game version 2.5. Codeware is not needed (unverified: one fallback for the inventory's preview may use it) |
 | Permissions | MIT: open source, free to modify and redistribute with the license notice. Bundled packages keep their licenses (`THIRD-PARTY-NOTICES.txt` in the zip) |
-| Tags | Clothing, utility, AI |
+| Tags | Clothing, utility, AI, 3D |

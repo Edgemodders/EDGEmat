@@ -13,12 +13,15 @@ It is a [REDnode](https://edgemodders.github.io/REDnode/) app for players, built
 | Needs | Why |
 |---|---|
 | [REDnode](https://www.nexusmods.com/cyberpunk2077/mods/35419) 0.48.1 or later, with REDswap (installed with it) | Runs the app, and swaps its archive into the game |
-| REDbridge, from REDnode's Mod Manager (**Get REDbridge**) | Reads the game's clothing and writes the new materials |
+| REDbridge, from REDnode's Mod Manager (**Get REDbridge**; it installs .NET 10 if missing) | Reads the game's clothing and writes the new materials |
 | [REDagent](https://www.nexusmods.com/cyberpunk2077/mods/35670), with your Anthropic key | Plans each restyle |
+| An OpenAI key, for patterns and Reshape; a Tripo key, for Reshape | Your own accounts and credits; the [Keys](#your-keys) panel asks for them |
 | Cyberpunk 2077 2.5 | As REDnode |
 
+Not needed: Cyber Engine Tweaks, ArchiveXL, TweakXL, WolvenKit.
+
 1. Install the zip with Vortex, or extract it into the game folder: the app lands in `red4ext/plugins/REDnode/apps/wardrobe-designer/`.
-2. In the game, press **F10** and open the **Mod Manager** from the launcher (the **REDNODE** tab at the lower left). Select **Wardrobe Designer**, allow its three permissions (**REDbridge**, **REDagent** and swapping **archives** into the game), and switch it on. **Pin to launcher** keeps it one press away.
+2. In the game, press **F10** and open the **Mod Manager** from the launcher (the **REDNODE** tab at the lower left). Select **Wardrobe Designer**, allow what it asks for (**REDbridge**, **REDagent**, swapping **archives** into the game, and your **OpenAI**, **Tripo** and **Gemini** keys, each used only by the feature that needs it), and switch it on. **Pin to launcher** keeps it one press away.
 3. The first time, it reads your game's materials, about half a minute, and again after a game update. The window says so.
 
 ## Use
