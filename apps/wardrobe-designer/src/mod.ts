@@ -46,6 +46,23 @@ const dir = defaultCacheDir();
 const archiveDir = path.join(pkg.dataDir, "work", "source", "archive");
 const packedDir = path.join(pkg.dataDir, "packed");
 const stateFile = path.join(pkg.dataDir, "restyles.json");
+const settingsFile = path.join(pkg.dataDir, "settings.json");
+
+/**
+ * Which image service makes patterns: OpenAI's GPT Image by default, the one Reshape uses too, so a
+ * player needs one image key for both (owner, 2026-11-02); Gemini when the player switches.
+ */
+type ImageService = "openai" | "gemini";
+const ServiceNames: Record<ImageService, string> = { openai: "GPT Image", gemini: "Gemini" };
+const KeyHelp: Record<ImageService, string> = { openai: "OpenAI key (platform.openai.com > API keys)", gemini: "Google Gemini key (aistudio.google.com > Get API key)" };
+let patternService: ImageService = (() => {
+  try {
+    const s = JSON.parse(fs.readFileSync(settingsFile, "utf8")) as { patterns?: string };
+    return s.patterns === "gemini" ? "gemini" : "openai";
+  } catch {
+    return "openai";
+  }
+})();
 
 interface Worn {
   slot: string;
@@ -71,6 +88,19 @@ const wordsInput = ui.input({ label: "How should it look?", placeholder: "red le
 const restyleButton = ui.button("Restyle", () => void restyle(), { disabled: true });
 const restoreButton = ui.button("Restore", () => void restore(), { variant: "ghost", disabled: true });
 const log = ui.list({ height: 280, keep: 1000 });
+const patternsButton = ui.button(`Patterns: ${ServiceNames[patternService]}`, () => switchPatterns(), { variant: "ghost" });
+
+function switchPatterns(): void {
+  patternService = patternService === "openai" ? "gemini" : "openai";
+  patternsButton.set({ label: `Patterns: ${ServiceNames[patternService]}` });
+  try {
+    fs.mkdirSync(pkg.dataDir, { recursive: true });
+    fs.writeFileSync(settingsFile, JSON.stringify({ patterns: patternService }, null, 2));
+  } catch (e) {
+    say(`Saving the setting failed: ${message(e)}`);
+  }
+  say(`Patterns are now made with ${ServiceNames[patternService]} (your ${KeyHelp[patternService]})`);
+}
 
 ui.window({
   title: "Wardrobe Designer",
@@ -85,6 +115,7 @@ ui.window({
     picked,
     wordsInput,
     ui.row(restyleButton, restoreButton, ui.button("Refresh", () => void readWorn(), { variant: "ghost" })),
+    ui.row(patternsButton),
     log,
   ],
 });
@@ -339,26 +370,26 @@ async function plan(look: Look, want: string): Promise<Recipe | undefined> {
 // ---------- patterns ----------
 
 /**
- * The player's Gemini key, through REDnode's shared keys: at once when this app is allowed and a key
- * is saved; else REDnode's own Key request window asks the player (to allow it, and to paste a key
- * when none is saved). Null when the player says no.
+ * The player's key for an image service, through REDnode's shared keys: at once when this app is
+ * allowed and a key is saved; else REDnode's own Key request window asks the player (to allow it, and
+ * to paste a key when none is saved). Null when the player says no.
  */
-async function geminiKey(): Promise<string | null> {
-  const key = await secrets.shared("gemini");
+async function imageKey(service: ImageService): Promise<string | null> {
+  const key = await secrets.shared(service);
   if (key) return key;
-  status.set({ text: "REDnode is asking for your Gemini key, in its own window...", tone: "dim" });
-  say("Patterns need an image service: REDnode asks for your Google Gemini key (aistudio.google.com > Get API key)");
-  return secrets.askShared("gemini", { reason: "To make the pattern you asked for as a texture, with your own Gemini key and credits" });
+  status.set({ text: `REDnode is asking for your ${service === "openai" ? "OpenAI" : "Gemini"} key, in its own window...`, tone: "dim" });
+  say(`Patterns need an image service: REDnode asks for your ${KeyHelp[service]}`);
+  return secrets.askShared(service, { reason: `To make the pattern you asked for as a texture with ${ServiceNames[service]}, with your own key and credits` });
 }
 
-/** A pattern's image from Gemini: a seamless texture from its words, as PNG. */
-const patternImage = (key: string): PatternImage => async (words) => {
+/** A pattern's image from the chosen service: a seamless texture from its words, as PNG. */
+const patternImage = (service: ImageService, key: string): PatternImage => async (words) => {
   const t = Date.now();
-  status.set({ text: `Gemini is making the pattern "${words}"...`, tone: "dim" });
-  const img = await generateTexture("gemini", words, { key });
-  say(`  Gemini (${img.model}) made "${words}" in ${seconds(t)}`);
+  status.set({ text: `${ServiceNames[service]} is making the pattern "${words}"...`, tone: "dim" });
+  const img = await generateTexture(service, words, { key });
+  say(`  ${ServiceNames[service]} (${img.model}) made "${words}" in ${seconds(t)}`);
   const png = await imageAsPng(await getBridge(), img.bytes, img.mime.includes("jpeg") ? ".jpg" : ".png");
-  return { png, made: { service: "Google Gemini", model: img.model, prompt: img.prompt, words } };
+  return { png, made: { service: service === "openai" ? "OpenAI" : "Google Gemini", model: img.model, prompt: img.prompt, words } };
 };
 
 // ---------- restyle, pack and swap ----------
@@ -431,15 +462,16 @@ async function restyle(): Promise<void> {
     const t2 = Date.now();
     // The key before anything is written, so a pattern the player has no key for changes nothing.
     const patterns = recipe.patterns?.filter((p) => p?.setup && p?.words) ?? [];
-    const key = patterns.length ? await geminiKey() : null;
+    const service = patternService;
+    const key = patterns.length ? await imageKey(service) : null;
     if (patterns.length && !key) {
-      status.set({ text: "Patterns need a Gemini key: nothing was changed. Try again to be asked once more.", tone: "danger" });
-      say("No Gemini key: nothing was changed");
+      status.set({ text: `Patterns need your ${KeyHelp[service]}: nothing was changed. Try again to be asked once more.`, tone: "danger" });
+      say(`No ${service === "openai" ? "OpenAI" : "Gemini"} key: nothing was changed`);
       return;
     }
     const r = await applyRecipe(await getBridge(), await getLibrary(), look, recipe, archiveDir, Suffix);
     for (const n of r.notes) say(`  ${n}`);
-    const made = key ? await applyPatterns(await getBridge(), look, patterns, archiveDir, patternImage(key)) : undefined;
+    const made = key ? await applyPatterns(await getBridge(), look, patterns, archiveDir, patternImage(service, key)) : undefined;
     for (const n of made?.notes ?? []) say(`  ${n}`);
     const written = [...r.written, ...(made?.written ?? [])];
     if (!r.changed.length && !made?.applied.length) {

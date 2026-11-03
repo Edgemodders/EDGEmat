@@ -34,6 +34,7 @@ Last updated 2026-10-26.
 | [Wardrobe Designer W1](#wardrobe-designer-w1) | By hand, in the game with REDnode and REDagent | W1 | 2026-10-30 | **Passed** (owner, every step: step 3 after the preview fix, [REDnode #28](https://github.com/Edgemodders/REDnode/issues/28); step 7 after the Restore fix, [REDnode #29](https://github.com/Edgemodders/REDnode/issues/29)). Built 2026-10-30; checked outside the game: V's Pants restyled into a scratch project twice (the second from the copy), packed (2 files), and `mat_restyle` over stdio |
 | [Wardrobe Designer W2 patterns](#wardrobe-designer-w2-patterns) | By hand, in the game with REDnode, REDagent and a Gemini key | W2 | 2026-11-01 | **Passed** (owner, rerun from step 4): yellow dots, bigger dots staying yellow, the world look, `red leather` taking the pattern off, Restore. Faded dots near the tile edges: EDGEmat's seamless blend, not Gemini. Gemini refused one image once (`IMAGE_RECITATION`); pressing again worked |
 | [Wardrobe Designer W2 pattern fixes](#wardrobe-designer-w2-pattern-fixes) | By hand, in the game with REDnode, REDagent and a Gemini key | W2 | 2026-11-02 | **Passed** (owner, in the game): the same picture kept at a new size and shine, no Gemini call; a picture that tiled across only shows faded dots in bands where it was blended down. Built 2026-11-01; checked outside the game on V's Pants with two saved Gemini pictures: the same words at a new repeat, then a new shine, made no image call and left only the new repeat's files; a picture that tiles across only was blended down only. Smoke: tiling, and the `IMAGE_RECITATION` retry against a stand-in |
+| [Wardrobe Designer patterns with GPT Image](#wardrobe-designer-patterns-with-gpt-image) | By hand, in the game with REDnode, REDagent and an OpenAI key | W2 | | Not run yet. Built 2026-11-02. Outside the game: GPT Image 2.5 (sunburst) made a sharp, even polka-dot pattern in 11 s, tiling across and about 11 px out down |
 | [Wardrobe Designer install](#wardrobe-designer-install) | By hand, in the game, from the release zip | Each Wardrobe Designer release | | Not run yet. Added 2026-10-30 with the release scaffolding; the draft zip builds (65 KB, the game-folder layout) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | | Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
 | [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-10-19 (0.1 test build, VSIX) | 0.3.0 from the Marketplace: not run yet |
@@ -543,6 +544,20 @@ Added 2026-11-01, from the W2 run's findings. Three changes: a picture that alre
 
 **Result, 2026-11-02: passed** (owner, in the game; Claude read the log and the photo-mode shots). V's Pants, feminine. Step 3: REDagent's pattern "bright yellow with large black polka dots", repeat 3, satin; one Gemini picture (gemini-3.1-flash-lite-image, 5.7 s), "did not tile down, so its edges were blended that way". Step 4: repeat 2, "the same picture as before, now repeat 2; the image service was not asked". Step 5: glossy, the same line. Step 7: Restore put the game's mesh back. The shots: glossy yellow, sharp black dots, and a few faded dots in horizontal bands on both legs, where the tile's top and bottom edges meet: the blend down, as expected for this picture.
 
+### Wardrobe Designer patterns with GPT Image
+
+Added 2026-11-02 (owner): patterns and Reshape's pictures use one image service, OpenAI's GPT Image, so a player needs fewer keys; a button switches patterns to Gemini. The app's manifest now lists `keys:openai` beside `keys:gemini`. The development folder, as in W2; Claude builds it (`npm run wardrobe:build`).
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Start the game, load a save, **F10**. **REDNODE** tab › **Mod Manager** › Wardrobe Designer: allow its new permission (your OpenAI key) if it shows one, then **Restart** | The window has a new button under Restyle: **Patterns: GPT Image** |
+| 2 | Open the inventory (**I**), **F10** until the window takes input, press **Legs**; if it has a \*, press **Restore** first | |
+| 3 | Type `yellow with large black polka dots`, press **Restyle** | If the app is not allowed your OpenAI key yet, REDnode's **Key request** window asks: **Allow** (the key is saved already). Then yellow pants with large, sharp black dots. The log says "GPT Image (gpt-image-2.5-...) made ..." |
+| 4 | Press **Patterns: GPT Image** | It reads **Patterns: Gemini**; the log says patterns are now made with Gemini |
+| 5 | Close the window and **Restart** the app (Mod Manager) | The button still reads **Patterns: Gemini** (kept in `settings.json` in the app's data folder) |
+| 6 | Press it again | **Patterns: GPT Image** |
+| 7 | Photo mode, front and back; then **Restore**, and tell Claude | Screenshots; Claude reads the log |
+
 ### Wardrobe Designer install
 
 Added 2026-10-30: the release zip in the game, as a player gets it (Vortex or extracted), not the development folder. Run it on each Wardrobe Designer release's zip before it goes to Nexus: the run's artifact **Wardrobe-Designer-build** from **Release Wardrobe Designer** without the ticks, or `npm run wardrobe:zip` (`dist/Wardrobe-Designer-<version>-draft.zip`).
@@ -551,7 +566,7 @@ Added 2026-10-30: the release zip in the game, as a player gets it (Vortex or ex
 |---|---|---|
 | 1 | In the game: **F10** › the **REDNODE** tab › the gear › **Developer mode** › **Development folders**: remove `E:\Modding\Cyberpunk 2077\EDGEmat\apps`, so only the installed copy runs. Then close the game | |
 | 2 | Install the zip with EDGEdeck (**Deploy**; the mod `wardrobe-designer`), Vortex, or extract it into the game folder | `red4ext\plugins\REDnode\apps\wardrobe-designer\` has `rednode-app.json`, `dist\mod.mjs`, `LICENSE.txt` and `THIRD-PARTY-NOTICES.txt` |
-| 3 | Start the game, load a save, **F10** › **Mod Manager** › **Wardrobe Designer** | It is off, with its version and its four permissions (REDbridge, REDagent, archives, the Gemini key) to allow. Allow them and switch it on |
+| 3 | Start the game, load a save, **F10** › **Mod Manager** › **Wardrobe Designer** | It is off, with its version and its five permissions (REDbridge, REDagent, archives, the OpenAI key, the Gemini key) to allow. Allow them and switch it on |
 | 4 | Open the inventory, press a slot, restyle it, then **Restore** | As in Wardrobe Designer W1, steps 2, 3 and 7 |
 | 5 | Tell Claude | Claude reads the log and records the version and the result |
 

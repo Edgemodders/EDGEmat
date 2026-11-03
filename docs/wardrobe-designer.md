@@ -39,7 +39,7 @@ What words do:
 | A color: "red", "dark blue", "pale green", "medium blue" | The closest color the game's surface has |
 | A material: "denim", "leather", "cotton" | Every layer of the old material changes to the game's plain version of the new one; trims and dirt stay |
 | A finish: "glossy", "matte", "shinier" | The closest finish that surface has; the log says which |
-| A pattern: "yellow with large black polka dots", "red and black tartan", "woodland camo" | REDagent picks the material and the pattern's size; Google Gemini makes it as a texture with your key; it covers that whole material, the garment's folds kept. "Larger dots" or "smaller checks" changes the size; plain words afterwards ("red leather") take the pattern off. The first time, REDnode asks for your Gemini key in its own window |
+| A pattern: "yellow with large black polka dots", "red and black tartan", "woodland camo" | REDagent picks the material and the pattern's size; OpenAI's GPT Image makes it as a texture with your key; it covers that whole material, the garment's folds kept. "Larger dots" or "smaller checks" changes the size, with the same picture and no new cost; plain words afterwards ("red leather") take the pattern off. The first time, REDnode asks for your OpenAI key in its own window (platform.openai.com > API keys). **Patterns: GPT Image** switches to Google Gemini, for a Gemini key instead (aistudio.google.com > Get API key) |
 
 ## Good to know
 
@@ -47,7 +47,7 @@ What words do:
 |---|---|
 | Everyone in that look changes | A restyle replaces the item's mesh, so NPCs wearing the same item change too. A V-only version is planned |
 | Where restyles live | One archive, `archive\pc\mod\WardrobeDesigner.archive`, so they stay after a restart. The app's work files and its list of restyles are in REDnode's data folder for it (`%APPDATA%\@rednode\overlay\packages\wardrobe-designer`) |
-| The AI's cost | REDagent uses your Anthropic key and keeps a daily limit for each app ($0.25 at first). Change it in REDagent: **Chats**, the **Mods** tab, Wardrobe Designer's limit, **Set**. A pattern is one image from Google Gemini on your own key (a few US cents; Google's prices apply) |
+| The AI's cost | REDagent uses your Anthropic key and keeps a daily limit for each app ($0.25 at first). Change it in REDagent: **Chats**, the **Mods** tab, Wardrobe Designer's limit, **Set**. A pattern is one image from GPT Image (or Gemini) on your own key: a few US cents, the service's own prices apply |
 | Patterns | A pattern replaces every layer of the material it goes on, trims and wear included, so on a garment with one material the whole garment takes it. A logo or a picture in one place is not supported yet |
 | Items it cannot change | Items with no layered materials (fixed textures only), and items added by other mods (ArchiveXL), for now |
 | Uninstall | **Restore** what you restyled, then remove the app. To drop every restyle at once, delete `archive\pc\mod\WardrobeDesigner.archive` with the game closed |

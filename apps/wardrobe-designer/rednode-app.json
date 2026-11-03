@@ -10,6 +10,7 @@
     "bridge",
     "agent",
     "archives",
+    "keys:openai",
     "keys:gemini"
   ],
   "requires": {
