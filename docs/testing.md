@@ -21,6 +21,8 @@ Last updated 2026-10-26.
 | [Generate round trip](#generate-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V |
 | [Tiling check](#tiling-check) | In the game, from `npm run tiling-check` | M3 | 2026-10-20 | Done: LayerTile repeats the textures |
 | [Reshape check](#reshape-check) | From `node scripts/reshape-check.mjs`, with Gemini and Tripo keys; then in the game | W3 | 2026-11-02 | **Passed** (owner, in the game): the cowboy hat with a brim about 1.8 times as wide, from GPT Image 2.5's picture, sits on V's head, one brim, the badge in front. Before it: V's head through the crown (fixed: the crown centred on the game's) and two brims (Gemini's picture) |
+| [Materials from a model](#materials-from-a-model) | Automated by hand, with the game's files | M4 (#4, #6) | 2026-11-04 | **Pass** outside the game: EDGEfab's glowing vending machine (one material, four maps, glow strength 3) gave five textures and a .mi that reads back with every value (EV 5.585); texture files on a game screen mesh took its `xx_screen` entry only, the other four named as kept; `mat_from_model` over stdio. Smoke: the .mi's glow values |
+| [Glow check](#glow-check) | From `npm run glow-check`, then in the game | M4 (#6) | | Not run yet. Built 2026-11-04 |
 | [Paint check](#paint-check) | From `npm run paint-check`, with a Tripo key; then in the game | W2 | 2026-10-31 | **Passed** (owner, dev PC): Tripo keeps the garment's vertices and UVs, and its paint shows in the game as painted. It paints no repeating pattern |
 | [M3 in-game round trip](#m3-in-game-round-trip) | In the game, with REDcode and Claude Code | M3 | 2026-10-20 | Pass on the owner's V; the deploy needed a separate step |
 | [M2 phase test](#m2-phase-test) | Against WolvenKit's reading, and by the owner | M2 | 2026-10-19 | Pass |
@@ -289,6 +291,31 @@ Tripo, task `080581f8-…`, from try 3: 130 s, 30 credits. A believable cowboy h
 **Built from GPT Image's picture (Claude, the owner's go):** Tripo task `e2727342-…` (145 s, 30 credits), its retopology `a0729f5c-…` (121 s, 30 credits) to 7,190 triangles, no loose pieces. Tripo's model matched the views' proportions (stretched 0.584, 0.586, 0.578). The crown moved 0.3 cm when centred, and along the centre line it holds the game's crown at every height. The top is 3.4 cm above the game hat's: GPT Image drew the crown about 2 to 2.5 cm taller and the band 0.6 cm (front) to 1.8 cm (back) higher, measured on the front and back views, so the hat may sit about 1 cm higher on the head. Imported and packed. Steps 1 to 4 again.
 
 **Result, 2026-11-02: passed** (owner, in the game: "much better"; six screenshots read by Claude). From below: one brim, smooth, nothing through it. Behind: the wide brim, crown and band, hair below. Both sides: the lit badge in front, the brim over V's visor, no skin through the crown. In front: the badge centred, the brim curling up at the sides as GPT Image drew it, the band just above the visor, no gap showing. From above: one brim, the badge in front; its outline a rounded trapezoid, wider behind (Tripo had no top view). **The owner's decision: GPT Image 2.5 is the default image service for Reshape** (the script's `--service` is now `openai` by default). Not done: the masculine mesh, the other looks' materials, Tripo's normal map. Not done: the masculine mesh, other looks' materials (the other looks show the hat in their old material on Tripo's UVs), Tripo's normal map.
+
+### Materials from a model
+
+Added 2026-11-04 (EDGEmat #4 and #6, for EDGEfab): `materialsFromModel` in the core, `mat_from_model`, and the API's `materialsFromModel`. Run outside the game with REDbridge, in a scratch project.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | `materialsFromModel` on EDGEfab's vending machine (test 8's `vending_glow.glb`: one Tripo material with color, metal and roughness, normal and glow maps, `emissiveFactor` 1, `KHR_materials_emissive_strength` 3), folder `edgemat\tests\vending` | Five textures (`_d01`, `_r01`, `_m01`, `_n01`, `_e01`) and a .mi; read back, the .mi is on metal_base with BaseColor, Roughness (scale 1), Metalness (scale 1), Normal, Emissive, EmissiveEV 5.585 (4 + log2 3) and EmissiveColor 255, 255, 255. Notes: the normal maps' direction and the glow brightness are unverified |
+| 2 | The same with texture files for `large_wall_screen_a_screen_aa.mesh`'s `xx_screen` (a color image, roughness 0.4) and glow `[0.2, 0.6, 1]` strength 2 with no map, and a glow for a material that does not exist | The mesh copied into the project, `xx_screen` pointing at the new .mi (local instance, no values of its own); the .mi has Emissive `white.xbm`, EV 5, color 124, 203, 255, RoughnessBias 0.4; notes name the glow left out and the four entries that kept their material |
+| 3 | `mat_from_model` over stdio, the vending machine with a glow override (orange, strength 3, EDGEfab's mask) and a folder with forward slashes | Listed among the tools; glow EV 5.585, color 255, 188, 0, from the map; six files; "Nothing was put on a mesh" (no mesh given) |
+
+**Last result:** 2026-11-04, every step as expected (17 s for the vending machine's five 2048 px textures, 4 s for step 2).
+
+### Glow check
+
+Added 2026-11-04 (EDGEmat #6): how bright glTF's glow strengths look in the game. EDGEmat turns a strength into the material's EmissiveEV as 4 + log2(strength): a first guess from the game's own glowing materials (half of 92 surveyed sit at EV 3.95 to 6). `npm run glow-check` makes every material of the cowboy hat's look dark grey with a cyan glow in eight bands across its texture (a glow map), packed into the project's `packed` folder.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | In a terminal in `extensions\edgemat`: `npm run build`, then `node scripts/glow-check.mjs "E:\Modding\Cyberpunk 2077\Projects\EDGEmat_GlowCheck" --strength 1` | The hat's materials listed with "EV 4, color 124, 231, 255, in bands", then "packed 5 files" and the archive's path |
+| 2 | With the game closed, copy `EDGEmat_GlowCheck.archive` from the project's `packed\archive\pc\mod` into `<game>\archive\pc\mod`. Make sure `EDGEmat_ReshapeCheck.archive` is not there (its hat would win). Start the game, load a save, **F10** › REDnode's **Console**: `addItem("Items.Hat_02_basic_01")`, put the hat on | |
+| 3 | Look at the hat at night (or in a dark room), then in daylight; photo mode, front and side. Screenshots | Cyan bands that glow, dark grey between them. Note how bright: a lit screen, too dim, or glaring |
+| 4 | Close the game, run step 1 again with `--strength 4` (EV 6), copy, look again | Brighter than step 3, by about four times |
+| 5 | Optional: `--whole` for the whole hat glowing | The whole hat cyan and lit |
+| 6 | Tell Claude: which strength looked like a lit screen | Claude sets the EV rule (`GlowEV.base`) from it and records the result |
 
 ### Paint check
 

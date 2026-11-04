@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 import type { EdgematApi } from "./api";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import { addToInventory, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, deskProjectName, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, renderMaterials, resolveBridge, resolveGame, suffixFor, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
+import { addToInventory, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, deskProjectName, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, materialsFromModel, renderMaterials, resolveBridge, resolveGame, suffixFor, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
 import { DeskView } from "./deskView";
 import { FindView, openFoundSetup } from "./findView";
 import { LibraryView } from "./libraryView";
@@ -628,6 +628,17 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       return maps;
     },
     onDidChangeMaterials: materialsChanged.event,
+    async materialsFromModel(req) {
+      const bridge = await bridgeNow();
+      if (!bridge) throw new Error("EDGEmat needs the game folder and REDbridge.");
+      const p = projectAt(req.project);
+      if (!p) throw new Error(`${req.project} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`);
+      log(`Materials from ${req.model ?? "texture files"} into ${p.dir}`);
+      const r = await materialsFromModel(bridge, { ...req, project: { archive: p.archive, raw: path.join(p.dir, "source", "raw") }, log });
+      for (const n of r.notes) log(`  ${n}`);
+      materialsChanged.fire({ mesh: req.mesh, materials: r.materials.filter((m) => m.applied).map((m) => m.name) });
+      return r;
+    },
   };
 }
 

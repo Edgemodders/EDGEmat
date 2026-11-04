@@ -569,7 +569,8 @@
     "smoke": "node scripts/smoke.mjs",
     "tiling-check": "node scripts/tiling-check.mjs",
     "paint-check": "node scripts/paint-check.mjs",
-    "reshape-check": "node scripts/reshape-check.mjs"
+    "reshape-check": "node scripts/reshape-check.mjs",
+    "glow-check": "node scripts/glow-check.mjs"
   },
   "dependencies": {
     "pngjs": "7.0.0",

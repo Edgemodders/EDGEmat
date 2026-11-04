@@ -19,7 +19,7 @@ import { z } from "zod";
 import {
   addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
-  applyMaterial, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, hasKey, imageAsPng, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
+  applyMaterial, materialsFromModel, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, hasKey, imageAsPng, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
   bridgeOver, loadReshape, readPng, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, resize, Tripo, writePng,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type PatternImage, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
@@ -716,6 +716,71 @@ server.registerTool(
       const written: string[] = [];
       for (const t of targets) for (const f of await applyMaterial(b, p.archive, t.mesh, t.material, mi)) if (!written.includes(f)) written.push(f);
       return text({ saved: { project: p.dir, mi, targets, files: written }, next: "Pack the project and install it (REDcode: Pack and Try), then look in the game." });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+const Rgb01 = z.tuple([z.number().min(0), z.number().min(0), z.number().min(0)]);
+
+server.registerTool(
+  "mat_from_model",
+  {
+    description:
+      "Makes game materials from a textured model (EDGEfab's Add to Project, or any GLB): per material, its textures as .xbm files and a .mi on metal_base, written into a WolvenKit project " +
+      "and put on the mesh's material entry of the same name. The model's UVs place the textures (no repeat). Reads a .glb's materials and images (color, metal and roughness, normal, glow), " +
+      "or texture files per material (materials), or both (files replace the model's). glow makes parts light up (glTF's emissive): a color, a strength and an optional map; without a map the whole part glows. " +
+      "Says per material what the game's material could not take (transparency, ambient occlusion, a second UV set). Pack and look in the game after.",
+    inputSchema: {
+      project: z.string().describe("The WolvenKit project folder"),
+      model: z.string().optional().describe("A .glb file on disk"),
+      materials: z
+        .array(
+          z.object({
+            name: z.string().describe("The material name: the model's, and the mesh's material entry"),
+            baseColor: z.string().optional().describe("Color image file"),
+            orm: z.string().optional().describe("glTF's packed map: green roughness, blue metalness"),
+            normal: z.string().optional().describe("Normal map file (glTF's green-up)"),
+            color: Rgb01.optional().describe("Linear color 0 to 1: the color without a map, or its factor"),
+            metallic: z.number().min(0).max(1).optional(),
+            roughness: z.number().min(0).max(1).optional(),
+          }),
+        )
+        .optional()
+        .describe("Texture files per material, instead of the model's own"),
+      mesh: z.string().optional().describe("The mesh's game path (in the project, or the game's): each material entry named as a model material takes its .mi"),
+      folder: z.string().optional().describe("Where the textures and .mi files go, a game path; default beside the mesh"),
+      glow: z
+        .array(
+          z.object({
+            material: z.string(),
+            color: Rgb01.describe("glTF's emissiveFactor: linear 0 to 1"),
+            strength: z.number().min(0).describe("glTF's emissive strength; 1 is a lit screen, each doubling one EV brighter"),
+            texture: z.string().optional().describe("The glow map, an image file; without it the whole part glows"),
+          }),
+        )
+        .optional()
+        .describe("Glow per material; replaces the model's own for the materials it names"),
+      made: z.record(z.unknown()).optional().describe("Where the model came from (a Tripo task, a file) and its license, kept in the record"),
+      flip_normal_green: z.boolean().optional().describe("Flip the normal maps' green channel (unverified which way the game reads them)"),
+    },
+  },
+  async ({ project, model, materials, mesh, folder, glow, made, flip_normal_green }) => {
+    try {
+      const p = projectFor(project);
+      const b = await getBridge();
+      const r = await materialsFromModel(b, {
+        project: { archive: p.archive, raw: path.join(p.dir, "source", "raw") },
+        model, materials, mesh, folder, glow, made, flipNormalGreen: flip_normal_green, log,
+      });
+      return text({
+        saved: { project: p.dir, materials: r.materials, files: r.files, record: r.record },
+        notes: r.notes,
+        next: r.materials.some((m) => m.applied)
+          ? "Pack the project and install it (REDcode: Pack and Try), then look at the model in the game."
+          : "Nothing was put on a mesh: pass mesh (its material entries named as the model's materials), or mat_apply each .mi.",
+      });
     } catch (e) {
       return failure(e);
     }

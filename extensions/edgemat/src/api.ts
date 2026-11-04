@@ -3,7 +3,10 @@
 // New members may be added within version 1; a change that breaks callers raises apiVersion.
 
 import type * as vscode from "vscode";
-import type { RenderedMaterial, RenderRequest } from "./core";
+import type { FromModelRequest, FromModelResult, RenderedMaterial, RenderRequest } from "./core";
+
+/** materialsFromModel's request: as the core's, with the project as a folder (or its .cpmodproj). */
+export type ModelMaterialsRequest = Omit<FromModelRequest, "project" | "log"> & { project: string };
 
 export interface EdgematApi {
   readonly apiVersion: 1;
@@ -18,4 +21,10 @@ export interface EdgematApi {
    * now: every viewer draws its materials again.
    */
   readonly onDidChangeMaterials: vscode.Event<{ mesh?: string; materials: string[] }>;
+  /**
+   * Game materials from a textured model (EDGEmat #4, #6; for EDGEfab's Add to Project): per material of a
+   * .glb, or per set of texture files, .xbm textures and a .mi on metal_base, put on the mesh entry of the same
+   * name, glow included. Returns each material, the files written and what was approximated. Added in 0.4.
+   */
+  materialsFromModel(req: ModelMaterialsRequest): Promise<FromModelResult>;
 }

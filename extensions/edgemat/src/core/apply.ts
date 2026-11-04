@@ -49,10 +49,17 @@ export async function writeTexture(bridge: BridgeClient, archive: string, gamePa
   return [gamePath];
 }
 
+/** The game's own plain textures, for a material slot that takes a value and no map. */
+export const WhiteTexture = "engine\\textures\\editor\\white.xbm";
+
 export interface TexturedMaterial {
-  /** The color texture's game path. */
+  /** The color texture's game path (WhiteTexture with baseColorScale for a flat color). */
   baseColor: string;
+  /** The color times this, red, green and blue 0 to 1 (metal_base's BaseColorScale; the game's default white). */
+  baseColorScale?: [number, number, number];
   normal?: string;
+  /** How strong the normal map's bumps are (the game's default 1). */
+  normalStrength?: number;
   /** The roughness map; without one the game's default is white (rough). */
   roughness?: string;
   /** Roughness = scale × map + bias, each 0 to 1 (the game's defaults 1 and 0). */
@@ -60,14 +67,36 @@ export interface TexturedMaterial {
   roughnessBias?: number;
   /** How many times the textures repeat across the UVs: metal_base's LayerTile, 0.1 to 100 (the game's default 1). */
   layerTile?: number;
-  /** 0 not metal to 1 metal; the default is 0. */
+  /** 0 not metal to 1 metal; the default is 0. With metalnessMap, added to the map. */
   metalness?: number;
+  /** A metalness map (grayscale, white is metal); its value is metalnessScale × map + metalness. */
+  metalnessMap?: string;
+  metalnessScale?: number;
+  /**
+   * Glow: the map (WhiteTexture for the whole part) times the color (0 to 255, as the game keeps it), at
+   * a brightness in EV (log2: one more is twice as bright). The game's own glowing metal_base materials
+   * mostly take 4 to 6 (EDGEmat's survey of 92, 2026-11-04).
+   */
+  emissive?: { map: string; color: [number, number, number]; ev: number };
 }
 
 /** A textured .mi on metal_base.remt, as WolvenKit JSON. Values left out keep the template's defaults. */
 export function texturedMaterialJson(m: TexturedMaterial): Json {
   const values: Json[] = [{ $type: "rRef:ITexture", BaseColor: ref(m.baseColor) }];
+  if (m.baseColorScale) {
+    const [X, Y, Z] = m.baseColorScale;
+    values.push({ $type: "Vector4", BaseColorScale: { $type: "Vector4", W: 0, X, Y, Z } });
+  }
   if (m.normal) values.push({ $type: "rRef:ITexture", Normal: ref(m.normal) });
+  if (m.normalStrength !== undefined) values.push({ $type: "Float", NormalStrength: m.normalStrength });
+  if (m.metalnessMap) values.push({ $type: "rRef:ITexture", Metalness: ref(m.metalnessMap) });
+  if (m.metalnessScale !== undefined) values.push({ $type: "Float", MetalnessScale: m.metalnessScale });
+  if (m.emissive) {
+    const [Red, Green, Blue] = m.emissive.color.map((c) => Math.max(0, Math.min(255, Math.round(c))));
+    values.push({ $type: "rRef:ITexture", Emissive: ref(m.emissive.map) });
+    values.push({ $type: "Float", EmissiveEV: m.emissive.ev });
+    values.push({ $type: "Color", EmissiveColor: { $type: "Color", Alpha: 255, Blue, Green, Red } });
+  }
   if (m.roughness) values.push({ $type: "rRef:ITexture", Roughness: ref(m.roughness) });
   // A texture's value is scale × map + bias, and the default metal map is black.
   if (m.roughnessScale !== undefined) values.push({ $type: "Float", RoughnessScale: m.roughnessScale });
