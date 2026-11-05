@@ -30,8 +30,9 @@ import { readJson } from "./project";
  * per material. The base may come down once a lower strength is seen.
  *
  * EV stops at 0. In the game EV 0 still washes out to white while EV -2 and EV -4 show no glow at all, even
- * in the inventory's light (2026-11-05): four times dimmer cannot do that, so a negative EV seems to switch
- * the glow off. Below EV 0 the color takes the rest (glowDim). Unverified that the color dims it evenly.
+ * in the inventory's light (2026-11-05), so a negative EV seemed to switch the glow off, and below EV 0 the
+ * color takes the rest (glowDim). In doubt: EV 0 with the color at a sixteenth is solid black too, though the
+ * game has lit materials at EV 0 with colors that dim. Unexplained until the control at strength 1 is seen.
  */
 export const GlowEV = { base: 4 };
 
