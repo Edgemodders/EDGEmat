@@ -28,12 +28,21 @@ import { readJson } from "./project";
  * of 92, median 4.3; EDGEmat's survey, 2026-11-04); in the game, strength 1 on a full-white map
  * washes out to white in a dark room (2026-11-05): too bright for small details, so strength is a choice
  * per material. The base may come down once a lower strength is seen.
+ *
+ * EV stops at 0. In the game EV 0 still washes out to white while EV -2 and EV -4 show no glow at all, even
+ * in the inventory's light (2026-11-05): four times dimmer cannot do that, so a negative EV seems to switch
+ * the glow off. Below EV 0 the color takes the rest (glowDim). Unverified that the color dims it evenly.
  */
 export const GlowEV = { base: 4 };
 
-/** EmissiveEV for a glTF emissive strength (KHR_materials_emissive_strength; 1 without it). */
+/** EmissiveEV for a glTF emissive strength (KHR_materials_emissive_strength; 1 without it). Never below 0. */
 export function glowEV(strength: number): number {
-  return Math.round((GlowEV.base + Math.log2(Math.max(strength, 1e-3))) * 1000) / 1000;
+  return Math.max(0, Math.round((GlowEV.base + Math.log2(Math.max(strength, 1e-3))) * 1000) / 1000);
+}
+
+/** What EmissiveEV cannot dim: the glow's linear color is multiplied by this (1 down to EV 0, less below it). */
+export function glowDim(strength: number): number {
+  return Math.min(1, 2 ** GlowEV.base * strength);
 }
 
 /** One material's texture files, as EDGEfab's Prepare writes them beside the model. */
@@ -302,10 +311,12 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
     }
     let glow: FromModelMaterial["glow"];
     if (p.glow) {
-      // The game keeps the color as 0 to 255: the brightest part of glTF's factor goes to the EV.
+      // The game keeps the color as 0 to 255: the brightest part of glTF's factor goes to the EV,
+      // and what EV cannot dim back into the color.
       const top = Math.max(...p.glow.color);
-      const color = p.glow.color.map((c) => srgb8(c / top)) as [number, number, number];
-      const ev = glowEV(p.glow.strength * top);
+      const light = p.glow.strength * top;
+      const color = p.glow.color.map((c) => srgb8((c / top) * glowDim(light))) as [number, number, number];
+      const ev = glowEV(light);
       const map = p.glow.map ? await tex(p.glow.map, "e01", await picture(p.glow.map), "color", "glow") : WhiteTexture;
       m.emissive = { map, color, ev };
       glow = { ev, color, map: !!p.glow.map };

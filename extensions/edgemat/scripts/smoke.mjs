@@ -307,6 +307,8 @@ try {
   const val = (k) => glowMi.find((e) => k in e)?.[k];
   check(core.glowEV(1) === 4 && core.glowEV(2) === 5 && val("EmissiveEV") === 5.585 && val("EmissiveColor")?.Green === 188 && val("Emissive")?.DepotPath.$value === core.WhiteTexture && val("BaseColorScale")?.Z === 1 && val("Metalness")?.DepotPath.$value === "x\\m01.xbm",
     `materials from a model: glow at EV ${core.glowEV(3)} for strength 3 (4 + log2), its color as 0 to 255, white for a whole part; a color factor and a metal map`);
+  check(core.glowEV(1 / 16) === 0 && core.glowDim(1 / 16) === 1 && core.glowEV(1 / 256) === 0 && core.glowDim(1 / 256) === 1 / 16 && core.glowDim(1) === 1,
+    "materials from a model: EV stops at 0; below it the color dims instead");
   const dotsTile = core.tiling(dots), rampTile = core.tiling(ramp), seamTile = core.tiling(core.makeSeamless(ramp));
   check(dotsTile.across && !dotsTile.down && !rampTile.across && !rampTile.down && seamTile.across && seamTile.down,
     `tiling: dots tile across, not down (cut at the bottom); a ramp neither way; the ramp made seamless both ways`);

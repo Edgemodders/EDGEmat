@@ -29,7 +29,7 @@ export { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, seamSco
 export { editImage, errorText, generateImage, generateTexture, listModels, texturePrompt, ImageServiceError, Services, type CallOptions, type DetailSize, type GeneratedImage, type ImageModel, type Quality, type ServiceId, type ServiceInfo } from "./imageServices";
 export { imageAsPng, makeMaterial, materialSlug, type MadeBy, type MaterialResult, type MaterialTarget, type NewMaterial, type Shine } from "./material";
 export { applyMaterial, texturedMaterialJson, uvTestPattern, writeTexture, writeTexturedMaterial, MetalBase, TextureTemplates, WhiteTexture, type TexturedMaterial, type TextureKind } from "./apply";
-export { glowEV, materialsFromModel, GlowEV, type FromModelMaterial, type FromModelRequest, type FromModelResult, type ModelGlow, type ModelMaterialFiles } from "./fromModel";
+export { glowDim, glowEV, materialsFromModel, GlowEV, type FromModelMaterial, type FromModelRequest, type FromModelResult, type ModelGlow, type ModelMaterialFiles } from "./fromModel";
 export { checkKey, envName, hasKey, keysDir, sharedKeys } from "./sharedKeys";
 export { bridgeOver, type BridgeCall } from "./kernelBridge";
 export { accessor, bbox, imageOf, primitives, readGlb, worldMatrices, writeGlb, type Box, type Glb, type GlbPart } from "./glb";
