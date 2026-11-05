@@ -6,7 +6,10 @@
 // build` first. Steps: docs/testing.md, "Glow check".
 //
 //   node scripts/glow-check.mjs <project folder> [--item Items.Hat_02_basic_01] [--body feminine]
-//        [--strength 1] [--color 0.2,0.8,1] [--whole]
+//        [--strength 1] [--color 0.2,0.8,1] [--whole] [--ladder]
+//
+// --ladder: the map holds six brightness levels in stripes, repeated down the texture (full, then 0.71, 0.5,
+// 0.35, 0.25 and 0.125 of it, linear), so one game launch shows where the glow dies.
 
 import * as fs from "node:fs";
 import { createRequire } from "node:module";
@@ -30,6 +33,7 @@ const body = opt("body", "feminine");
 const strength = Number(opt("strength", "1"));
 const color = opt("color", "0.2,0.8,1").split(",").map(Number);
 const whole = args.includes("--whole");
+const ladder = args.includes("--ladder");
 if (!(strength > 0) || color.length !== 3 || color.some((c) => !(c >= 0 && c <= 1))) {
   console.error("FAIL: --strength is above 0, --color is three numbers 0 to 1");
   process.exit(1);
@@ -61,9 +65,20 @@ try {
   if (!look) throw new Error(`${itemId} has no ${body} look`);
   console.log(`${item.name} (${item.id}), ${body}: ${look.meshes.length} mesh(es)`);
 
-  // The glow map: eight bands down the texture, white and black in turn.
+  // The glow map: eight bands down the texture, white and black in turn; or the ladder's stripes.
   let map;
-  if (!whole) {
+  if (ladder) {
+    const Levels = [1, 0.71, 0.5, 0.35, 0.25, 0.125], Rows = 36, S = 1024;
+    const srgb = (c) => Math.round(255 * (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055));
+    const img = { width: S, height: S, data: new Uint8Array(S * S * 4) };
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+      const v = srgb(Levels[Math.floor((y * Rows) / S) % Levels.length]);
+      img.data.set([v, v, v, 255], (y * S + x) * 4);
+    }
+    map = path.join(project.raw, "edgemat", "tests", "glow", "ladder.png");
+    fs.mkdirSync(path.dirname(map), { recursive: true });
+    fs.writeFileSync(map, core.writePng(img));
+  } else if (!whole) {
     const S = 512, img = { width: S, height: S, data: new Uint8Array(S * S * 4) };
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) img.data.set(Math.floor((y * 8) / S) % 2 ? [0, 0, 0, 255] : [255, 255, 255, 255], (y * S + x) * 4);
     map = path.join(project.raw, "edgemat", "tests", "glow", "bands.png");
@@ -81,7 +96,7 @@ try {
       glow: names.map((n) => ({ material: n, color, strength, texture: map })),
       made: { check: "glow", item: item.id, strength },
     });
-    for (const x of r.materials) console.log(`  ${path.win32.basename(m.mesh)} ${x.name}: EV ${x.glow?.ev}, color ${x.glow?.color.join(", ")}, ${x.glow?.map ? "in bands" : "all over"}${x.applied ? "" : " (not applied)"}`);
+    for (const x of r.materials) console.log(`  ${path.win32.basename(m.mesh)} ${x.name}: EV ${x.glow?.ev}, color ${x.glow?.color.join(", ")}, ${x.glow?.map ? (ladder ? "in a ladder of six levels" : "in bands") : "all over"}${x.applied ? "" : " (not applied)"}`);
     for (const n of r.notes) console.log(`  ${n}`);
   }
   const packed = path.join(projDir, "packed", "archive", "pc", "mod");
