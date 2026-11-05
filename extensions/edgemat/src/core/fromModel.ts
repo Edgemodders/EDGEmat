@@ -25,8 +25,9 @@ import { readJson } from "./project";
 /**
  * Glow's brightness: EmissiveEV = base + log2(strength), so each doubling of glTF's strength is one EV
  * more. Base 4 is near the middle of the game's own glowing metal_base materials (EV 3.95 to 6 for half
- * of 92, median 4.3; EDGEmat's survey, 2026-11-04); strength 1 looked plenty bright in the game
- * (2026-11-05). How it grows with strength is unverified.
+ * of 92, median 4.3; EDGEmat's survey, 2026-11-04); in the game, strength 1 on a full-white map
+ * washes out to white in a dark room (2026-11-05): too bright for small details, so strength is a choice
+ * per material. The base may come down once a lower strength is seen.
  */
 export const GlowEV = { base: 4 };
 
@@ -328,7 +329,7 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
     if (left.length) notes.push(`the mesh's ${left.join(", ")} kept ${left.length === 1 ? "its" : "their"} material: the model has none by ${left.length === 1 ? "that name" : "those names"}`);
   }
   if (out.some((m) => m.textures.some((t) => /_n01\.xbm$/i.test(t)))) notes.push(`normal maps written ${req.flipNormalGreen ? "with green flipped" : "as glTF has them (green up)"}; which way the game reads them is unverified`);
-  if (out.some((m) => m.glow)) notes.push(`glow brightness: EV = ${GlowEV.base} + log2(strength); strength 1 is checked in the game, stronger not yet`);
+  if (out.some((m) => m.glow)) notes.push(`glow brightness: EV = ${GlowEV.base} + log2(strength); strength 1 is very bright in the game, too much for small lit details`);
 
   const record = path.join(req.project.raw, folder, `${stem}.from_model.json`);
   fs.mkdirSync(path.dirname(record), { recursive: true });

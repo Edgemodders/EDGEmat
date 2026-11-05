@@ -756,7 +756,7 @@ server.registerTool(
           z.object({
             material: z.string(),
             color: Rgb01.describe("glTF's emissiveFactor: linear 0 to 1"),
-            strength: z.number().min(0).describe("glTF's emissive strength; 1 is a lit screen, each doubling one EV brighter"),
+            strength: z.number().min(0).describe("glTF's emissive strength; 1 is very bright in the game (a full-white map washes out to white in the dark), too much for small lit details, so go lower for those; each doubling is one EV brighter"),
             texture: z.string().optional().describe("The glow map, an image file; without it the whole part glows"),
           }),
         )
