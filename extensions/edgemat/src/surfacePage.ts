@@ -1,5 +1,5 @@
 // The surface page (design, "In VS Code"): an editor tab for one surface or microblend, opened from the
-// Library. One tab is reused as the modder clicks around, until "Keep open" detaches it. The page shows
+// Game Materials. One tab is reused as the modder clicks around, until "Keep open" detaches it. The page shows
 // the cached thumbnail at once and swaps in larger images as REDbridge makes them.
 
 import * as vscode from "vscode";

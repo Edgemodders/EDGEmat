@@ -1,4 +1,4 @@
-// The Library view in EDGEmat's activity bar container: the surfaces (templates) by category and the
+// The Game Materials view (id edgemat.library) in EDGEmat's activity bar container: the surfaces (templates) by category and the
 // microblends, each with a thumbnail from the game, filtered by plain words.
 
 import * as vscode from "vscode";

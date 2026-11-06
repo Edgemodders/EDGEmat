@@ -1,4 +1,4 @@
-// EDGEmat's extension: the activity bar container and its Library view (M1). Finds the game and
+// EDGEmat's extension: the activity bar container and its Game Materials view (M1). Finds the game and
 // REDbridge as the design says ("The game folder and the bridge"), uses REDcode's running bridge when
 // REDcode is active, and builds the material library from the user's game in the background.
 
@@ -135,8 +135,8 @@ function refresh(force = false): Promise<void> {
       return;
     }
     setState(cached ? "ready" : "building");
-    log(force ? "Rebuilding the library" : cached ? "The game changed: rebuilding the library" : `Building the library from ${game.path} (${game.from})`);
-    await vscode.window.withProgress({ location: { viewId: "edgemat.library" }, title: "Building the material library" }, async () => {
+    log(force ? "Rebuilding Game Materials" : cached ? "The game changed: rebuilding Game Materials" : `Building Game Materials from ${game.path} (${game.from})`);
+    await vscode.window.withProgress({ location: { viewId: "edgemat.library" }, title: "Building Game Materials" }, async () => {
       await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "EDGEmat" }, async (p) => {
         let last = 0;
         const lib = await buildLibrary(bridge!, cacheDir, (message, done, total) => {
@@ -145,7 +145,7 @@ function refresh(force = false): Promise<void> {
             p.report({ message: `${message} ${done}/${total}` });
           }
         });
-        log(`Library built in ${lib.seconds} s: ${lib.counts.templates} surfaces, ${lib.counts.microblends} microblends, ${lib.counts.setups} setups, ${lib.counts.masks} mask sets${lib.failed.length ? `; ${lib.failed.length} files failed, see below` : ""}`);
+        log(`Game Materials built in ${lib.seconds} s: ${lib.counts.templates} surfaces, ${lib.counts.microblends} microblends, ${lib.counts.setups} setups, ${lib.counts.masks} mask sets${lib.failed.length ? `; ${lib.failed.length} files failed, see below` : ""}`);
         for (const f of lib.failed) log(`  failed: ${f}`);
         for (const f of lib.missing) log(`  referenced by a surface but missing in the game: ${f}`);
         show(lib);
@@ -154,7 +154,7 @@ function refresh(force = false): Promise<void> {
     setState("ready");
   })()
     .catch((e) => {
-      log(`The library could not be built: ${e instanceof Error ? e.message : String(e)}`);
+      log(`Game Materials could not be built: ${e instanceof Error ? e.message : String(e)}`);
       setState(view.current ? "ready" : "error");
     })
     .finally(() => {
@@ -336,7 +336,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     openSurface: (p) => {
       const template = library()?.templates.find((t) => t.path.toLowerCase() === p.toLowerCase());
       if (template) void pages.show({ kind: "surface", template });
-      else void vscode.window.showInformationMessage(`${p} is not in the library: a custom or missing surface.`);
+      else void vscode.window.showInformationMessage(`${p} is not in Game Materials: a custom or missing surface.`);
     },
     openMicroblend: (p) => {
       const found = library()?.microblends.find((m) => m.path.toLowerCase() === p.toLowerCase());
@@ -359,7 +359,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     vscode.commands.registerCommand("edgemat.setGameFolder", setGameFolder),
     vscode.commands.registerCommand("edgemat.showLog", () => output.show()),
     vscode.commands.registerCommand("edgemat.searchLibrary", async () => {
-      const q = await vscode.window.showInputBox({ title: "Search the library", prompt: "Plain words, such as leather, worn chrome or denim", value: view.query });
+      const q = await vscode.window.showInputBox({ title: "Search Game Materials", prompt: "Plain words, such as leather, worn chrome or denim", value: view.query });
       if (q === undefined) return;
       view.setFilter(q);
       tree.message = view.summary() || undefined;

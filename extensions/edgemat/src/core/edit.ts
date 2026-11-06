@@ -85,7 +85,7 @@ export function applyLayerEdit(setup: Setup, index: number, patch: LayerPatch, l
   if (patch.material !== undefined && layer.material.toLowerCase() !== was.material.toLowerCase()) {
     if (!/\.mltemplate$/i.test(layer.material)) throw new Error(`A surface is an .mltemplate file, not ${layer.material || "nothing"}.`);
     const t = templateOf(lib, layer.material);
-    if (lib && !t) notes.push(`${layer.material} is not in the library (a custom or missing surface), so the layer's presets were kept.`);
+    if (lib && !t) notes.push(`${layer.material} is not in Game Materials (a custom or missing surface), so the layer's presets were kept.`);
     if (t) {
       const reset: string[] = [];
       for (const kind of PresetKinds) {
@@ -111,7 +111,7 @@ export function applyLayerEdit(setup: Setup, index: number, patch: LayerPatch, l
   }
   if (patch.microblend !== undefined && layer.microblend) {
     if (!/\.xbm$/i.test(layer.microblend)) throw new Error(`A microblend is an .xbm texture, not ${layer.microblend}.`);
-    if (lib && !lib.microblends.some((m) => m.path.toLowerCase() === layer.microblend.toLowerCase())) notes.push(`${layer.microblend} is not one of the library's microblends.`);
+    if (lib && !lib.microblends.some((m) => m.path.toLowerCase() === layer.microblend.toLowerCase())) notes.push(`${layer.microblend} is not one of the microblends in Game Materials.`);
   }
 
   const layers = setup.layers.slice();
@@ -218,7 +218,7 @@ export function patchFromWords(setup: Setup, index: number, w: LayerWords, lib: 
   }
   const words: [keyof LayerWords, PresetKind][] = [["roughness", "roughLevelsOut"], ["roughnessContrast", "roughLevelsIn"], ["metal", "metalLevelsOut"], ["metalContrast", "metalLevelsIn"], ["bumps", "normalStrength"]];
   if (w.color !== undefined || words.some(([k]) => w[k] !== undefined)) {
-    if (!t) throw new Error(`Layer ${index}'s surface (${layer.material || "none"}) is not in the library, so its presets cannot be looked up.`);
+    if (!t) throw new Error(`Layer ${index}'s surface (${layer.material || "none"}) is not in Game Materials, so its presets cannot be looked up.`);
     const info = describeSurface(t);
     if (w.color !== undefined) {
       const exact = info.colors.find((c) => c.name.toLowerCase() === w.color!.trim().toLowerCase());

@@ -6,11 +6,11 @@ The EDGE material editor for Cyberpunk 2077. Part of the EDGE modding platform b
 
 | Part | What it does |
 |---|---|
-| **Library** | Every surface (multilayered material template) in your game with its colors, and every microblend, each with a thumbnail, searchable by plain words such as *leather*, *denim* or *dirt*. Built from your own game on first use, in well under a minute, and rebuilt after a game update. Nothing from the game ships with EDGEmat |
+| **Game Materials** | Every surface (multilayered material template) in your game with its colors, and every microblend, each with a thumbnail, searchable by plain words such as *leather*, *denim* or *dirt*. Built from your own game on first use, in well under a minute, and rebuilt after a game update. Nothing from the game ships with EDGEmat |
 | **Surface page** | Click a surface: a larger image tinted with the color you pick, every color as a swatch with a plain name ("dark muted blue"), the closest color to one you type or pick, and roughness, metal and bumps in plain words |
-| **Setup editor** | Open any `.mlsetup` from the game, a file, a project, a mod archive, or REDcode's Game Assets: each layer in plain words, a map of where each layer goes on the garment, and warnings for what looks wrong. Click a layer to change its surface, color, finish, tiling, opacity and microblend, with undo. **Open Setup** is in the Library's title bar |
+| **Setup editor** | Open any `.mlsetup` from the game, a file, a project, a mod archive, or REDcode's Game Assets: each layer in plain words, a map of where each layer goes on the garment, and warnings for what looks wrong. Click a layer to change its surface, color, finish, tiling, opacity and microblend, with undo. **Open Setup** is in the Game Materials title bar |
 | **Save to Project** | Saves a setup into your WolvenKit project (REDcode's open one): as a new setup, with the garment's meshes for both bodies pointed at it, so it shows in the game with no other mod. Then REDcode's Pack and Try |
-| **New Material** | A material from words, through Google Gemini or OpenAI with your own key, or from a photo of your own: made seamless, with bumps and shine, and put on a garment, which keeps its own folds. The sparkle in the Library's title bar, or on a material in Find. Nothing is sent until you press Generate |
+| **New Material** | A material from words, through Google Gemini or OpenAI with your own key, or from a photo of your own: made seamless, with bumps and shine, and put on a garment, which keeps its own folds. The sparkle in the Game Materials title bar, or on a material in Find. Nothing is sent until you press Generate |
 | **Find** | Type a garment's in-game name ("punk jeans") or part of a mesh path: its record id, its looks per body, its meshes and materials. Click a layered material to open its setup with the right masks |
 | **View in 3D** | The eye on a mesh opens it in [REDcode](https://github.com/Edgemodders/REDcode)'s 3D view, with its colors from EDGEmat. Colors only for now: bumps and shine come later |
 
@@ -22,11 +22,11 @@ The same features are in EDGEmat's MCP server, which comes with the extension, s
 
 | Assistant | How |
 |---|---|
-| Claude Code | **EDGEmat: Connect an Assistant (MCP)...** (the Library's **...** menu, or the command palette) registers it, with your image service key if you want materials from words. Then start a new Claude Code session |
+| Claude Code | **EDGEmat: Connect an Assistant (MCP)...** (the Game Materials **...** menu, or the command palette) registers it, with your image service key if you want materials from words. Then start a new Claude Code session |
 | Agents inside VS Code 1.101 or later | Nothing to do: they see EDGEmat's tools |
 | Other MCP clients | The same command copies a JSON entry. Without VS Code: `@edgemodders/edgemat-mcp` on npm |
 
-The server finds the game and REDbridge as the extension does, and shares its material library.
+The server finds the game and REDbridge as the extension does, and shares its Game Materials.
 
 ## Setup
 

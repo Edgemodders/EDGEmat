@@ -1,4 +1,4 @@
-// The Desk view (design, "The Desk"): the meshes and setups on the Desk, above the Library. A mesh opens
+// The Desk view (design, "The Desk"): the meshes and setups on the Desk, above Game Materials. A mesh opens
 // into its looks and their materials as in Find; a material opens its setup, which saves in that Desk
 // entry. What is on the Desk is read from desk.json, which the MCP server's mat_desk changes too.
 

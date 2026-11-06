@@ -19,6 +19,7 @@ Last updated 2026-11-03.
 
 | To-do | Why | Since |
 |---|---|---|
+| Run [Game Materials name](testing.html#game-materials-name), a quick check through F5 | The rename is new since 0.3.1, so the release gate needs it | 2026-11-06 |
 | Delete `EDGEmat_GlowCheck.archive` from the game's `archive\pc\mod`, with the game closed | It changes the same hat as the Reshape test; the glow check is done | 2026-11-05 |
 | Run [Wardrobe Designer Reshape and keys](testing.html#wardrobe-designer-reshape-and-keys) in the game, on REDnode 0.56.1 (the dev PC has it since 2026-11-03) | W3's first version in the app; with [Wardrobe Designer install](testing.html#wardrobe-designer-install), the gate for Wardrobe Designer's first release | 2026-11-02 |
 | For Wardrobe Designer's Nexus page: three screenshots (the window beside V with the pants restyled; one item in four looks; the reshaped cowboy hat) (the Equipment-EX link, `mods/6945`, is checked) | The placeholders in `apps/wardrobe-designer/nexus/README.md` | 2026-11-03 |
@@ -53,6 +54,12 @@ Last updated 2026-11-03.
 | [EDGEfab #3](https://github.com/Edgemodders/EDGEfab/issues/3) | Fit a generated mesh onto a game garment, replacing it: weights from the original garment, out of V's body, garment support, both bodies, at the original's path; callable outside VS Code, for Wardrobe Designer's Reshape | Filed 2026-10-31 (owner's ask). Not urgent: fits EDGEfab's F4 Clothing. **2026-11-02 (owner):** EDGEmat builds the fit itself for Wardrobe Designer (core, no VS Code), and it moves into EDGEfab when EDGEfab's development resumes |
 
 ## Log
+
+### 2026-11-06
+
+| What | Detail |
+|---|---|
+| **The Library view is now Game Materials** ([EDGEmat #8](https://github.com/Edgemodders/EDGEmat/issues/8), from REDcode) | The name Library now belongs to the EDGE Library, the folder every EDGE tool shares, which EDGEfab's docs and EDGEwave already use. Owner's choice, on my suggestion. Names only: the view and command ids and the MCP tool `mat_library` stay, and so do the phase name M1 Library and the code's `Library` type. The design has a short new section, "The EDGE Library (proposed)": EDGEmat's Library view and Add to Library, not built and in no phase yet. **At the next release:** EDGEmat's wiki and the wiki's `library.md` (line 29) in EDGEweb still say Library, on purpose, since the released 0.3.1 does (`docs/dev-setup.md`, "Releasing", step 6) |
 
 ### 2026-11-05
 
@@ -295,6 +302,7 @@ Last updated 2026-11-03.
 
 | Decision | Why | Date |
 |---|---|---|
+| EDGEmat's Library view is **Game Materials**; **Library** means only the shared EDGE Library | Two things called Library would clash once a modder has both. Not two sections in one view: a read-only list from the game and a modder's store are different things, and the title bar's Search and Rebuild fit only one. Not plain "Materials": a modder would look there for what they generated | 2026-11-06 |
 | The tool driving a new feature may carry a small piece that belongs elsewhere (a Tripo client, say) instead of first asking the other tool for it; it moves to its better home later, as a design improvement. Weigh case by case: how complex the piece is, whether it truly belongs in the other tool, and whether the feature is a proof of concept that may not work. Lightweight, temporary debt for an exploration is fine. Once a home tool has all of a feature, EDGEmat may depend on it, keeping in mind what a user without that tool loses. For now Wardrobe Designer drives the player-facing features | Other tools may take a while to catch up, and a request for a feature that turns out not to work can be obsolete moments later (owner) | 2026-10-31 |
 | Game surfaces are read-only; custom colors come from a custom copy | A surface is shared by every item that uses it | 2026-10-16 |
 | The bridge client is copied from REDcode for now | A shared npm package for the EDGE tools stays the goal | 2026-10-16 |

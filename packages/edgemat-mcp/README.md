@@ -30,13 +30,13 @@ An option or variable you pass wins over VS Code's settings; an empty one counts
 | `REDBRIDGE_EXE` | REDbridge |
 | `GEMINI_API_KEY`, `OPENAI_API_KEY` | `mat_generate` only; else the shared key store |
 
-The material library is built from your own game the first time, and kept in `%LOCALAPPDATA%\EDGEmat` (`--cache` or `EDGEMAT_CACHE` to move it), shared with the extension.
+Game Materials, the extension's list of every surface and microblend, is built from your own game the first time, and kept in `%LOCALAPPDATA%\EDGEmat` (`--cache` or `EDGEMAT_CACHE` to move it), shared with the extension.
 
 ## Tools
 
 | Tool | Does |
 |---|---|
-| `mat_library` | Whether the library is built and current; builds it |
+| `mat_library` | Whether Game Materials is built and current; builds it |
 | `mat_templates`, `mat_microblends` | Search the game's surfaces and detail textures |
 | `mat_colors` | A surface's colors in plain words, and the closest to one you name |
 | `mat_find` | A garment or mesh, down to its looks per body, meshes and materials; for a mesh, the items that wear each look, with the CET command that gives V one |

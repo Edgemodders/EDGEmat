@@ -575,7 +575,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   private async pickSurface(doc: SetupDocument, index: number): Promise<string | undefined> {
     const lib = this.host.library();
     if (!lib) {
-      void vscode.window.showInformationMessage("The library is not built yet.");
+      void vscode.window.showInformationMessage("Game Materials is not built yet.");
       return undefined;
     }
     const current = doc.setup?.layers[index]?.material.toLowerCase();
@@ -589,7 +589,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   private async pickMicroblend(doc: SetupDocument, index: number): Promise<string | undefined> {
     const lib = this.host.library();
     if (!lib) {
-      void vscode.window.showInformationMessage("The library is not built yet.");
+      void vscode.window.showInformationMessage("Game Materials is not built yet.");
       return undefined;
     }
     const current = doc.setup?.layers[index]?.microblend.toLowerCase();

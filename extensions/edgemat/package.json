@@ -73,7 +73,7 @@
         },
         {
           "id": "edgemat.library",
-          "name": "Library"
+          "name": "Game Materials"
         },
         {
           "id": "edgemat.find",
@@ -92,7 +92,7 @@
       },
       {
         "view": "edgemat.library",
-        "contents": "EDGEmat needs your Cyberpunk 2077 folder to build its material library from your game.\n[Set Game Folder](command:edgemat.setGameFolder)",
+        "contents": "EDGEmat needs your Cyberpunk 2077 folder to build Game Materials: every surface and microblend in your game.\n[Set Game Folder](command:edgemat.setGameFolder)",
         "when": "edgemat.state == noGame"
       },
       {
@@ -102,17 +102,17 @@
       },
       {
         "view": "edgemat.library",
-        "contents": "Building the material library from your game: every surface with its colors, and every microblend, with thumbnails. This runs once, and again after a game update.",
+        "contents": "Building Game Materials from your game: every surface with its colors, and every microblend, with thumbnails. This runs once, and again after a game update.",
         "when": "edgemat.state == building"
       },
       {
         "view": "edgemat.library",
-        "contents": "The library could not be built.\n[Show Log](command:edgemat.showLog)\n[Try Again](command:edgemat.rebuildLibrary)",
+        "contents": "Game Materials could not be built.\n[Show Log](command:edgemat.showLog)\n[Try Again](command:edgemat.rebuildLibrary)",
         "when": "edgemat.state == error"
       },
       {
         "view": "edgemat.library",
-        "contents": "Nothing in the library matches your search.\n[Clear Search](command:edgemat.clearSearch)",
+        "contents": "Nothing in Game Materials matches your search.\n[Clear Search](command:edgemat.clearSearch)",
         "when": "edgemat.state == ready && edgemat.filtered"
       }
     ],
@@ -157,7 +157,7 @@
       },
       {
         "command": "edgemat.searchLibrary",
-        "title": "Search Library",
+        "title": "Search Game Materials",
         "category": "EDGEmat",
         "icon": "$(search)"
       },
@@ -169,7 +169,7 @@
       },
       {
         "command": "edgemat.rebuildLibrary",
-        "title": "Rebuild Library",
+        "title": "Rebuild Game Materials",
         "category": "EDGEmat",
         "icon": "$(refresh)"
       },

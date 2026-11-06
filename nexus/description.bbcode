@@ -49,7 +49,7 @@ One click opens the mesh in REDcode's 3D viewer, with its colors from EDGEmat: e
 [img]https://staticdelivery.nexusmods.com/mods/3333/images/35422/35422-1792555416-1046393162.png[/img]
 
 [size=4][b][color=#19f3ff]Every surface and every color, named[/color][/b][/size]
-A library of all the game's surfaces (about 390) and detail textures (about 130), built from your own game with thumbnails. Each surface's page shows every color it offers as a swatch with a plain name ("dark muted blue"), and sorts them by how close they are to a color you type or pick.
+Game Materials, a list of all the game's surfaces (about 390) and detail textures (about 130), built from your own game with thumbnails. Each surface's page shows every color it offers as a swatch with a plain name ("dark muted blue"), and sorts them by how close they are to a color you type or pick.
 
 [img]https://staticdelivery.nexusmods.com/mods/3333/images/35422/35422-1792555604-1072948209.png[/img]
 
@@ -57,7 +57,7 @@ A library of all the game's surfaces (about 390) and detail textures (about 130)
 From the game, your WolvenKit project, a file on disk, or inside another mod's archive, without unpacking it. Right-click a [i].mlsetup[/i] or [i].mltemplate[/i] and choose [b]Open Material in EDGEmat[/b]. EDGEmat finds the right masks, and never changes the original.
 
 [size=4][b][color=#19f3ff]Ask Claude[/color][/b][/size]
-EDGEmat's MCP server comes with the extension, and [b]Connect an Assistant[/b] in the Library's menu sets up Claude Code in one step. Then Claude can do what you do: "Make the punk jeans dark green on both bodies, in my project." "Make a dark green snakeskin material and put it on the Light Azure slim-fits." It finds the garment, recolors or generates, and saves into your project or onto the Desk. It sends no telemetry; its only network calls go to the image service whose key you gave it.
+EDGEmat's MCP server comes with the extension, and [b]Connect an Assistant[/b] in the Game Materials menu sets up Claude Code in one step. Then Claude can do what you do: "Make the punk jeans dark green on both bodies, in my project." "Make a dark green snakeskin material and put it on the Light Azure slim-fits." It finds the garment, recolors or generates, and saves into your project or onto the Desk. It sends no telemetry; its only network calls go to the image service whose key you gave it.
 
 [color=#19f3ff][i]Asking Claude: "Using EDGEmat, make a dark green snakeskin material and put it on the Light Azure composite-lined slim-fits, both bodies, in my project."
 
@@ -82,7 +82,7 @@ Click "Run" in [url=https://www.nexusmods.com/cyberpunk2077/mods/35421]REDcode[/
 [*][b]edgemat-mcp-x.y.z.cjs[/b]: the MCP server on its own, one file, for assistants outside VS Code. Optional.[/*]
 [*]README.txt (how to install), LICENSE.txt and THIRD-PARTY-NOTICES.txt.[/*]
 [/list]
-Nothing from the game is in it: EDGEmat builds its library from your own game the first time it runs, in under half a minute, and stays current after game patches.
+Nothing from the game is in it: EDGEmat builds its list of materials from your own game the first time it runs, in under half a minute, and stays current after game patches.
 
 [size=5][b][color=#fcee0a]Requirements[/color][/b][/size]
 
@@ -103,16 +103,16 @@ Or from this page:
 [list]
 [*]Download the zip and extract it anywhere.[/*]
 [*]In VS Code, open the Extensions view (Ctrl+Shift+X), click [b]...[/b] at its top, choose [b]Install from VSIX...[/b] and pick [i]edgemat-x.y.z.vsix[/i].[/*]
-[*]Click the EDGEmat icon in the activity bar. The library builds itself.[/*]
+[*]Click the EDGEmat icon in the activity bar. Game Materials builds itself.[/*]
 [/list]
 Or from a terminal: [i]code --install-extension edgemat-x.y.z.vsix[/i]. The step-by-step guide: [url=https://edgemodders.ai/wiki/edgemat/install.html]Install and set up[/url].
 
-[b]Uninstall:[/b] in VS Code's Extensions view. The library and the Desk live in [i]%LOCALAPPDATA%\EDGEmat[/i]; delete that folder too for a clean slate.
+[b]Uninstall:[/b] in VS Code's Extensions view. Game Materials and the Desk live in [i]%LOCALAPPDATA%\EDGEmat[/i]; delete that folder too for a clean slate.
 
 [size=5][b][color=#fcee0a]Roadmap[/color][/b][/size]
 
 [list]
-[*][b]Library[/b], [b]Read[/b] and [b]Edit[/b]: the library, surface pages, the setup editor with editing and Save to Project, Find, the Desk, View in 3D with a live preview, New Material, the assistant's tools. Done: this version.[/*]
+[*][b]Game Materials[/b], [b]Read[/b] and [b]Edit[/b]: the list of game materials, surface pages, the setup editor with editing and Save to Project, Find, the Desk, View in 3D with a live preview, New Material, the assistant's tools. Done: this version.[/*]
 [*][color=#19f3ff]Next:[/color] [b]Make[/b]: materials for brand-new clothes and objects, from a model's own textures, picked from the game, or generated; a mesh's looks.[/*]
 [*][b]Preview[/b]: shine, bumps, metal and detail on the 3D model, not just colors.[/*]
 [*][b]Beyond layers[/b]: colors no surface offers, other kinds of material.[/*]

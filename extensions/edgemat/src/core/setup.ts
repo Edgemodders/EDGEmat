@@ -158,7 +158,7 @@ export function describeSetup(setup: Setup, lib: Library | undefined, maskCount?
       s = surfaces.get(t.path) ?? describeSurface(t);
       surfaces.set(t.path, s);
     } else if (l.material && !unused && lib) {
-      warnings.push("Its surface is not in the library: a custom or missing template.");
+      warnings.push("Its surface is not in Game Materials: a custom or missing template.");
     }
     let color: ColorInfo | undefined;
     if (s) {

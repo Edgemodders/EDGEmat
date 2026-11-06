@@ -115,7 +115,7 @@ server.registerTool(
   "mat_library",
   {
     description:
-      "EDGEmat's material library, built from the user's own Cyberpunk 2077 install: every surface template (.mltemplate) with its color, normal, roughness and metal presets, and every microblend. " +
+      "EDGEmat's Game Materials, built from the user's own Cyberpunk 2077 install (not the EDGE Library, the folder of a modder's own work): every surface template (.mltemplate) with its color, normal, roughness and metal presets, and every microblend. " +
       "action 'status' says whether it exists, when it was built and whether it still matches the game; 'build' builds or rebuilds it (about a minute or two, once per game version).",
     inputSchema: { action: z.enum(["status", "build"]).default("status") },
   },

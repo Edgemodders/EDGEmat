@@ -11,7 +11,8 @@ Last updated 2026-10-26.
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
 | [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's six checks (entries, variations, the move from the old Desk), and the items that wear a mesh look (2026-10-26: the slim-fits' leather look, `Items.Pants_01_basic_01`; index in 11 s), and microblends in the color map (the slim-fits' leather: base 87.1%, denim with lint 0.5%, piping 6.7%) |
 | [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache. 2026-10-26: `mat_desk` add twice reuses the unedited entry (same id); remove of an unknown id is refused. `mat_find` with the slim-fits mesh and look `leather`: `worn_by` `Items.Pants_01_basic_01` (feminine) with its `cet` command; with item `Items.Pants_01_basic_01`, `cet` |
-| [Library view](#library-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass |
+| [Game Materials view](#game-materials-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass (as the Library view) |
+| [Game Materials name](#game-materials-name) | By hand, F5 | After 0.3.1 | Not run | Open |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
@@ -89,7 +90,24 @@ The counts change after a game patch. A patch that adds surfaces is fine as long
 
 ## By hand in VS Code
 
-### Library view in VS Code
+### Game Materials name
+
+Added 2026-11-06 (EDGEmat #8): the Library view is now Game Materials. Only names changed, and the view's id is the same, so this checks the names and that its buttons still work.
+
+1. Open this repo in VS Code, run `npm run build`, press **F5** and choose **Run EDGEmat**.
+2. In the second VS Code window that opens, check:
+
+| # | Do | Expected |
+|---|---|---|
+| 1 | Click EDGEmat's icon in the activity bar (left edge) | The views are **DESK**, **GAME MATERIALS** and **FIND**, in that order. None is called Library. Your open and folded views are as you left them |
+| 2 | Hover the **GAME MATERIALS** header, then hold the pointer over its magnifier and its refresh icon | Their tooltips say **Search Game Materials** and **Rebuild Game Materials** |
+| 3 | Press the magnifier, type `leather`, press Enter | The box is titled **Search Game Materials**; the view shows 7 surfaces |
+| 4 | Press the magnifier again, type `zzzz`, press Enter | The view says **Nothing in Game Materials matches your search**, with a **Clear Search** button. Press it: the full list returns |
+| 5 | Press the refresh icon (**Rebuild Game Materials**), then the view's **...** menu › **Show Log** | The view shows progress. The log (Output › EDGEmat) has a line `Game Materials built in ...` |
+| 6 | In the same title bar, press the sparkle icon, then the go-to-file icon. Then **...** menu | **New Material** opens, **Open Setup** asks where from (press Esc), and the menu lists **Connect an Assistant (MCP)...** |
+| 7 | Press Ctrl+Shift+P and type `EDGEmat: ` | The list has **EDGEmat: Search Game Materials** and **EDGEmat: Rebuild Game Materials**, and nothing named Library |
+
+### Game Materials view in VS Code
 
 Run 2026-10-16 and again 2026-10-17 by the owner: **all pass.**
 
@@ -99,7 +117,7 @@ Run 2026-10-16 and again 2026-10-17 by the owner: **all pass.**
 | # | Check | Expected |
 |---|---|---|
 | 1 | The activity bar | The EDGEmat icon (corner brackets around two layers): yellow when inactive, white when active, in the REDnode HUD theme |
-| 2 | The Library on first open | "386 surfaces · 131 microblends · built <date>". A first build shows progress in the view and takes under half a minute |
+| 2 | Game Materials on first open | "386 surfaces · 131 microblends · built <date>". A first build shows progress in the view and takes under half a minute |
 | 3 | Surfaces | Grouped by category (fabric, metal, plastic and so on), each with a thumbnail |
 | 4 | Hover a surface | A larger thumbnail, its color count and its game path |
 | 5 | Microblends: the second top-level group, below all the surface categories (Collapse All in the view's title bar shows both groups) | Listed with thumbnails when opened |
@@ -113,12 +131,12 @@ Run 2026-10-17 by the owner: **all pass.** Before that it was rendered in headle
 
 Where things are: the Copy buttons sit after the game path at the top, beside Preset, RGB and Swatch in the color panel under the image, and under each texture image. Below about 760 px wide the page is one column, with the image and color panel above Colors.
 
-1. `npm run build`, then **F5** (**Run EDGEmat**), as for the Library view.
+1. `npm run build`, then **F5** (**Run EDGEmat**), as for the Game Materials view.
 2. In the development host, check:
 
 | # | Check | Expected |
 |---|---|---|
-| 1 | Click a surface in the Library, such as fabric › leather bull 01 30 | An editor tab opens with its title and a small icon. The page shows "Surface · fabric › leather", the game path with Copy path, an image (the thumbnail at once, a sharper one within a second or two), and the default color selected |
+| 1 | Click a surface in Game Materials, such as fabric › leather bull 01 30 | An editor tab opens with its title and a small icon. The page shows "Surface · fabric › leather", the game path with Copy path, an image (the thumbnail at once, a sharper one within a second or two), and the default color selected |
 | 2 | Click another surface | The same tab shows it; no new tab |
 | 3 | Keep open, then click a third surface | The kept tab stays; a new tab opens for the third |
 | 4 | Click swatches | The image is tinted with each color; the panel under it shows a plain name, the preset name, RGB and the swatch hex, each with Copy. Untick "Tint with the selected color" to see the detail map alone |
@@ -141,7 +159,7 @@ Run 2026-10-17 by the owner: **all pass**, including opening from REDcode's Game
 
 | # | Check | Expected |
 |---|---|---|
-| 1 | **Open Setup** (the go-to-file icon in the Library's title bar) › From the game › `s1_055 red yellow` › `ml_s1_055_pma_shoe__red_yellow_graphic` | A tab "ml_s1_055_pma_shoe__red_yellow_graphic", "Setup · game file", "19 of 20 layers show · ratio 1". A color map of the sneaker's texture (yellow canvas, red panels, black sole) and 20 layers |
+| 1 | **Open Setup** (the go-to-file icon in the Game Materials title bar) › From the game › `s1_055 red yellow` › `ml_s1_055_pma_shoe__red_yellow_graphic` | A tab "ml_s1_055_pma_shoe__red_yellow_graphic", "Setup · game file", "19 of 20 layers show · ratio 1". A color map of the sneaker's texture (yellow canvas, red panels, black sole) and 20 layers |
 | 2 | The layers | Each with its index, color swatch, surface thumbnail, "Surface · color", finish words, and its share of the texture with a bar. Layer 11 is dimmed: "not shown: opacity 0" |
 | 3 | Click layer 7 | Its details open: surface (rubber bumper damaged, with Open), color, roughness, metal, bumps, tiling ×10.1, opacity, microblend, "Shows on 11% of the texture". The map switches to Selected layer, with the sole and rubber band lit in yellow |
 | 4 | Click spots on the map: a red panel, the yellow canvas, the sole | The layer that shows there is selected and scrolled into view |
@@ -163,7 +181,7 @@ Built 2026-10-20 (M3). **Run 2026-10-20 by the owner on the laptop: all 14 pass*
 
 | # | Do | Expected |
 |---|---|---|
-| 1 | EDGEmat's activity bar icon › the **Find** header (below the Library) › its magnifier › type `rocker's heart` › open the item › your V's body (Feminine or Masculine) › `t2_084_pw?__short_sleeves.mesh` › click the material **black_red_glossy** | The setup editor opens `ml_t2_084_pma_jacket__short_sleeves_black_red_glossy`. Under the title: "Select a layer to change it." and a line saying Ctrl+S saves it into a project. Top right: Hide unused slots, Raw values, and a filled **Save to Project** button. The editor's title bar (top right of the tab) has a Save to Project icon |
+| 1 | EDGEmat's activity bar icon › the **Find** header (below Game Materials) › its magnifier › type `rocker's heart` › open the item › your V's body (Feminine or Masculine) › `t2_084_pw?__short_sleeves.mesh` › click the material **black_red_glossy** | The setup editor opens `ml_t2_084_pma_jacket__short_sleeves_black_red_glossy`. Under the title: "Select a layer to change it." and a line saying Ctrl+S saves it into a project. Top right: Hide unused slots, Raw values, and a filled **Save to Project** button. The editor's title bar (top right of the tab) has a Save to Project icon |
 | 2 | Click the layer with the biggest share (the top of the bars on the right) | Its details open with controls: **Change...** in the Surface row; a filter box and a grid of swatches under Color, the current one outlined; drop-downs for Roughness, Roughness contrast, Metal, Metal contrast, Bumps; number boxes for Tiling, Offset U and V, Opacity; **Change...** and three number boxes in the Microblend row |
 | 3 | In the Color row's filter box type `blue`, then click a strong blue swatch | The grid narrows to blues. The layer turns blue in the list and on the map. The tab shows the unsaved dot, and the header says "Edited, not saved yet." |
 | 4 | Click an empty part of the page (not a box), then Ctrl+Z, then Ctrl+Y | Ctrl+Z puts the old color back; Ctrl+Y makes it blue again. Keep it blue: it is what you look for in the game |
@@ -175,7 +193,7 @@ Built 2026-10-20 (M3). **Run 2026-10-20 by the owner on the laptop: all 14 pass*
 | 10 | The path box shows `...\ml_t2_084_pma_jacket__short_sleeves_black_red_glossy_edgemat_m3.mlsetup`. Press Enter | "Finding the meshes that use this setup", then a list with `t2_084_pma__short_sleeves.mesh` and `t2_084_pwa__short_sleeves.mesh`, both ticked, each naming black_red_glossy. Press OK (or Enter) |
 | 11 | Wait for the save | A message "Saved into EDGEmat_M3: the setup and 2 meshes pointed at it." with **Pack and Try** and **Open the Saved Setup**. The unsaved dot goes; a line under the header says where it was saved. In the project: `source\archive\base\characters\garment\player_equipment\torso\t2_084_jacket__short_sleeves\` has the two meshes, and its `textures` folder the new setup. Do not pack yet |
 | 12 | **Open the Saved Setup** (in that message; or open the new `.mlsetup` from the project with EDGEmat). Change one more thing, then press Ctrl+S | "Setup · project file", with your edits. Ctrl+S saves straight into that file: no list, no question, and the unsaved dot goes |
-| 13 | Open any game setup: **Open Setup** (the Library's title bar) › **From the game...** › type `s1_055 red yellow` (results appear as you type) › pick `ml_s1_055_pma_shoe__red_yellow_graphic`. Change a color, press Ctrl+S, then Esc in the list | Ctrl+S on a game file opens the Save to Project list (game files are never written). After Esc the tab stays unsaved, with no error message. Close it with Don't Save |
+| 13 | Open any game setup: **Open Setup** (the Game Materials title bar) › **From the game...** › type `s1_055 red yellow` (results appear as you type) › pick `ml_s1_055_pma_shoe__red_yellow_graphic`. Change a color, press Ctrl+S, then Esc in the list | Ctrl+S on a game file opens the Save to Project list (game files are never written). After Esc the tab stays unsaved, with no error message. Close it with Don't Save |
 | 14 | Another color theme: with a layer's details open, press Ctrl+K then Ctrl+T, and arrow through the list (VS Code previews each). Try at least **Light Modern** and **Dark Modern**; Esc goes back to yours | In each: the swatches show and the current one is outlined; the filter box, drop-downs and number boxes are readable; Save to Project stands out; the share bars and map show |
 
 ### M3 in-game round trip
@@ -188,7 +206,7 @@ All three go into the `EDGEmat_M3` project from the test above, on three garment
 |---|---|---|
 | A | The jacket from the setup editor test above (the Rocker's Heart crystaljock bomber, saved in step 11) | Saved already |
 | B | Register EDGEmat's MCP server for Claude Code if it is not ([dev setup](dev-setup.html), section 4; build it first with `npm run mcp:build`; register with `--scope user`, or only the folder it was run in sees it). Start a new Claude Code session and ask: "Using EDGEmat, make the Sturdy-stitched punk jeans dark green on both bodies, and save it into my project E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M3." | Claude finds the item (`mat_find`), sees that the two bodies wear different meshes with their own setups (`l1_066` feminine, `l1_062` masculine), looks at the layers (`mat_describe`) and recolors both (`mat_edit`), and says which files it saved: a new setup and a mesh for each body. To look at them: right-click a saved `.mlsetup` › **Open With...** › **EDGEmat Setup Editor** (REDcode's tree also opens `.mlsetup`), and open a saved `.mesh` from the project in REDcode's 3D view with the **black_punk** appearance chosen (it opens on the first one) |
-| C | In the development host: Open Setup (the Library's title bar) › **A file on disk...** › `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M0\source\archive\base\characters\garment\player_equipment\feet\s1_055_shoe__converse\textures\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup`. It is the M0 round 1 setup: the sole red, the collar lining white, the toe cap layer hidden. **Save to Project** › EDGEmat_M3 › As a new setup › Enter › both sneaker meshes ticked › OK | "Setup · project file" (of the M0 project); saved into EDGEmat_M3 as `..._edgemat_m3.mlsetup`, with `s1_055_pma_shoe__converse.mesh` and `s1_055_pwa_shoe__converse.mesh` |
+| C | In the development host: Open Setup (the Game Materials title bar) › **A file on disk...** › `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_M0\source\archive\base\characters\garment\player_equipment\feet\s1_055_shoe__converse\textures\ml_s1_055_pma_shoe__red_yellow_graphic.mlsetup`. It is the M0 round 1 setup: the sole red, the collar lining white, the toe cap layer hidden. **Save to Project** › EDGEmat_M3 › As a new setup › Enter › both sneaker meshes ticked › OK | "Setup · project file" (of the M0 project); saved into EDGEmat_M3 as `..._edgemat_m3.mlsetup`, with `s1_055_pma_shoe__converse.mesh` and `s1_055_pwa_shoe__converse.mesh` |
 | D | In REDcode with EDGEmat_M3 open: **Pack and Try** (or Pack and Install). Answer **Deploy all** if REDcode asks. Start the game. With Red Hot Tools installed, Pack and Try only sends the archive to `archive\pc\hot` for a running game: with the game closed, use **Pack and Install** (or Deploy) instead | The project packs with no errors and is installed: `<game>\archive\pc\mod\EDGEmat_M3.archive` exists (folder `mod`, singular). If it went to `mods\EDGEmat_M3\` instead, `redcode.pack.redmod` is on, and the game must start with `-modded` (REDcode's Run Game does) |
 | E | In the game, with Cyber Engine Tweaks' console: `Game.AddToInventory("Items.Jacket_01_old_01", 1)`, `Game.AddToInventory("Items.Pants_03_basic_01", 1)`, `Game.AddToInventory("Items.CasualShoes_01_basic_01", 1)`. Equip all three; look in third person (photo mode or a mirror) and at your arms in first person | The jacket shows your blue and leather layer; the jeans are dark green; the sneakers have a red sole, a white collar lining and no black toe cap |
 | F | Screenshots before and after | Kept outside the repo |
@@ -199,7 +217,7 @@ Built 2026-10-20 (M3, Generate's first slice). **Run 2026-10-20 by the owner on 
 
 | # | Do | Expected |
 |---|---|---|
-| 1 | EDGEmat's activity bar icon › the **Library** header › the sparkle icon (**New Material...**, leftmost) | A **New Material** tab: "Where it goes" says not on a mesh yet; **1. The image** with two tabs, From words (AI) and From an image file; a text box, Detail, the service (Google Gemini), the model ("Newest (listed when you generate)"), List models, a line on credits and the key, and **Generate** |
+| 1 | EDGEmat's activity bar icon › the **Game Materials** header › the sparkle icon (**New Material...**, leftmost) | A **New Material** tab: "Where it goes" says not on a mesh yet; **1. The image** with two tabs, From words (AI) and From an image file; a text box, Detail, the service (Google Gemini), the model ("Newest (listed when you generate)"), List models, a line on credits and the key, and **Generate** |
 | 2 | Close it. **Find** › `comfy rocker` › the item (Comfy rocker aramid-weave slim-fits) › your body › `l1_012_pw?_pants__jeans_tight.mesh` › hover the material **leather** › the sparkle icon at its right (or right-click › **New Material Here...**) | The tab opens titled "New Material: leather". "Where it goes" names leather on both meshes, `l1_012_pwa_...` and `l1_012_pma_...` (both bodies), and says the garment keeps its own folds |
 | 3 | Type `worn brown leather with fine creases`. Open **The words sent** | The words EDGEmat sends: a seamless texture of your words, flat light, no text or logos, and the detail size. Edit them and **Back to the standard words** appears |
 | 4 | Pick your service. Press **Generate** | A password box asks for the key the first time (it says where to make one). Then a notification "EDGEmat: generating with ..." with Cancel, and within about a minute **2. Takes** shows Take 1, selected, and **3. The material** shows it tiled 3 × 3. The model menu now lists your key's image models |
@@ -357,7 +375,7 @@ So **Tripo paints a believable garment (its colorway, a color per part, details 
 Built 2026-10-17. **Last run 2026-10-19 by the owner through F5: all 10 checks pass.** The walks behind it were also run outside VS Code on the test set (smoke test, and `mat_find` over stdio).
 
 1. `npm run build`, then **F5** (**Run EDGEmat**).
-2. In the development host, open EDGEmat's activity bar container. **Find** is the second view, a **FIND** header below **Library**, often collapsed at the bottom of the sidebar: click its header to expand it, and collapse Library (click its header) if Find is squeezed. The magnifier at the top of the Library is **Search Library**, not Find; Find's own magnifier shows only when you hover over Find's header.
+2. In the development host, open EDGEmat's activity bar container. **Find** is the last view, a **FIND** header below **Game Materials**, often collapsed at the bottom of the sidebar: click its header to expand it, and collapse Game Materials (click its header) if Find is squeezed. The magnifier at the top of the Library is **Search Library**, not Find; Find's own magnifier shows only when you hover over Find's header.
 
 | # | Check | Expected |
 |---|---|---|
@@ -377,7 +395,7 @@ Built 2026-10-17. **Last run 2026-10-19 by the owner through F5: all 10 checks p
 Built 2026-10-19. **Last run 2026-10-19 by the owner through F5: all 7 checks pass**, colors the right way up on the sneaker and the jacket. The colors behind it are also checked outside VS Code (smoke test, "3D view"). Needs REDcode installed in the development host's VS Code (it is, when REDcode is installed in your normal VS Code), with its REDbridge running.
 
 1. `npm run build`, then **F5** (**Run EDGEmat**).
-2. In the development host, open EDGEmat's activity bar container, expand **FIND** below the Library, press **Find...** and type `sunny ammo`.
+2. In the development host, open EDGEmat's activity bar container, expand **FIND** below Game Materials, press **Find...** and type `sunny ammo`.
 3. Expand "Sunny Ammo synthetic high-tops", then **Feminine body**. Under it is the mesh row `s1_055_pwa_shoe__converse.mesh`.
 
 | # | Check | Expected |
@@ -388,7 +406,7 @@ Built 2026-10-19. **Last run 2026-10-19 by the owner through F5: all 7 checks pa
 | 4 | Rotate the sneaker (drag in the view) | The colors sit where they belong on the shoe: the sole is black, the laces area matches the map. If the colors look scrambled or upside down, tell me: it means the map's orientation is off |
 | 5 | Find `t2_078 samurai`, expand **Meshes**, right-click `t2_078_ma_jacket__samurai.mesh` › **View in 3D** | The jacket opens in 3D. On its first look it is near-black (the Arasaka jacket is black), with the Arasaka decals and stitches showing as textures |
 | 6 | Switch the 3D view's appearance list to **no_bags** | The bags change to a flat color or disappear (their material is `mesh_decal.mt` without a texture) |
-| 7 | **Show Log** (Library's `...` menu) | Lines like `3D view: 5 of 5 materials for base\...\t2_078_ma_jacket__samurai.mesh, look default, in 1055 ms` |
+| 7 | **Show Log** (the Game Materials `...` menu) | Lines like `3D view: 5 of 5 materials for base\...\t2_078_ma_jacket__samurai.mesh, look default, in 1055 ms` |
 
 ### M2 phase test
 
@@ -406,7 +424,7 @@ Added 2026-10-25: the Desk view, Open in EDGEmat from REDcode's views, saving on
 
 | Step | Do | Expect |
 |---|---|---|
-| 1 | Click EDGEmat's icon in the activity bar (left edge); if the Desk has entries, hover its title bar › **Clear the Desk...** | Three views: **Desk** at the top, then Library and Find. The Desk is empty and says how to put something on it |
+| 1 | Click EDGEmat's icon in the activity bar (left edge); if the Desk has entries, hover its title bar › **Clear the Desk...** | Three views: **Desk** at the top, then Game Materials and Find. The Desk is empty and says how to put something on it |
 | 2 | Click REDcode's icon in the activity bar › **Game Assets** view › search or browse to the slim-fits `.mesh` › right-click it | **Open in EDGEmat** in the menu, beside Open in Editor |
 | 3 | Choose **Open in EDGEmat** | EDGEmat's activity bar opens on the Desk. The mesh is there, selected and open: its looks, with the first look an item wears open on its materials (since 2026-10-26; on the slim-fits, **leather**) |
 | 3b | EDGEmat's **Find** view: search `comfy rocker`, open the item and its body, right-click the slim-fits mesh › **Add to Desk** | The Desk comes forward with the mesh selected, its look **leather** open on its materials. The same line as step 3 when it has no edits yet (no second one) |
@@ -629,12 +647,12 @@ Added 2026-10-30: the image service keys move from VS Code's secret storage to t
 | Step | Do | Expect |
 |---|---|---|
 | 1 | Before starting F5, in File Explorer open `%APPDATA%\Edgemodders\keys` (paste it in the address bar). Then start F5 | If you had set a Gemini or OpenAI key in EDGEmat 0.3, a notification at the bottom right: "your Google Gemini key is now in the EDGE tools' shared key store". `gemini.txt` (or `openai.txt`) is now in the folder: one line of letters and digits, not your key. With no key set before, no notification |
-| 2 | Library view title bar › **New Material** (the sparkle). Type `red brick`, press **Generate** | It makes a take without asking for a key (when step 1 moved one). With none set, it asks once in a password box that says the key goes in the shared key store |
+| 2 | Game Materials title bar › **New Material** (the sparkle). Type `red brick`, press **Generate** | It makes a take without asking for a key (when step 1 moved one). With none set, it asks once in a password box that says the key goes in the shared key store |
 | 3 | Command palette (`Ctrl+Shift+P`) › **EDGEmat: Set Image Service Key...** › **OpenAI** › type `abc` | Under the box: "OpenAI keys start with sk-". Press Escape: nothing saved |
 | 4 | In a terminal: `claude mcp list`, then `claude mcp get edgemat` | No `GEMINI_API_KEY` or `OPENAI_API_KEY` in EDGEmat's entry, unless you added one yourself or it comes from EDGEchat's own key field |
 | 5 | A new Claude Code session: "Using EDGEmat, make just the image of a red brick material, don't apply it" | `mat_generate` with `imageOnly` returns an image file, using the key from the store. If EDGEchat has its own Gemini key field filled in, that one is used instead |
 | 6 | Command palette › **EDGEmat: Clear Image Service Key...** › the service from step 1 | A warning first: every EDGE tool that uses it asks again. **Clear It**: the file is gone from the folder; **Generate** on the New Material page asks for the key again |
-| 7 | Library view › **...** › **Connect an Assistant (MCP)...** › **Connect Claude Code** | No question about keys; "EDGEmat is connected to Claude Code" |
+| 7 | Game Materials › **...** › **Connect an Assistant (MCP)...** › **Connect Claude Code** | No question about keys; "EDGEmat is connected to Claude Code" |
 
 ### Connect an assistant
 
@@ -643,7 +661,7 @@ Added for 0.3.1, when the MCP server came into the extension. In a normal VS Cod
 | Step | Do | Expect |
 |---|---|---|
 | 1 | Check `%LOCALAPPDATA%\EDGEmat\mcp\` | `edgemat-mcp.cjs` is there, made when EDGEmat started |
-| 2 | Library view › **...** (top right of the view) › **Connect an Assistant (MCP)...** | Four choices; the hint at the top says whether agents inside this editor already see EDGEmat |
+| 2 | Game Materials › **...** (top right of the view) › **Connect an Assistant (MCP)...** | Four choices; the hint at the top says whether agents inside this editor already see EDGEmat |
 | 3 | **Connect Claude Code**; in 0.3.1, with a key set, answer the key question (from the release after 0.3.1 there is none: the server reads the shared key store) | "EDGEmat is connected to Claude Code" |
 | 4 | In a terminal: `claude mcp list` | `edgemat` points at the file from step 1, connected |
 | 5 | A new Claude Code session: "Which EDGEmat tools do you have?", then "Describe the Comfy rocker slim-fits' materials" | The 10 `mat_` tools; `mat_find` and `mat_describe` answer |
@@ -655,7 +673,7 @@ Asked for by the owner on 2026-10-16 as the CLI install of the VSIX. **Last run 
 
 1. Extensions view (`Ctrl+Shift+X`), search `EDGEmat`, pick EDGEmat by Edgemodders with the Preview badge, **Install**. Or `code --install-extension edgemodders.edgemat`.
 2. Check the version on its page is the release's.
-3. Click the EDGEmat icon in the activity bar: the [Library view](#library-view-in-vs-code) checks, then Find and New Material open.
+3. Click the EDGEmat icon in the activity bar: the [Game Materials view](#game-materials-view-in-vs-code) checks, then Find and New Material open.
 
 Without a store, the release's VSIX the same way:
 
