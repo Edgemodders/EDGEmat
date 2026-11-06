@@ -32,7 +32,8 @@ import { readJson } from "./project";
  * EV stops at 0. In the game EV 0 still washes out to white while EV -2 and EV -4 show no glow at all, even
  * in the inventory's light (2026-11-05), so a negative EV seemed to switch the glow off, and below EV 0 the
  * color takes the rest (glowDim). In doubt: EV 0 with the color at a sixteenth is solid black too, though the
- * game has lit materials at EV 0 with colors that dim. Strength 1 again lights it (the control), so the drop is real and unexplained.
+ * game has lit materials at EV 0 with colors that dim. Strength 1 again lights it (the control), so the drop is real. A ladder map at EV 0 is all dark, so EV 0 and
+ * below may simply be off, and this floor of 0 too low: unverified, the ladder at EV 1 is next.
  */
 export const GlowEV = { base: 4 };
 
