@@ -26,7 +26,8 @@ import { readJson } from "./project";
  * Glow's brightness, measured in the game (2026-11-05; design, "How glow works in the game"): at EmissiveEV 0 or
  * below metal_base shows no glow at all, whatever the map or color. EV 1 glows, visibly in daylight, without
  * washing out; EV 4 washes a full-white map out to white with a wide bloom. So EmissiveEV = base + log2(strength),
- * strength 1 being a soft glow, and never below floor: under it the color dims instead (glowDim).
+ * strength 1 being a soft glow, and never below floor: under it the color dims instead (glowDim), which holds the
+ * color best. About an eighth of strength 1 is the limit of what shows.
  */
 export const GlowEV = { base: 1, floor: 1 };
 
@@ -312,6 +313,7 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
       const light = p.glow.strength * top;
       const color = p.glow.color.map((c) => srgb8((c / top) * glowDim(light))) as [number, number, number];
       const ev = glowEV(light);
+      if (light < 1 / 8) notes.push(`${p.name}: a glow of strength ${Math.round(light * 1000) / 1000} is likely too dim to see in the game (about 0.125 is the limit on a full-white map)`);
       const map = p.glow.map ? await tex(p.glow.map, "e01", await picture(p.glow.map), "color", "glow") : WhiteTexture;
       m.emissive = { map, color, ev };
       glow = { ev, color, map: !!p.glow.map };

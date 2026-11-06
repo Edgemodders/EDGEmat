@@ -756,7 +756,7 @@ server.registerTool(
           z.object({
             material: z.string(),
             color: Rgb01.describe("glTF's emissiveFactor: linear 0 to 1"),
-            strength: z.number().min(0).describe("glTF's emissive strength: 1 is a soft glow for small lit details, still visible in daylight; 8 is white-hot with a wide bloom; each doubling is twice as bright. Below 1 the color dims instead"),
+            strength: z.number().min(0).describe("glTF's emissive strength: 1 is a soft glow for small lit details, still visible in daylight; 8 is white-hot with a wide bloom; each doubling is twice as bright. Below 1 the color dims instead, which holds the color best (0.25 is a saturated glow); below about 0.125 it is too dim to see"),
             texture: z.string().optional().describe("The glow map, an image file; without it the whole part glows"),
           }),
         )

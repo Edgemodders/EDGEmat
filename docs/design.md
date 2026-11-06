@@ -165,6 +165,7 @@ Measured on game 2.5 on 2026-11-05 with the glow check (`docs/testing.md`), on m
 |---|---|---|
 | 4 | Full-white map, full color | Washes out to white, with a wide bloom and a tint on nearby clothing. Color only at the edges and in the halo |
 | 1 | Six map levels, full color | Lit, with no wide bloom. All six levels show, full down to an eighth, in a dark room and in daylight. The top levels are pale, the lower ones hold their cyan |
+| 1 | Six map levels, the color at a quarter | Lit and saturated: the top stripes hold full cyan instead of going pale. Two to four levels show; the rest fade into the base. Direct street light can wash the lower ones out |
 | 0 | Six map levels, full color | Dark all over, the full-level stripes too |
 | 0 | Bands, color at a sixteenth | Dark |
 | -2, -4 | Bands, full color | Dark |
@@ -173,7 +174,7 @@ Measured on game 2.5 on 2026-11-05 with the glow check (`docs/testing.md`), on m
 |---|---|
 | **EmissiveEV 0 or below is off** | There is no separate switch: this value is it, and no map or color brings the glow back. It fits metal_base's default (EV 0, black color). No material with a color in the game's survey sits between EV 0 and 1.45. So the survey's EV 0 materials are probably unlit states, not dim glows (unverified) |
 | **The map dims smoothly above it** | Levels hold in steps, down to an eighth, with hard edges kept. So a glow map's own brightness carries through |
-| **The rule** | EmissiveEV = 1 + log2(strength), never below 1. Strength 1 is a soft glow for small details, 8 is white-hot. Under strength 1 the color dims instead (unverified in the game until the last glow check) |
+| **The rule** | EmissiveEV = 1 + log2(strength), never below 1. Strength 1 is a soft glow for small details, 8 is white-hot. Under strength 1 the color dims instead, which holds the color best: strength 0.25 is a saturated glow. About an eighth of strength 1 is the limit of what shows on a full-white map; `materialsFromModel` says so below it |
 | **Bright is normal** | Of 98 glowing metal_base materials surveyed, 33 sit at EV 6 or more, and 79 of the 94 maps measured are plain `white.xbm`. A white middle with a colored rim is how a lamp looks in this game |
 
 **Unverified:** where exactly the glow starts between EV 0 and 1, and the shader's formula (2^EV - 1 would fit, a guess). Whether EmissiveColor is read as sRGB. How ray tracing changes it. One early run contradicts the table: its archive was meant to be EV 0 and glowed, white with a thin rim, brighter than the confirmed EV 1. It was not read back at the time, so the earlier EV 2 archive was probably still in place.
