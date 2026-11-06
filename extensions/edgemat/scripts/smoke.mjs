@@ -305,10 +305,10 @@ try {
   // Materials from a model: glow and the metal map in a .mi's values (EDGEmat #4, #6).
   const glowMi = core.texturedMaterialJson({ baseColor: core.WhiteTexture, baseColorScale: [0.5, 0.25, 1], metalnessMap: "x\\m01.xbm", metalnessScale: 1, emissive: { map: core.WhiteTexture, color: [255, 188, 0], ev: core.glowEV(3) } }).Data.RootChunk.values;
   const val = (k) => glowMi.find((e) => k in e)?.[k];
-  check(core.glowEV(1) === 4 && core.glowEV(2) === 5 && val("EmissiveEV") === 5.585 && val("EmissiveColor")?.Green === 188 && val("Emissive")?.DepotPath.$value === core.WhiteTexture && val("BaseColorScale")?.Z === 1 && val("Metalness")?.DepotPath.$value === "x\\m01.xbm",
-    `materials from a model: glow at EV ${core.glowEV(3)} for strength 3 (4 + log2), its color as 0 to 255, white for a whole part; a color factor and a metal map`);
-  check(core.glowEV(1 / 16) === 0 && core.glowDim(1 / 16) === 1 && core.glowEV(1 / 256) === 0 && core.glowDim(1 / 256) === 1 / 16 && core.glowDim(1) === 1,
-    "materials from a model: EV stops at 0; below it the color dims instead");
+  check(core.glowEV(1) === 1 && core.glowEV(2) === 2 && val("EmissiveEV") === 2.585 && val("EmissiveColor")?.Green === 188 && val("Emissive")?.DepotPath.$value === core.WhiteTexture && val("BaseColorScale")?.Z === 1 && val("Metalness")?.DepotPath.$value === "x\\m01.xbm",
+    `materials from a model: glow at EV ${core.glowEV(3)} for strength 3 (1 + log2), its color as 0 to 255, white for a whole part; a color factor and a metal map`);
+  check(core.glowEV(1 / 4) === 1 && core.glowDim(1 / 4) === 1 / 4 && core.glowEV(1 / 256) === 1 && core.glowDim(1 / 256) === 1 / 256 && core.glowDim(1) === 1 && core.glowDim(4) === 1,
+    "materials from a model: EV stops at 1, since the game shows no glow at 0 or below; under it the color dims instead");
   const dotsTile = core.tiling(dots), rampTile = core.tiling(ramp), seamTile = core.tiling(core.makeSeamless(ramp));
   check(dotsTile.across && !dotsTile.down && !rampTile.across && !rampTile.down && seamTile.across && seamTile.down,
     `tiling: dots tile across, not down (cut at the bottom); a ramp neither way; the ramp made seamless both ways`);

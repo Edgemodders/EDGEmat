@@ -149,13 +149,34 @@ The goal for a modder: preview meshes with their appearances and materials in RE
 
 | Feature | What it does | Phase |
 |---|---|---|
-| **Materials from a textured model** | Turns a model's PBR textures (base color, normal, metallic-roughness, emissive) into the game's material for plain textured assets: a `.mi` on `engine\materials\metal_base.remt` (the usual choice for custom assets, unverified for all cases), with the images imported as `.xbm`. Handles the format gaps: glTF packs roughness and metalness in one image; normal-map conventions may differ (unverified). **Built 2026-11-04** for EDGEfab (#4, with glow from #6): core `materialsFromModel` (`fromModel.ts`), MCP `mat_from_model`, the API's `materialsFromModel`. metal_base takes every map glTF has: the packed map is split (green Roughness, blue Metalness), a flat channel becomes a value, the color factor is BaseColorScale; glow is Emissive (the map, or the game's `white.xbm` for a whole part), EmissiveColor and EmissiveEV = 4 + log2(strength) (strength 1 seen in the game on 2026-11-05: very bright, a full-white map washes out to white; strength 0.25 looked the same; the base is undecided until a lower strength is seen). Left out and said: ambient occlusion, transparency, texture transforms, a second UV set | M4 |
+| **Materials from a textured model** | Turns a model's PBR textures (base color, normal, metallic-roughness, emissive) into the game's material for plain textured assets: a `.mi` on `engine\materials\metal_base.remt` (the usual choice for custom assets, unverified for all cases), with the images imported as `.xbm`. Handles the format gaps: glTF packs roughness and metalness in one image; normal-map conventions may differ (unverified). **Built 2026-11-04** for EDGEfab (#4, with glow from #6): core `materialsFromModel` (`fromModel.ts`), MCP `mat_from_model`, the API's `materialsFromModel`. metal_base takes every map glTF has: the packed map is split (green Roughness, blue Metalness), a flat channel becomes a value, the color factor is BaseColorScale; glow is Emissive (the map, or the game's `white.xbm` for a whole part), EmissiveColor and EmissiveEV = 1 + log2(strength), never below 1 ("How glow works in the game"). Left out and said: ambient occlusion, transparency, texture transforms, a second UV set | M4 |
 | **Generate a material** | A new material from words ("brown leather") through an AI image service the modder chose, or from a photo. [Below](#generate-a-material) | M4 |
 | **Game materials on a new mesh** | A surface and color, or a game `.mi`, picked from the game and put on a new mesh. [Below](#game-materials-on-a-new-mesh) | M4 |
 | **Looks editor** | A mesh's appearances: list them, see each on the model, pick the material for each submesh, add a look, duplicate a look as a variant. Writes the mesh's `appearances` and `materialEntries` | M4 (recolor's "save as new look" in M3) |
 | **Layered materials for new assets** | A multilayered material with several layers on a custom model needs masks painted for its UVs: mask painting (a later feature in the behavior spec) becomes how a modder makes one | M6 |
 
 **For EDGEfab** (owner, 2026-10-19): EDGEfab makes clothes and objects, and gets their materials from EDGEmat in one of two ways: a new material made by Generate (EDGEmat calls the image service), or an existing game material picked and applied. It calls EDGEmat's API from its extension, and an assistant calls EDGEmat's MCP tools (`mat_generate`, `mat_find`, `mat_colors`, `mat_apply`). Fitting clothes to the body is EDGEfab's and Blender's ([EDGEfab design, "Clothing"](https://edgemodders.github.io/EDGEfab/design.html#clothing-fitting-to-the-body)).
+
+### How glow works in the game
+
+Measured on game 2.5 on 2026-11-05 with the glow check (`docs/testing.md`), on metal_base, wearing the cowboy hat with a cyan glow. These are what EDGEmat's glow is built on.
+
+| EmissiveEV | Map and color | In the game |
+|---|---|---|
+| 4 | Full-white map, full color | Washes out to white, with a wide bloom and a tint on nearby clothing. Color only at the edges and in the halo |
+| 1 | Six map levels, full color | Lit, with no wide bloom. All six levels show, full down to an eighth, in a dark room and in daylight. The top levels are pale, the lower ones hold their cyan |
+| 0 | Six map levels, full color | Dark all over, the full-level stripes too |
+| 0 | Bands, color at a sixteenth | Dark |
+| -2, -4 | Bands, full color | Dark |
+
+| What it means | Detail |
+|---|---|
+| **EmissiveEV 0 or below is off** | There is no separate switch: this value is it, and no map or color brings the glow back. It fits metal_base's default (EV 0, black color). No material with a color in the game's survey sits between EV 0 and 1.45. So the survey's EV 0 materials are probably unlit states, not dim glows (unverified) |
+| **The map dims smoothly above it** | Levels hold in steps, down to an eighth, with hard edges kept. So a glow map's own brightness carries through |
+| **The rule** | EmissiveEV = 1 + log2(strength), never below 1. Strength 1 is a soft glow for small details, 8 is white-hot. Under strength 1 the color dims instead (unverified in the game until the last glow check) |
+| **Bright is normal** | Of 98 glowing metal_base materials surveyed, 33 sit at EV 6 or more, and 79 of the 94 maps measured are plain `white.xbm`. A white middle with a colored rim is how a lamp looks in this game |
+
+**Unverified:** where exactly the glow starts between EV 0 and 1, and the shader's formula (2^EV - 1 would fit, a guess). Whether EmissiveColor is read as sRGB. How ray tracing changes it. One early run contradicts the table: its archive was meant to be EV 0 and glowed, white with a thin rim, brighter than the confirmed EV 1. It was not read back at the time, so the earlier EV 2 archive was probably still in place.
 
 ### Generate a material
 

@@ -1,8 +1,8 @@
 // The glow check (EDGEmat #6): glow through materialsFromModel, on an item V wears, to settle in the game
-// how bright glTF's emissive strengths look (EmissiveEV = 4 + log2(strength), unverified) and that a glow
+// how bright glTF's emissive strengths look (EmissiveEV = 1 + log2(strength)) and that a glow
 // map lights only its white parts. Every material of the item's look becomes a dark grey material with a
 // glow: by default in bands across the texture (a map), or over the whole item with --whole. Packed into
-// the project's packed folder. Below strength 0.0625 (EV 0) the color dims instead of the EV. Run `npm run
+// the project's packed folder. Below strength 1 (EV 1) the color dims instead of the EV. Run `npm run
 // build` first. Steps: docs/testing.md, "Glow check".
 //
 //   node scripts/glow-check.mjs <project folder> [--item Items.Hat_02_basic_01] [--body feminine]

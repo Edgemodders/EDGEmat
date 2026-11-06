@@ -23,28 +23,21 @@ import { imageAsPng, materialSlug } from "./material";
 import { readJson } from "./project";
 
 /**
- * Glow's brightness: EmissiveEV = base + log2(strength), so each doubling of glTF's strength is one EV
- * more. Base 4 is near the middle of the game's own glowing metal_base materials (EV 3.95 to 6 for half
- * of 92, median 4.3; EDGEmat's survey, 2026-11-04); in the game, strength 1 on a full-white map
- * washes out to white in a dark room (2026-11-05): too bright for small details, so strength is a choice
- * per material. The base may come down once a lower strength is seen.
- *
- * EV stops at 0. In the game EV 0 still washes out to white while EV -2 and EV -4 show no glow at all, even
- * in the inventory's light (2026-11-05), so a negative EV seemed to switch the glow off, and below EV 0 the
- * color takes the rest (glowDim). In doubt: EV 0 with the color at a sixteenth is solid black too, though the
- * game has lit materials at EV 0 with colors that dim. Strength 1 again lights it (the control), so the drop is real. A ladder map at EV 0 is all dark, so EV 0 and
- * below may simply be off, and this floor of 0 too low: unverified, the ladder at EV 1 is next.
+ * Glow's brightness, measured in the game (2026-11-05; design, "How glow works in the game"): at EmissiveEV 0 or
+ * below metal_base shows no glow at all, whatever the map or color. EV 1 glows, visibly in daylight, without
+ * washing out; EV 4 washes a full-white map out to white with a wide bloom. So EmissiveEV = base + log2(strength),
+ * strength 1 being a soft glow, and never below floor: under it the color dims instead (glowDim).
  */
-export const GlowEV = { base: 4 };
+export const GlowEV = { base: 1, floor: 1 };
 
-/** EmissiveEV for a glTF emissive strength (KHR_materials_emissive_strength; 1 without it). Never below 0. */
+/** EmissiveEV for a glTF emissive strength (KHR_materials_emissive_strength; 1 without it). Never below the floor. */
 export function glowEV(strength: number): number {
-  return Math.max(0, Math.round((GlowEV.base + Math.log2(Math.max(strength, 1e-3))) * 1000) / 1000);
+  return Math.max(GlowEV.floor, Math.round((GlowEV.base + Math.log2(Math.max(strength, 1e-3))) * 1000) / 1000);
 }
 
-/** What EmissiveEV cannot dim: the glow's linear color is multiplied by this (1 down to EV 0, less below it). */
+/** What EmissiveEV cannot dim: the glow's linear color is multiplied by this (1 down to the floor, less below it). */
 export function glowDim(strength: number): number {
-  return Math.min(1, 2 ** GlowEV.base * strength);
+  return Math.min(1, 2 ** (GlowEV.base - GlowEV.floor) * strength);
 }
 
 /** One material's texture files, as EDGEfab's Prepare writes them beside the model. */
@@ -342,7 +335,6 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
     if (left.length) notes.push(`the mesh's ${left.join(", ")} kept ${left.length === 1 ? "its" : "their"} material: the model has none by ${left.length === 1 ? "that name" : "those names"}`);
   }
   if (out.some((m) => m.textures.some((t) => /_n01\.xbm$/i.test(t)))) notes.push(`normal maps written ${req.flipNormalGreen ? "with green flipped" : "as glTF has them (green up)"}; which way the game reads them is unverified`);
-  if (out.some((m) => m.glow)) notes.push(`glow brightness: EV = ${GlowEV.base} + log2(strength); strength 1 is very bright in the game, too much for small lit details`);
 
   const record = path.join(req.project.raw, folder, `${stem}.from_model.json`);
   fs.mkdirSync(path.dirname(record), { recursive: true });
