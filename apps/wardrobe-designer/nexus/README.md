@@ -1,6 +1,6 @@
 # Wardrobe Designer on Nexus Mods
 
-The source of Wardrobe Designer's own Nexus Mods page, beside EDGEmat's (`nexus/` at the repo root), the way REDnode keeps its app packs' pages. **The page: [mod 36636](https://www.nexusmods.com/cyberpunk2077/mods/36636)**, made by the owner on 2026-10-30 with Nexus's starter text and no files; the first release fills it. It is kept through Nexus's v3 API with `tools/nexus/` (copied from REDnode; keep the copies the same), as EDGEmat's page is.
+The source of Wardrobe Designer's own Nexus Mods page, beside EDGEmat's (`nexus/` at the repo root), the way REDnode keeps its app packs' pages. **The page: [mod 36636](https://www.nexusmods.com/cyberpunk2077/mods/36636)**, made by the owner on 2026-10-30 with Nexus's starter text and no files; the first release fills it. It is kept through Nexus's v3 API with the Nexus tool from [EDGErepo](https://github.com/Edgemodders/EDGErepo) (cloned at the tag `v1` by the release workflow, checked out beside this repo for the npm scripts), as EDGEmat's page is.
 
 | File | What it is |
 |---|---|
@@ -23,7 +23,7 @@ The release workflow `.github/workflows/release-wardrobe.yml` (Actions tab, **Re
 
 Edits made on the Nexus page itself: `npm run wardrobe:nexus:pull` writes the live description here, then merge and commit before the next release, or the release stops before it uploads anything.
 
-**Release tags:** `nexus.json`'s `"tag": "wardrobe-designer-v"` tells `tools/nexus/nexus.mjs` this page's own release tags, so it knows a description an earlier release pushed ([REDnode #30](https://github.com/Edgemodders/REDnode/issues/30), copied 2026-11-03). No pull is needed after a release.
+**Release tags:** `nexus.json`'s `"tag": "wardrobe-designer-v"` tells the Nexus tool this page's own release tags, so it knows a description an earlier release pushed ([REDnode #30](https://github.com/Edgemodders/REDnode/issues/30), copied 2026-11-03). No pull is needed after a release.
 
 ## Before posting: the placeholders
 

@@ -2,7 +2,7 @@
 
 The source of EDGEmat's Nexus Mods page lives here, so updates are edits in the repo, not in Nexus's text box. The same way as REDnode's and REDcode's.
 
-**Live:** https://www.nexusmods.com/cyberpunk2077/mods/35422 (posted by the owner at 0.3.0). Since 2026-10-25 the page is kept through Nexus's v3 API, as REDnode's and REDagent's are: `tools/nexus/` (copied from REDnode; keep the copies the same) and `nexus.json` (the page, the main file, and how a release uploads: Mod Manager Download off, the old version archived). The release workflow's **Update Nexus Mods** box uploads the Nexus zip, adds the changelog and pushes `description.bbcode`.
+**Live:** https://www.nexusmods.com/cyberpunk2077/mods/35422 (posted by the owner at 0.3.0). Since 2026-10-25 the page is kept through Nexus's v3 API, as REDnode's and REDagent's are: the Nexus tool (shared, in [EDGErepo](https://github.com/Edgemodders/EDGErepo); the npm scripts need it checked out beside this repo, `../EDGErepo`, and the release workflow clones it at the tag `v1`) and `nexus.json` (the page, the main file, and how a release uploads: Mod Manager Download off, the old version archived). The release workflow's **Update Nexus Mods** box uploads the Nexus zip, adds the changelog and pushes `description.bbcode`.
 
 | File | What it is |
 |---|---|
@@ -77,7 +77,7 @@ By hand, after `npm run edgemat:package` and `npm run mcp:build`: `npm run relea
 3. The push never overwrites an edit made on Nexus: if the live description is neither the one last pulled nor the one the previous release pushed, the run stops before it builds. Then `npm run nexus:pull`, merge with `git diff`, commit, and run again. `npm run nexus:status` shows the page's version, files and whether its description matches.
 4. Screenshots uploaded on Nexus show in the description as `staticdelivery.nexusmods.com` links; keep them when editing.
 
-The key: in CI the organisation secret `NEXUS_KEY`; on the dev PC the DPAPI file `%APPDATA%\Edgemodders\nexus-key.txt` (`tools/nexus/api.mjs`). Never print it or pass it on a command line.
+The key: in CI the organisation secret `NEXUS_KEY`; on the dev PC the DPAPI file `%APPDATA%\Edgemodders\nexus-key.txt` (EDGErepo's `tools/nexus/api.mjs`). Never print it or pass it on a command line.
 
 Keep these in step with the extension (its README and `docs/changelog.md`):
 

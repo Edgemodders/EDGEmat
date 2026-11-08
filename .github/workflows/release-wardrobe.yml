@@ -17,13 +17,14 @@
 #                                               one archived; the first release makes the main file),
 #                                               with Mod Manager Download on, adds its changelog and
 #                                               pushes apps/wardrobe-designer/nexus/description.bbcode
-#                                               (tools/nexus/nexus.mjs, copied from REDnode; NEXUS_KEY).
+#                                               (the Nexus tool, from EDGErepo at the tag v1; NEXUS_KEY).
 #                                               It checks the page first and stops before building if
 #                                               the description changed on Nexus since the last pull
 #                                               (npm run wardrobe:nexus:pull, merge, commit, run again).
 #                                               If the upload fails after the GitHub release, run
-#                                               tools/nexus/nexus.mjs release on the dev PC with the
-#                                               release's zip: it skips what is already done.
+#                                               node ../EDGErepo/tools/nexus/nexus.mjs release on the
+#                                               dev PC with the release's zip: it skips what is
+#                                               already done.
 #
 # Release gate: make a release only after every test of the builds since the last release has passed
 # (docs/testing.md). Untested or failed means no release.
@@ -91,11 +92,17 @@ jobs:
           node tools/release/notes.mjs "${VERSION}" --wardrobe --out "${RUNNER_TEMP}/notes.md"
           node tools/release/notes.mjs "${VERSION}" --wardrobe --nexus --out "${RUNNER_TEMP}/nexus-notes.txt"
 
+      # The Nexus tool, shared by the Edgemodders repos at this tag (REDnode's docs/edgerepo.md). Outside
+      # the workspace, so nothing packs it.
+      - name: The Nexus tool
+        if: inputs.release && inputs.nexus
+        run: git -c advice.detachedHead=false clone --quiet --depth 1 --branch v1 https://github.com/Edgemodders/EDGErepo "$RUNNER_TEMP/EDGErepo"
+
       - name: Nexus Mods can take this release
         if: inputs.release && inputs.nexus
         env:
           NEXUS_KEY: ${{ secrets.NEXUS_KEY }}
-        run: node tools/nexus/nexus.mjs check apps/wardrobe-designer/nexus --version "${VERSION}"
+        run: node "$RUNNER_TEMP/EDGErepo/tools/nexus/nexus.mjs" check apps/wardrobe-designer/nexus --version "${VERSION}"
 
       - run: npm ci
 
@@ -129,4 +136,4 @@ jobs:
         if: ${{ inputs.release && inputs.nexus && !cancelled() && steps.github.outcome == 'success' }}
         env:
           NEXUS_KEY: ${{ secrets.NEXUS_KEY }}
-        run: node tools/nexus/nexus.mjs release apps/wardrobe-designer/nexus --version "${VERSION}" --zip "${ZIP}" --notes "${RUNNER_TEMP}/nexus-notes.txt"
+        run: node "$RUNNER_TEMP/EDGErepo/tools/nexus/nexus.mjs" release apps/wardrobe-designer/nexus --version "${VERSION}" --zip "${ZIP}" --notes "${RUNNER_TEMP}/nexus-notes.txt"
