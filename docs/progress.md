@@ -55,6 +55,12 @@ Last updated 2026-11-03.
 
 ## Log
 
+### 2026-11-10
+
+| What | Detail |
+|---|---|
+| **A Desk entry's Add to Project has EDGEfab's icon** | Owner's ask: VS Code's new-file icon in place of the **+**, as on EDGEfab's Desk. The Desk's title bar (Add the Desk to Project...) and Find's Add to Desk keep their **+**. Checked in step 8 of [Game Materials name](testing.html#game-materials-name) |
+
 ### 2026-11-06
 
 | What | Detail |

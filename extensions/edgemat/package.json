@@ -282,7 +282,7 @@
         "command": "edgemat.deskEntryToProject",
         "title": "Add to Project...",
         "category": "EDGEmat",
-        "icon": "$(add)"
+        "icon": "$(new-file)"
       },
       {
         "command": "edgemat.renameDeskEntry",
