@@ -19,6 +19,7 @@ Last updated 2026-11-03.
 
 | To-do | Why | Since |
 |---|---|---|
+| Check that the npm token in the Edgemodders secret `NPM_TOKEN` may publish a new package under `@edgemodders` (on npmjs.com: the token's packages and scopes) | `@edgemodders/edgemat-core` is new at the next release; a token for `edgemat-mcp` only would refuse it, after the rest of the release is out | 2026-11-12 |
 | Run [Game Materials name](testing.html#game-materials-name), a quick check through F5 | The rename is new since 0.3.1, so the release gate needs it | 2026-11-06 |
 | Delete `EDGEmat_GlowCheck.archive` from the game's `archive\pc\mod`, with the game closed | It changes the same hat as the Reshape test; the glow check is done | 2026-11-05 |
 | Run [Wardrobe Designer Reshape and keys](testing.html#wardrobe-designer-reshape-and-keys) in the game, on REDnode 0.56.1 (the dev PC has it since 2026-11-03) | W3's first version in the app; with [Wardrobe Designer install](testing.html#wardrobe-designer-install), the gate for Wardrobe Designer's first release | 2026-11-02 |
@@ -54,6 +55,12 @@ Last updated 2026-11-03.
 | [EDGEfab #3](https://github.com/Edgemodders/EDGEfab/issues/3) | Fit a generated mesh onto a game garment, replacing it: weights from the original garment, out of V's body, garment support, both bodies, at the original's path; callable outside VS Code, for Wardrobe Designer's Reshape | Filed 2026-10-31 (owner's ask). Not urgent: fits EDGEfab's F4 Clothing. **2026-11-02 (owner):** EDGEmat builds the fit itself for Wardrobe Designer (core, no VS Code), and it moves into EDGEfab when EDGEfab's development resumes |
 
 ## Log
+
+### 2026-11-12
+
+| What | Detail |
+|---|---|
+| **The core as a package** ([EDGEmat #7](https://github.com/Edgemodders/EDGEmat/issues/7), from EDGEfab) | `packages/edgemat-core` builds `@edgemodders/edgemat-core` from `extensions/edgemat/src/core`: one CommonJS file (about 200 KB) with `.d.ts` types, `pngjs` and `vscode-jsonrpc` as dependencies, the same version as EDGEmat (`tools/version.mjs` keeps it in step). The release workflow's `npm` job publishes it after the MCP server. Checked from a packed copy in a scratch project: `require`, `import`, and EDGEfab's imports type-check (test [Core package](testing.html#core-package)). The issue asked for `keys.mjs` inside it; since #10 the core has no key store, so EDGEfab reads keys from its own environment or passes them in. It goes to npm with EDGEmat's next release, under the release gate; #7 closes then. Its first publish needs `NPM_TOKEN` to make a new package under `@edgemodders` (unverified) |
 
 ### 2026-11-11
 

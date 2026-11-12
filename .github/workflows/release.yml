@@ -8,7 +8,9 @@
 #                                               (VSCE_PAT) and Open VSX (OVSX_PAT), tags the commit
 #                                               v<version> and makes the GitHub release with the files,
 #                                               then publishes the server to npm as
-#                                               @edgemodders/edgemat-mcp with provenance (NPM_TOKEN).
+#                                               @edgemodders/edgemat-mcp and the core as
+#                                               @edgemodders/edgemat-core (EDGEmat #7), both with
+#                                               provenance (NPM_TOKEN).
 #                                               Stops first if that tag exists (raise the version with
 #                                               tools/version.mjs), if it is not run on main, if
 #                                               docs/changelog.md has no section for the version (the
@@ -191,12 +193,23 @@ jobs:
 
       # The bundles, then the license and the notices beside the server (both generated, not committed).
       - name: Build
+        id: build
         run: |
           npm run build
           node tools/release/notices.mjs
           cp dist/THIRD-PARTY-NOTICES.txt LICENSE packages/edgemat-mcp/
+          cp LICENSE packages/edgemat-core/
 
       - name: npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --workspace packages/edgemat-mcp --provenance --access public
+
+      # The core for other tools (EDGEfab), the same version. It bundles only EDGEmat's own code (its
+      # packages are dependencies), so it takes the license and no notices. Runs even if the server's
+      # publish failed, so one does not hold back the other.
+      - name: npm, the core
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --workspace packages/edgemat-core --provenance --access public

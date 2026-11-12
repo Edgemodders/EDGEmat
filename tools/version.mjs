@@ -1,4 +1,4 @@
-// EDGEmat's one version, shared by the extension and the MCP server (the same way as REDnode's
+// EDGEmat's one version, shared by the extension, the MCP server and the core package (the same way as REDnode's
 // tools/version.mjs). The extension's package.json holds it; this script copies it into the rest.
 //
 //   node tools/version.mjs            show the version and where each part stands
@@ -28,6 +28,8 @@ const PARTS = [
   { name: "MCP server", ...json("packages/edgemat-mcp/package.json") },
   { name: "Lock file, extension", ...locked("extensions/edgemat") },
   { name: "Lock file, MCP server", ...locked("packages/edgemat-mcp") },
+  { name: "Core package", ...json("packages/edgemat-core/package.json") },
+  { name: "Lock file, core", ...locked("packages/edgemat-core") },
 ];
 
 const arg = process.argv[2];

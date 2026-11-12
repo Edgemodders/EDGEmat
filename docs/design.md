@@ -40,6 +40,7 @@ Two facts that matter most, both **unverified**:
 | `extensions/edgemat` | The VS Code extension, id `edgemodders.edgemat`, with its own activity bar container: the `.mlsetup` editor, the library and find views ([In VS Code](#in-vs-code)), and the material bake that REDcode's viewer shows ([Preview](#preview-redcode-shows-meshes-edgemat-renders-materials)) |
 | `extensions/edgemat/src/core` | Everything that is not UI: the bridge client, the material library, reading and editing setups, finding an item's materials. **No VS Code imports**, so the MCP server bundles the same code, as `redcode-mcp` does with REDcode's bridge client |
 | `packages/edgemat-mcp` | The MCP server over stdio, for Claude Code, REDagent or any MCP client |
+| `packages/edgemat-core` | The core as an npm package, `@edgemodders/edgemat-core`, for other tools' extensions and MCP servers (EDGEfab's Add to Project calls `materialsFromModel` with its own REDbridge through `bridgeOver`). Built from the same source, released with EDGEmat at the same version. Before 1.0, a change to an export's request or result raises at least the middle number and is named in the changelog ([EDGEmat #7](https://github.com/Edgemodders/EDGEmat/issues/7), built 2026-11-12) |
 | REDbridge | Every game file read and write: archives, CR2W as JSON, textures to PNG, mesh export. EDGEmat asks for new methods as REDbridge issues labelled `request` |
 
 | Relationship | How |

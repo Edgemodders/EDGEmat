@@ -9,6 +9,7 @@ Last updated 2026-10-26.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check and build](#type-check-and-build) | Automated | M1 | 2026-10-16 | Pass |
+| [Core package](#core-package) | Automated by hand, a scratch folder | After 0.3.1 (#7) | 2026-11-12 | **Pass** (Claude): packed and installed in a scratch project; `require` gives 144 exports, `import` works, EDGEfab's imports type-check against its types, no `powershell` or `SecureString` in it |
 | [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's six checks (entries, variations, the move from the old Desk), and the items that wear a mesh look (2026-10-26: the slim-fits' leather look, `Items.Pants_01_basic_01`; index in 11 s), and microblends in the color map (the slim-fits' leather: base 87.1%, denim with lint 0.5%, piping 6.7%) |
 | [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache. 2026-10-26: `mat_desk` add twice reuses the unedited entry (same id); remove of an unknown id is refused. `mat_find` with the slim-fits mesh and look `leather`: `worn_by` `Items.Pants_01_basic_01` (feminine) with its `cet` command; with item `Items.Pants_01_basic_01`, `cet` |
 | [Game Materials view](#game-materials-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass (as the Library view) |
@@ -56,7 +57,21 @@ npm run typecheck
 npm run build
 ```
 
-Expected: no errors; `extensions/edgemat/dist` and `packages/edgemat-mcp/dist` written.
+Expected: no errors; `extensions/edgemat/dist`, `packages/edgemat-mcp/dist` and `packages/edgemat-core/dist` written.
+
+### Core package
+
+Added 2026-11-12 ([EDGEmat #7](https://github.com/Edgemodders/EDGEmat/issues/7)): `@edgemodders/edgemat-core` works for a tool that installs it from npm, as EDGEfab will. In a terminal at the repository root, with a scratch folder outside it.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | `npm run build --workspace packages/edgemat-core`, copy `LICENSE` into `packages/edgemat-core`, `npm pack --pack-destination <scratch>` there, then delete the copy | `edgemodders-edgemat-core-<version>.tgz`: `dist/index.cjs`, its map, `dist/types/*.d.ts`, README, LICENSE, package.json, about 216 KB |
+| 2 | In an empty scratch folder: `npm init -y`, `npm install <the .tgz> typescript @types/node` | `pngjs` and `vscode-jsonrpc` come with it |
+| 3 | `node -e "const c=require('@edgemodders/edgemat-core'); console.log(Object.keys(c).length, typeof c.materialsFromModel)"`, and the same with `node --input-type=module -e "import { materialsFromModel } from '@edgemodders/edgemat-core'; ..."` | A count (144 on 2026-11-12) and `function`, both ways |
+| 4 | A `.ts` file with EDGEfab's imports (`bridgeOver`, `materialsFromModel`, `projectAt`, `BridgeClient`, `isGameFolder`, `resolveBridge`, `resolveGame`, `vscodeUserSettings`, `readPng`, `writePng` and the types `BridgeCall`, `FromModelMaterial`, `ModelGlow`, `Image`), `tsc --noEmit` with `module` `Node16` and `strict` | No errors |
+| 5 | Search `node_modules/@edgemodders/edgemat-core/dist/index.cjs` for `powershell` and `SecureString` | None |
+
+Last run 2026-11-12 by Claude: every step as expected.
 
 ### Smoke test: the library against the game
 

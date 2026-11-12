@@ -1,0 +1,58 @@
+{
+  "name": "@edgemodders/edgemat-core",
+  "version": "0.3.1",
+  "description": "EDGEmat's core as a library: Cyberpunk 2077 materials (.mlsetup, .mi, .xbm) read, edited and made from your own game, for other tools' extensions and MCP servers.",
+  "license": "MIT",
+  "author": "Edgemodders",
+  "homepage": "https://edgemodders.github.io/EDGEmat/",
+  "keywords": [
+    "cyberpunk2077",
+    "modding",
+    "materials",
+    "mlsetup",
+    "wolvenkit",
+    "redbridge"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Edgemodders/EDGEmat.git",
+    "directory": "packages/edgemat-core"
+  },
+  "type": "commonjs",
+  "main": "dist/index.cjs",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/index.cjs",
+    "dist/index.cjs.map",
+    "dist/types",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node esbuild.mjs && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "pngjs": "7.0.0",
+    "vscode-jsonrpc": "^9.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pngjs": "^6.0.5",
+    "esbuild": "^0.28.2",
+    "typescript": "~5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

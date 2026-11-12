@@ -44,6 +44,10 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 - When Google Gemini sent no image because its answer came too close to a picture it knows (`IMAGE_RECITATION`), Generate stopped. It now asks once more with slightly changed words before saying why.
 - With Google Gemini, Generate's first choice of model was always the "Lite" one, because the check for small models also matched the "mini" in "Gemini". It now picks the newest full model the key can use (Nano Banana 2 today), which follows the words better and costs a little more; the model list still offers the others.
 
+**Other**
+
+- EDGEmat's core is on npm as `@edgemodders/edgemat-core`, for other tools: EDGEfab uses it to give a new item its materials from a model. The same version as EDGEmat. Modders don't need it.
+
 ## 0.3.1 (2026-10-21)
 
 EDGEmat's MCP server now comes with the extension, so an assistant needs no separate download.
