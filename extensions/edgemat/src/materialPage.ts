@@ -3,13 +3,14 @@
 // a take; the chosen one is made seamless, its bumps and shine derived, and it is written into a project
 // and put on the mesh materials the page was opened for. The key never reaches the page: the page asks,
 // the extension calls the service. Nothing is sent until the modder presses Generate or lists models.
-// The keys are the EDGE tools' shared ones (REDnode #23): set once here or in any EDGE tool, used by all.
+// The keys are in VS Code's secret storage, one per service; an environment variable (GEMINI_API_KEY,
+// OPENAI_API_KEY) wins. Not the EDGE tools' shared key store, shelved on 2026-11-11 (EDGEmat #10).
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  checkKey, generateImage, hasKey, imageAsPng, listModels, sharedKeys, makeMaterial, makeSeamless, materialSlug, readPng, resize, squareCrop, tiling, writePng, Services,
+  checkKey, envKey, generateImage, imageAsPng, listModels, makeMaterial, makeSeamless, materialSlug, readPng, resize, squareCrop, tiling, writePng, Services,
   type BridgeClient, type DetailSize, type MadeBy, type MaterialTarget, type Project, type Quality, type ServiceId, type Shine,
 } from "./core";
 
@@ -50,9 +51,8 @@ export interface Take {
   name: string;
 }
 
-/** Where EDGEmat 0.3 kept a key, before the shared store: moved once by moveOldKeys. */
-const KeySecret = (s: ServiceId) => `edgemat.${s}.apiKey`;
-const Tool = "EDGEmat";
+/** Where a key is kept in VS Code's secret storage (the same names since 0.3.0). */
+export const KeySecret = (s: ServiceId) => `edgemat.${s}.apiKey`;
 const MaxTakes = 20;
 const PreviewSize = 512;
 
@@ -102,7 +102,7 @@ export class MaterialPage {
 
   private async data(): Promise<MaterialPageData> {
     const g = this.context.globalState;
-    const services = await Promise.all((Object.keys(Services) as ServiceId[]).map(async (id) => ({ id, name: Services[id].name, hasKey: hasKey(id) })));
+    const services = await Promise.all((Object.keys(Services) as ServiceId[]).map(async (id) => ({ id, name: Services[id].name, hasKey: !!(envKey(id) ?? (await this.context.secrets.get(KeySecret(id)))) })));
     return {
       target: this.target,
       service: g.get<ServiceId>("edgemat.generate.service") ?? "gemini",
@@ -113,9 +113,9 @@ export class MaterialPage {
     };
   }
 
-  /** The service's key: from the shared store, else asked for once in a password box. */
+  /** The service's key: from the environment, else VS Code's secret storage, else asked for once in a password box. */
   async key(service: ServiceId, ask = true): Promise<string | undefined> {
-    const k = await sharedKeys.getKey(service, { tool: Tool });
+    const k = envKey(service) ?? (await this.context.secrets.get(KeySecret(service)))?.trim();
     if (k || !ask) return k;
     return this.setKey(service);
   }
@@ -126,22 +126,22 @@ export class MaterialPage {
     const info = Services[s];
     const k = await vscode.window.showInputBox({
       title: `EDGEmat: ${info.name} API key`,
-      prompt: `For Generate. Kept encrypted for your Windows account in the EDGE tools' shared key store, so every EDGE tool that needs it uses it too, and sent only to ${info.name}. Make one at ${info.keyFrom}.`,
+      prompt: `For Generate. Kept encrypted in VS Code's secret storage, for EDGEmat only, never in settings, and sent only to ${info.name}. Make one at ${info.keyFrom}.`,
       password: true,
       ignoreFocusOut: true,
       validateInput: (v) => (v.trim() ? checkKey(s, v) : null),
     });
     if (!k?.trim()) return undefined;
-    await sharedKeys.setKey(s, k.trim());
+    await this.context.secrets.store(KeySecret(s), k.trim());
     return k.trim();
   }
 
   async clearKey(): Promise<void> {
     const s = await pickService("Clear the API key for");
     if (!s) return;
-    const go = await vscode.window.showWarningMessage(`Clear the ${Services[s].name} API key?`, { modal: true, detail: "It is the EDGE tools' shared key: every EDGE tool that uses it asks for it again." }, "Clear It");
+    const go = await vscode.window.showWarningMessage(`Clear the ${Services[s].name} API key?`, { modal: true, detail: `Generate asks for it again.${envKey(s) ? ` ${Services[s].env} is set in your environment, so EDGEmat goes on using that one.` : ""}` }, "Clear It");
     if (!go) return;
-    await sharedKeys.removeKey(s);
+    await this.context.secrets.delete(KeySecret(s));
     void vscode.window.showInformationMessage(`EDGEmat: the ${Services[s].name} API key is cleared.`);
   }
 
@@ -256,31 +256,6 @@ export class MaterialPage {
 <style nonce="${nonce}">${Css}</style></head>
 <body><script id="data" type="application/json" nonce="${nonce}">${json}</script>
 <script nonce="${nonce}" src="${script}"></script></body></html>`;
-  }
-}
-
-/**
- * Moves keys EDGEmat 0.3 kept in VS Code's secret storage into the shared store, once: a key already in
- * the store wins, and the old copy is deleted either way.
- */
-export async function moveOldKeys(context: vscode.ExtensionContext, log: (line: string) => void): Promise<void> {
-  const moved: string[] = [];
-  for (const id of Object.keys(Services) as ServiceId[]) {
-    try {
-      const old = await context.secrets.get(KeySecret(id));
-      if (!old) continue;
-      if (!hasKey(id)) {
-        await sharedKeys.setKey(id, old);
-        moved.push(Services[id].name);
-      }
-      await context.secrets.delete(KeySecret(id));
-    } catch (e) {
-      log(`Keys: could not move the ${Services[id].name} key to the shared store: ${e instanceof Error ? e.message : String(e)}`);
-    }
-  }
-  if (moved.length) {
-    log(`Keys: moved the ${moved.join(" and ")} key to the shared store`);
-    void vscode.window.showInformationMessage(`EDGEmat: your ${moved.join(" and ")} key is now in the EDGE tools' shared key store, so EDGEmat's assistant tools and other EDGE tools use it too.`);
   }
 }
 

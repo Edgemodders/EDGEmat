@@ -6,7 +6,7 @@
 //
 // Options win, then the variables EDGEMAT_GAME_PATH, REDBRIDGE_EXE, EDGEMAT_CACHE (EDGEchat passes these); without them
 // (or with empty ones) it finds the game and REDbridge as the extension does, from the VS Code settings (edgemat.*, then
-// redcode.*). Image keys: GEMINI_API_KEY, OPENAI_API_KEY. The bridge starts only when a tool needs it; inside REDnode
+// redcode.*). Keys, from the environment only: GEMINI_API_KEY, OPENAI_API_KEY, TRIPO_API_KEY. The bridge starts only when a tool needs it; inside REDnode
 // (REDNODE_BRIDGE_URL and REDNODE_BRIDGE_TOKEN set) it uses REDnode's REDbridge instead of starting its own.
 // stdout is the MCP channel; logs go to stderr.
 
@@ -19,7 +19,7 @@ import { z } from "zod";
 import {
   addToInventory, applyLayerEdit, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, describeSurface, findSurface, gamePathInProject, isGameFile, itemMaterials, itemsWearing, loadItems, meshesToPoint, meshesUsing, meshMaterials, newPathFor, openSetup, patchFromWords, projectAt,
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
-  applyMaterial, materialsFromModel, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, hasKey, imageAsPng, makeMaterial, materialSlug, sharedKeys, texturePrompt, Services,
+  applyMaterial, materialsFromModel, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, envKey, imageAsPng, makeMaterial, materialSlug, texturePrompt, Services,
   bridgeOver, loadReshape, readPng, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, resize, Tripo, writePng,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type PatternImage, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
@@ -378,7 +378,7 @@ server.registerTool(
       "Restyles a clothing item, as EDGEmat's Wardrobe Designer does in the game: one call from the item to a project. Without materials, returns the item's look (its meshes and each layered material's shown layers in plain words), which is what to plan on. " +
       "With materials (a recipe: for each setup, the layer changes in words, as mat_edit takes them), applies it with mat_edit's checks: each changed setup is saved beside the game's under a new name, and the look's meshes are copied into the project and pointed at it, so it shows in the game with no other mod once packed and installed (REDcode: Pack and Try). " +
       "A layer change that cannot be made is skipped and said in notes; the rest go in. Run it again on the same project and it starts from the restyled copy. body: the look for one body; default every body's look. " +
-      "patterns (prints such as polka dots, stripes or camo): each makes a texture from its words through the user's AI image service and puts it over that whole material, as mat_generate does; it spends their credits with their own key (the EDGE tools' shared key store, or GEMINI_API_KEY or OPENAI_API_KEY). How to plan:\n" +
+      "patterns (prints such as polka dots, stripes or camo): each makes a texture from its words through the user's AI image service and puts it over that whole material, as mat_generate does; it spends their credits with their own key (GEMINI_API_KEY or OPENAI_API_KEY in this server's environment). How to plan:\n" +
       RestyleBrief,
     inputSchema: {
       item: z.string().describe("A clothing record id (Items.Q001_Pants), or words matching one item"),
@@ -445,9 +445,9 @@ server.registerTool(
   {
     description:
       "Changes a clothing item's shape by words, as Wardrobe Designer's Reshape does, a step at a time into a WolvenKit project. step views: draws the item's look from four sides (front, left, back, right) as one picture and says whether it can be fitted yet " +
-      "(garments that move with one bone, such as hats, helmets and glasses, for now). step change: an AI image service changes that picture by words ('make the brim twice as wide'); OpenAI's GPT Image by default, from the EDGE tools' shared key store, spending the user's credits " +
+      "(garments that move with one bone, such as hats, helmets and glasses, for now). step change: an AI image service changes that picture by words ('make the brim twice as wide'); OpenAI's GPT Image by default, with OPENAI_API_KEY or GEMINI_API_KEY from this server's environment, spending the user's credits " +
       "(a few tens of US cents); each change builds on the last unless from is 'game'. Look at the picture it returns before going on: Tripo and the fit follow it faithfully, mistakes included (an old part kept beside the new one). step back: takes the last change away. " +
-      "step make: Tripo makes a 3D model from the last change's four views and brings it to a game's face count (about 60 Tripo credits and 4 minutes, the user's Tripo key), then fits it onto the garment and imports it over the look's mesh in the project with Tripo's texture as its material. " +
+      "step make: Tripo makes a 3D model from the last change's four views and brings it to a game's face count (about 60 Tripo credits and 4 minutes, the user's Tripo key, TRIPO_API_KEY in this server's environment), then fits it onto the garment and imports it over the look's mesh in the project with Tripo's texture as its material. " +
       "Pack and install the project afterwards (REDcode: Pack and Try), or let Wardrobe Designer swap it in. Only the chosen body's mesh and its look's material are changed.",
     inputSchema: {
       item: z.string().describe("A clothing record id (Items.Hat_02_basic_01), or words matching one item"),
@@ -503,8 +503,8 @@ server.registerTool(
       const change = v.changes.at(-1);
       if (!change) return failure(new Error("No change yet: call step change with words first."));
       if (!v.fit.ok) return failure(new Error(`${it.name ?? it.id} cannot be fitted yet: ${v.fit.why}. Tripo was not asked.`));
-      const tripoKey = await sharedKeys.getKey("tripo", { tool: "EDGEmat MCP" });
-      if (!tripoKey) return failure(new Error("No Tripo key: set one in REDnode's Keys (or any EDGE tool), or TRIPO_API_KEY in the MCP server's environment."));
+      const tripoKey = envKey("tripo");
+      if (!tripoKey) return failure(new Error("No Tripo key: set TRIPO_API_KEY in the MCP server's environment (for Claude Code: claude mcp add ... -e TRIPO_API_KEY=<key>). Tripo was not asked."));
       const made = await reshapeModel(new Tripo(tripoKey, { log }), v, change, { task, log });
       const r = await reshapeFit(b, v, change, made, proj, { folder: `edgemat\\reshape\\${materialSlug(change.words)}`, log });
       return {
@@ -608,14 +608,14 @@ const materialOutResult = (r: MaterialResult, project: string) => ({
     : "Not put on any mesh: pass targets (mat_find lists meshes and material names), or mat_apply the .mi later.",
 });
 
-const HowToSetKey = "Set one in VS Code with EDGEmat's command Set Image Service Key... (it goes in the EDGE tools' shared key store), or set GEMINI_API_KEY or OPENAI_API_KEY in the MCP server's environment.";
+const HowToSetKey = "Set GEMINI_API_KEY or OPENAI_API_KEY in the MCP server's environment: in VS Code, EDGEmat's Connect an Assistant (MCP)... can include the key EDGEmat holds; for Claude Code by hand, claude mcp add ... -e OPENAI_API_KEY=<key>.";
 
 /** The image service to use (the one asked for, else the first with a key) and its key; throws in words when there is none. */
 async function imageKey(service?: ServiceId): Promise<{ service: ServiceId; key: string }> {
-  const s: ServiceId | undefined = service ?? (hasKey("gemini") ? "gemini" : hasKey("openai") ? "openai" : undefined);
+  const s: ServiceId | undefined = service ?? (envKey("gemini") ? "gemini" : envKey("openai") ? "openai" : undefined);
   if (!s) throw new Error(`No image service key. ${HowToSetKey}`);
-  const key = await sharedKeys.getKey(s, { tool: "EDGEmat MCP" });
-  if (!key) throw new Error(`No ${Services[s].name} key, or one made by another Windows user. ${HowToSetKey}`);
+  const key = envKey(s);
+  if (!key) throw new Error(`No ${Services[s].name} key. ${HowToSetKey}`);
   return { service: s, key };
 }
 
@@ -633,7 +633,7 @@ server.registerTool(
   {
     description:
       "Makes a new material from words through an AI image service, as EDGEmat's New Material page does: the image is made seamless, bumps and shine are derived, and it is written into a WolvenKit project " +
-      "as textures and a textured .mi (metal_base), and put on the target mesh materials. Spends the user's credits with their own key, from the EDGE tools' shared key store (set once in EDGEmat's Set Image Service Key... or any EDGE tool), or the environment: GEMINI_API_KEY (service gemini) or OPENAI_API_KEY (service openai). " +
+      "as textures and a textured .mi (metal_base), and put on the target mesh materials. Spends the user's credits with their own key, from this server's environment: GEMINI_API_KEY (service gemini) or OPENAI_API_KEY (service openai). " +
       "words: the material, such as 'worn brown leather with fine creases'; EDGEmat adds a prefix asking for a seamless texture in flat light with no text. " +
       "imageOnly true makes only the image and returns its file, to look at before using it with mat_from_image. A generated material replaces a whole material: on a garment it covers every part that material paints.",
     inputSchema: {

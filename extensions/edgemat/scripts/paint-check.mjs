@@ -11,7 +11,7 @@
 //
 // --style sends a picture (png, jpg or webp) beside the words, as Tripo's style image: a swatch of the
 // pattern wanted, for one the words alone do not bring.
-// The Tripo key is read from the shared key store (service "tripo", or TRIPO_API_KEY), never printed.
+// The Tripo key: TRIPO_API_KEY, else the dev PC's shared key store through REDnode's checkout (devKey.mjs), never printed.
 // --task reuses a finished task instead of paying for a new one. --flip turns the painted image upside
 // down, for when it shows mirrored top to bottom in the game. --dry stops before Tripo (no key needed). One Texture task is 10 credits (US$0.10),
 // 20 at "detailed".
@@ -19,7 +19,7 @@
 import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import * as path from "node:path";
-import { getKey } from "../src/core/keys.mjs";
+import { devKey } from "./devKey.mjs";
 
 const require = createRequire(import.meta.url);
 const core = require("../dist/core.js");
@@ -56,18 +56,14 @@ const choice = core.resolveBridge(settings);
 if (!game) fail("no game folder found");
 if (!choice) fail("REDbridge.exe not found");
 const needKey = !dry && !opt("result");
-const key = needKey ? getKey("tripo", { tool: "EDGEmat" }) : undefined;
+const key = needKey ? await devKey("tripo") : undefined;
 // Tripo through the core: its calls, uploads, waits (each change logged) and downloads.
 const client = key ? new core.Tripo(key, { log: (l) => console.log(`  ${l}`) }) : undefined;
 const tripo = (method, route, body) => client.call(method, route, body);
 const upload = (file) => client.upload(file);
 const waitFor = (id) => client.wait(id, (p, s) => console.log(`  ${id}: ${s} ${p}`));
 const download = (url, file) => client.download(url, file);
-if (!key && needKey) {
-  console.error("No Tripo key. Make one in Tripo's developer console (API Keys), then in PowerShell:");
-  console.error(`  New-Item -ItemType Directory -Force "$env:APPDATA\\Edgemodders\\keys" | Out-Null; Read-Host 'Key' -AsSecureString | ConvertFrom-SecureString | Set-Content "$env:APPDATA\\Edgemodders\\keys\\tripo.txt"`);
-  process.exit(1);
-}
+if (!key && needKey) process.exit(1);
 
 function fail(message) {
   console.error(`FAIL: ${message}`);

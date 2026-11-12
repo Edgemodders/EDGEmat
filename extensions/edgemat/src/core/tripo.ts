@@ -1,4 +1,4 @@
-// Tripo's v3 API: an AI 3D service, with the player's own key (shared key store, service "tripo"; never
+// Tripo's v3 API: an AI 3D service, with the player's own key (TRIPO_API_KEY for the MCP server and scripts, REDnode's keys in Wardrobe Designer; never
 // logged). Used by the paint check and Reshape. Plain fetch, cancel through an AbortSignal.
 
 import * as fs from "node:fs";

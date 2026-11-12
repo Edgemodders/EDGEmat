@@ -30,7 +30,7 @@ export { editImage, errorText, generateImage, generateTexture, listModels, textu
 export { imageAsPng, makeMaterial, materialSlug, type MadeBy, type MaterialResult, type MaterialTarget, type NewMaterial, type Shine } from "./material";
 export { applyMaterial, texturedMaterialJson, uvTestPattern, writeTexture, writeTexturedMaterial, MetalBase, TextureTemplates, WhiteTexture, type TexturedMaterial, type TextureKind } from "./apply";
 export { glowDim, glowEV, materialsFromModel, GlowEV, type FromModelMaterial, type FromModelRequest, type FromModelResult, type ModelGlow, type ModelMaterialFiles } from "./fromModel";
-export { checkKey, envName, hasKey, keysDir, sharedKeys } from "./sharedKeys";
+export { checkKey, envKey, KeyEnv, type KeyService } from "./keys";
 export { bridgeOver, type BridgeCall } from "./kernelBridge";
 export { accessor, bbox, imageOf, primitives, readGlb, worldMatrices, writeGlb, type Box, type Glb, type GlbPart } from "./glb";
 export { Tripo, type TripoTask } from "./tripo";

@@ -15,14 +15,14 @@
 // once per work folder; --redraw draws them again and starts the changes over. A change with the same words
 // and model as the last one is kept; --again asks once more; --from game changes the game's look instead
 // of building on the last change; --picture <file> adds a picture made before (or by hand) as the change,
-// with no image service asked. --task reuses a finished Tripo task. Keys come from the shared key store
-// (openai or gemini, tripo), never printed. GPT Image: a few tens of US cents a change. Tripo: about 60
+// with no image service asked. --task reuses a finished Tripo task. Keys come from the environment, else the dev
+// PC's shared key store through REDnode's checkout (devKey.mjs; openai or gemini, tripo), never printed. GPT Image: a few tens of US cents a change. Tripo: about 60
 // credits for the model and its retopology.
 
 import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import * as path from "node:path";
-import { getKey } from "../src/core/keys.mjs";
+import { devKey } from "./devKey.mjs";
 
 const require = createRequire(import.meta.url);
 const core = require("../dist/core.js");
@@ -98,8 +98,8 @@ try {
     // A picture made before (or by hand) as the change: no image service asked.
     change = await core.reshapeAddPicture(bridge, v, fs.readFileSync(path.resolve(opt("picture"))), { words, service, model, from: change?.sheet });
   } else if (args.includes("--again") || !change || change.words !== words.trim() || change.model !== model || opt("from") === "game") {
-    const key = getKey(service, { tool: "EDGEmat" });
-    if (!key) throw new Error(`No ${service} key in the shared key store`);
+    const key = await devKey(service);
+    if (!key) throw new Error(`No ${service} key`);
     change = await core.reshapeChange(bridge, v, words, { key, what, service, model, from: opt("from", "last"), log });
   } else {
     console.log(`  the same words and model as the last change: kept (--again for a new one)`);
@@ -110,8 +110,8 @@ try {
   if (until === "fit" && !v.fit.ok) throw new Error(`Not fitted: ${v.fit.why}. Tripo was not asked.`);
 
   // 3. Model.
-  const key = getKey("tripo", { tool: "EDGEmat" });
-  if (!key) throw new Error("No Tripo key in the shared key store (service tripo)");
+  const key = await devKey("tripo");
+  if (!key) throw new Error("No Tripo key");
   const tripo = new core.Tripo(key, { log });
   const balance = await tripo.balance();
   if (balance !== undefined) console.log(`  Tripo: ${balance} credits`);
