@@ -517,7 +517,7 @@ Added 2026-10-21, when REDcode marked `.mlsetup` files in its Project view for E
 |---|---|---|
 | 1 | VS Code's Explorer (`Ctrl+Shift+E`): click the `.mlsetup` once | It opens straight in EDGEmat's setup editor, since EDGEmat is VS Code's default editor for `.mlsetup` files: layers in plain words, the Save to Project button in the tab's title bar |
 | 2 | Right-click the same `.mlsetup` in the Explorer | **Open Material in EDGEmat...**, the menu's first item. Choose it: the setup editor's tab comes forward. The entry is for bringing a file back into EDGEmat after another editor opened it (step 3) |
-| 3 | Open the same file in another editor (right-click › Open With... › a text or CR2W editor), then right-click its tab | **Open Material in EDGEmat...** in the tab's menu; it opens the setup editor |
+| 3 | Open the same file in REDcode's editor: in the Explorer, right-click the `.mlsetup` › **Open With...** › in the list at the top of the window, **REDcode CR2W Editor**. A second tab opens with the file's raw fields. Right-click that tab's name in the tab bar | **Open Material in EDGEmat...** in the tab's menu. Choose it: EDGEmat's setup editor tab comes forward |
 | 4 | With REDcode 0.10.3 or later: REDcode's Project view, right-click the `.mlsetup` | **Open Material in EDGEmat...**; it opens the setup editor |
 | 5 | Right-click a `.mltemplate` under `source\archive` (in the Explorer) › **Open Material in EDGEmat...** | Its surface page, when the surface is in the library; else "not in the library" |
 | 6 | Right-click a `.mesh` or `.xbm` | No EDGEmat entry |
