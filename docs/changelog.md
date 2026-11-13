@@ -39,6 +39,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **Fixed**
 
+- Long game paths in the tooltips of Find, the Desk and Game Materials (a material's setup and mask, a surface's or microblend's path) were cut off at the tooltip's right edge. They now wrap.
 - **Clear the Desk...** could stop with an error (ENOTEMPTY, "Directory not empty") when Windows still held one of the Desk's files, such as a setup or 3D view still open, and leave the Desk half cleared. The Desk now empties first and retries the files; any Windows still holds are deleted when EDGEmat next starts, and a note says so. The same for taking a line off and Add and Clear.
 - **Connect an Assistant (MCP)...** › **Copy the Claude Code command** left out your image service key's `-e`, though its message said to put your key in place of `<key>`. The copied line now has `-e OPENAI_API_KEY=<key>` (or Gemini's) for each key you set, never the key itself.
 - A material of a mesh in your project opened the game's setup even when your project held its own copy, such as one saved with Save to Project. It now opens your project's copy.

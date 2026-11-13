@@ -3,6 +3,7 @@
 
 import * as vscode from "vscode";
 import { byCategory, searchMicroblends, searchTemplates, thumbnailFile, type Library, type Microblend, type Template } from "./core";
+import { appendPaths } from "./tips";
 
 type Node =
   | { kind: "surfaces"; templates: Template[] }
@@ -115,7 +116,7 @@ export class LibraryView implements vscode.TreeDataProvider<Node> {
         const tip = new vscode.MarkdownString();
         if (m.thumbnail) tip.appendMarkdown(`![](${vscode.Uri.file(thumbnailFile(this.cacheDir, m.thumbnail)).toString()}|width=96)\n\n`);
         tip.appendMarkdown(`**${title}**\n\nMicroblend: a small detail texture that breaks up a layer's mask edge\n\n`);
-        tip.appendCodeblock(m.path, "text");
+        appendPaths(tip, [["", m.path]]);
         item.tooltip = tip;
         return item;
       }
@@ -134,7 +135,7 @@ export class LibraryView implements vscode.TreeDataProvider<Node> {
     tip.appendMarkdown(`**${t.title}**\n\n`);
     tip.appendMarkdown(`${plural(t.colors.length, "color")} · ${plural(t.roughLevelsOut.length, "roughness level")} · ${plural(t.normalStrength.length, "normal strength")}\n\n`);
     tip.appendMarkdown(`Tiling ${t.tiling} · ${t.textures.metalness?.includes("\\default\\") ? "no metal map" : "own metal map"}\n\n`);
-    tip.appendCodeblock(t.path, "text");
+    appendPaths(tip, [["", t.path]]);
     item.tooltip = tip;
     return item;
   }

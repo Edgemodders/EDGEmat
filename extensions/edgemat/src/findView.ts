@@ -8,6 +8,7 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import { deskLabel, deskProjectName, itemMaterials, itemsWearing, loadItems, meshMaterials, searchItems, type BridgeClient, type Desk, type DeskEntry, type ItemEntry, type ItemLook, type MaterialTarget, type MaterialUse, type MeshLook, type WornBy } from "./core";
 import { gameUri, optionsQuery, SetupEditor } from "./setupEditor";
+import { appendPaths } from "./tips";
 
 export type Node =
   | { kind: "group"; label: string; children: Node[] }
@@ -243,17 +244,17 @@ export class FindView implements vscode.TreeDataProvider<Node> {
           t.description = `${edited ? "edited on the Desk · " : ""}multilayered · ${file(u.setup ?? "no setup")}`;
           t.iconPath = new vscode.ThemeIcon("layers");
           md.appendMarkdown(`Multilayered. Click to open its setup with the mask set this material names.${node.desk ? " Ctrl+S in the setup editor saves it on the Desk." : ""}\n\n`);
-          md.appendCodeblock(`setup ${u.setup ?? "(none)"}\nmask  ${u.mask ?? "(none)"}${u.globalNormal ? `\nnormal ${u.globalNormal}` : ""}`, "text");
+          appendPaths(md, [["setup", u.setup ?? "(none)"], ["mask", u.mask ?? "(none)"], ...(u.globalNormal ? [["normal", u.globalNormal] as [string, string]] : [])]);
           if (u.setup) t.command = { command: "edgemat.openFoundSetup", title: "Open Setup", arguments: [u.setup, u.mask, node.via, node.root, node.desk, node.mesh, node.look] };
           t.contextValue = "edgemat.gamePath edgemat.material";
         } else {
           t.description = file(u.base || "unknown material");
           t.iconPath = new vscode.ThemeIcon("circle-outline");
           md.appendMarkdown(`Not multilayered: EDGEmat edits these later (M6).${u.baseColor ? " Its color texture shows in View in 3D." : ""}\n\n`);
-          if (u.baseColor) md.appendCodeblock(`color ${u.baseColor}`, "text");
+          if (u.baseColor) appendPaths(md, [["color", u.baseColor]]);
           t.contextValue = "edgemat.material";
         }
-        if (u.base) md.appendCodeblock(`base ${u.base}${u.instances.length ? `\nvia  ${u.instances.join("\n     ")}` : ""}`, "text");
+        if (u.base) appendPaths(md, [["base", u.base], ...u.instances.map((i): [string, string] => ["via", i])]);
         t.tooltip = md;
         return t;
       }
