@@ -82,6 +82,19 @@ export function deskProjectName(root: string): string {
   return path.basename(path.dirname(path.dirname(root)));
 }
 
+/**
+ * Deletes a folder, retrying a while: on Windows a folder a view, an editor or a file watcher still has
+ * open can refuse at first (ENOTEMPTY, EBUSY, EPERM). False when some of it is still there.
+ */
+function removeDir(dir: string): boolean {
+  try {
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    return true;
+  } catch {
+    return !fs.existsSync(dir);
+  }
+}
+
 export class Desk {
   readonly dir: string;
   readonly file: string;
@@ -178,17 +191,40 @@ export class Desk {
     this.write(this.entries().map((e) => (e.id === id ? { ...e, name: name?.trim() || undefined } : e)));
   }
 
-  /** Takes entries off the Desk, with their edits. */
-  remove(ids: string[]): void {
+  /**
+   * Takes entries off the Desk, with their edits. The list changes first, so a folder Windows will not let
+   * go of (an open setup, a 3D view, a file watcher) is only a leftover, deleted by sweep later. Answers
+   * whether every folder went.
+   */
+  remove(ids: string[]): boolean {
     const off = new Set(ids);
     this.write(this.entries().filter((e) => !off.has(e.id)));
-    for (const id of ids) fs.rmSync(path.join(this.items, id), { recursive: true, force: true });
+    return ids.map((id) => removeDir(path.join(this.items, id))).every(Boolean);
   }
 
-  /** Everything off the Desk, edits included. */
-  clear(): void {
-    fs.rmSync(this.items, { recursive: true, force: true });
+  /** Everything off the Desk, edits included. Answers whether every folder went (see remove). */
+  clear(): boolean {
     this.write([]);
+    return removeDir(this.items);
+  }
+
+  /** Deletes the folders of entries no longer on the Desk, left when Windows held them (EDGEmat starts). */
+  sweep(): void {
+    let listed: DeskEntry[];
+    try {
+      listed = JSON.parse(fs.readFileSync(this.file, "utf8")).entries;
+      if (!Array.isArray(listed)) return;
+    } catch {
+      return; // no list, or one that does not read: delete nothing
+    }
+    const ids = new Set(listed.map((e) => String(e?.id).toLowerCase()));
+    let names: string[] = [];
+    try {
+      names = fs.readdirSync(this.items);
+    } catch {
+      return;
+    }
+    for (const name of names) if (!ids.has(name.toLowerCase())) removeDir(path.join(this.items, name));
   }
 
   /** The entry's edited copy of a setup, by its game path, when there is one. */

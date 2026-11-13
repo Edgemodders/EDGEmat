@@ -254,6 +254,16 @@ try {
   const deskOld = new core.Desk(deskCache).entries();
   check(deskGone && deskOld.length === 1 && deskOld[0].id && deskOld[0].variation === 1 && desk.edited(deskOld[0]).length === 1 && !fs.existsSync(path.join(deskCache, "desk", "source")),
     "taking an entry off deletes its folder; a Desk from before entries had folders gets ids, and its shared edit is copied into the entry");
+  const cleared = desk.clear();
+  // A folder Windows held when its entry came off (an open setup or 3D view) is deleted when EDGEmat next starts.
+  const kept = desk.open("mesh", deskMesh).entry;
+  await desk.saveSetup(bridge, kept, deskSetup, deskEdit);
+  const orphan = path.join(deskCache, "desk", "items", "0rphan00", "source", "archive");
+  fs.mkdirSync(orphan, { recursive: true });
+  fs.writeFileSync(path.join(orphan, "left.mlsetup"), "");
+  desk.sweep();
+  check(cleared && !fs.existsSync(path.dirname(path.dirname(orphan))) && desk.edited(kept).length === 1,
+    "clearing answers that every folder went; a leftover folder of an entry no longer on the Desk is swept, a listed entry's edit stays");
   desk.clear();
 
   // The items that wear a mesh look, for REDnode's Console's addItem once a project changes the mesh.

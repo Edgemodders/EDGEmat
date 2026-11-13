@@ -386,6 +386,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
   const findTree = vscode.window.createTreeView("edgemat.find", { treeDataProvider: find, showCollapseAll: true });
   const desk = new Desk(cacheDir);
   fs.mkdirSync(desk.dir, { recursive: true });
+  desk.sweep(); // folders Windows held when they came off the Desk
+  const heldNote = () => void vscode.window.showInformationMessage("EDGEmat: off the Desk. Some of its files are still open (a setup tab or a 3D view of them), so Windows kept them for now; EDGEmat deletes them when it next starts.");
   const deskView = new DeskView(desk, bridgeNow, () => cacheDir, log);
   const deskTree = vscode.window.createTreeView("edgemat.desk", { treeDataProvider: deskView, showCollapseAll: true });
   // The MCP server's mat_desk changes desk.json too.
@@ -485,7 +487,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
         const go = await vscode.window.showWarningMessage(`Take ${deskLabel(entry)} off the Desk?`, { modal: true, detail: `Its ${edits === 1 ? "edit" : `${edits} edited setups`} on the Desk ${edits === 1 ? "is" : "are"} deleted. Your projects keep what you added to them.` }, "Take It Off");
         if (!go) return;
       }
-      deskView.remove([entry]);
+      if (!deskView.remove([entry])) heldNote();
       materialsChanged.fire({ materials: [] });
     }),
     vscode.commands.registerCommand("edgemat.renameDeskEntry", async (node) => {
@@ -510,7 +512,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
         "Clear the Desk",
       );
       if (!go) return;
-      desk.clear();
+      if (!desk.clear()) heldNote();
       deskView.load();
       materialsChanged.fire({ materials: [] });
     }),
@@ -662,7 +664,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       log(`${what === "the Desk" ? "The Desk" : what} added to ${project.archive}: ${r.written.join(", ") || "nothing written"}`);
       for (const s of r.setups) log(`  ${s.from} saved as ${s.to}${s.meshes.length ? `, pointed at by ${s.meshes.join(", ")}` : ""}`);
       for (const n of r.notes) log(`  ${n}`);
-      if (go === clearWord) deskView.remove(desk.entries().filter((e) => r.added.includes(e.id) && !r.kept.includes(e.id)));
+      if (go === clearWord && !deskView.remove(desk.entries().filter((e) => r.added.includes(e.id) && !r.kept.includes(e.id)))) heldNote();
       materialsChanged.fire({ materials: [] });
       const pack = packAndTryFor(project);
       const kept = r.kept.length ? ` ${plural(r.kept.length, "mesh")} stayed on the Desk with ${r.kept.length === 1 ? "its" : "their"} edits, since the project keeps its own.` : "";

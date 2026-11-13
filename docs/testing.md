@@ -464,7 +464,7 @@ Added 2026-10-25: the Desk view, Open in EDGEmat from REDcode's views, saving on
 | 20 | Its new-file icon (Add to Project...) again › **Replace with the Desk's** › **Add to Project** | The mesh is written again and the log says the project's copy was replaced. The project's slim-fits wears the first line's color in its 3D view |
 | 21 | REDcode's Project view: right-click the project's `.mesh` › **Open in EDGEmat** | It goes on the Desk as a new line marked **from <project>**. Close the project in REDcode and open another: the line still reads "from <project>" (it is still that project's file); rename or delete that project's folder and it reads "from <project>, not found" |
 | 22 | Hover a line › the × icon (Take Off the Desk) | It asks first if the line has edits, then it comes off; the other lines stay |
-| 23 | Hover the Desk's title bar › **Clear the Desk...** › **Clear the Desk** | The Desk is empty. The project keeps its files |
+| 23 | Hover the Desk's title bar › **Clear the Desk...** › **Clear the Desk** | The Desk is empty. The project keeps its files. If a setup tab or 3D view of a Desk file is still open, Windows may keep that file a moment: then a note says EDGEmat deletes it when it next starts, and the Desk is empty all the same. 2026-11-13 (owner): an error, ENOTEMPTY on `desk\items`; fixed the same day, rerun |
 | 24 | Optional, with Claude Code connected: ask "put the slim-fits on EDGEmat's Desk, then list the Desk" | `mat_desk` adds it with an id, and the Desk view shows it within a second or two |
 
 ### Microblends and worn looks
