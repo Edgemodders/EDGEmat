@@ -76,21 +76,27 @@ export class LibraryView implements vscode.TreeDataProvider<Node> {
 
   getTreeItem(node: Node): vscode.TreeItem {
     const open = this.filter ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
+    // VS Code keeps a group's folded or open state while its id stays the same, so under a filter each group
+    // gets an id of that filter's: they open on what it found, and clearing it brings back the modder's folding.
+    const filtered = (key: string) => (this.filter ? `filter:${this.filter}:${key}` : undefined);
     switch (node.kind) {
       case "surfaces": {
         const item = new vscode.TreeItem("Surfaces", vscode.TreeItemCollapsibleState.Expanded);
+        item.id = filtered("surfaces");
         item.description = plural(node.templates.length, "template");
         item.iconPath = new vscode.ThemeIcon("layers");
         return item;
       }
       case "category": {
         const item = new vscode.TreeItem(node.name, open);
+        item.id = filtered(`category:${node.name}`);
         item.description = String(node.templates.length);
         item.iconPath = vscode.ThemeIcon.Folder;
         return item;
       }
       case "microblends": {
         const item = new vscode.TreeItem("Microblends", open);
+        item.id = filtered("microblends");
         item.description = plural(node.microblends.length, "microblend");
         item.iconPath = new vscode.ThemeIcon("symbol-color");
         return item;
