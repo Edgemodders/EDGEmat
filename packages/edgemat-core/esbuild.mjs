@@ -16,3 +16,17 @@ await esbuild.build({
   sourcemap: true,
   logLevel: "info",
 });
+
+// The map's sources stay inside the package: "../src/core/<file>.ts" from dist/, not the path up to the
+// extension's source, which in a consumer resolved outside the package (node_modules/extensions/...), so a
+// tool attributing bundled code by its map's paths missed it (EDGEfab, 2026-11-13). The text is in the map.
+const mapFile = "dist/index.cjs.map";
+const map = JSON.parse(fs.readFileSync(mapFile, "utf8"));
+const core = "extensions/edgemat/src/core/";
+map.sources = map.sources.map((s) => {
+  const at = s.replace(/\\/g, "/").indexOf(core);
+  if (at < 0) throw new Error(`A source outside EDGEmat's core: ${s}`);
+  return `../src/core/${s.replace(/\\/g, "/").slice(at + core.length)}`;
+});
+if (!map.sourcesContent || map.sourcesContent.length !== map.sources.length) throw new Error("The map has no source text");
+fs.writeFileSync(mapFile, JSON.stringify(map));

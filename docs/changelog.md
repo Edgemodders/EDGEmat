@@ -11,6 +11,10 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+**Other**
+
+- `@edgemodders/edgemat-core`'s source map names its files inside the package (`../src/core/...`, with their text in the map), so a tool that bundles it can tell its code apart. In 0.3.2 the paths led out of the package.
+
 ## 0.3.2 (2026-11-13)
 
 **New**

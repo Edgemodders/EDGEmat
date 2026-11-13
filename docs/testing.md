@@ -70,6 +70,7 @@ Added 2026-11-12 ([EDGEmat #7](https://github.com/Edgemodders/EDGEmat/issues/7))
 | 3 | `node -e "const c=require('@edgemodders/edgemat-core'); console.log(Object.keys(c).length, typeof c.materialsFromModel)"`, and the same with `node --input-type=module -e "import { materialsFromModel } from '@edgemodders/edgemat-core'; ..."` | A count (144 on 2026-11-12) and `function`, both ways |
 | 4 | A `.ts` file with EDGEfab's imports (`bridgeOver`, `materialsFromModel`, `projectAt`, `BridgeClient`, `isGameFolder`, `resolveBridge`, `resolveGame`, `vscodeUserSettings`, `readPng`, `writePng` and the types `BridgeCall`, `FromModelMaterial`, `ModelGlow`, `Image`), `tsc --noEmit` with `module` `Node16` and `strict` | No errors |
 | 5 | Search `node_modules/@edgemodders/edgemat-core/dist/index.cjs` for `powershell` and `SecureString` | None |
+| 6 | Read `dist/index.cjs.map`'s `sources` | Each `../src/core/<file>.ts`, inside the package, with `sourcesContent` for each. Added 2026-11-13 after EDGEfab found 0.3.2's paths led out of the package |
 
 Last run 2026-11-12 by Claude: every step as expected.
 
