@@ -1,6 +1,6 @@
 {
   "name": "@edgemodders/edgemat-core",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "EDGEmat's core as a library: Cyberpunk 2077 materials (.mlsetup, .mi, .xbm) read, edited and made from your own game, for other tools' extensions and MCP servers.",
   "license": "MIT",
   "author": "Edgemodders",

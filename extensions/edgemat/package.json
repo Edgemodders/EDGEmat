@@ -3,7 +3,7 @@
   "displayName": "EDGEmat",
   "description": "The EDGE material editor for Cyberpunk 2077: find a garment's materials by its name, recolor its layers, make new materials from your words, and save them into your mod.",
   "publisher": "edgemodders",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "MIT",
   "preview": true,
   "galleryBanner": {
