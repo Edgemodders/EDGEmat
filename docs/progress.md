@@ -23,7 +23,6 @@ Last updated 2026-11-03.
 | Delete `EDGEmat_GlowCheck.archive` from the game's `archive\pc\mod`, with the game closed | It changes the same hat as the Reshape test; the glow check is done | 2026-11-05 |
 | Run [Wardrobe Designer Reshape and keys](testing.html#wardrobe-designer-reshape-and-keys) in the game, on REDnode 0.56.1 (the dev PC has it since 2026-11-03) | W3's first version in the app; with [Wardrobe Designer install](testing.html#wardrobe-designer-install), the gate for Wardrobe Designer's first release | 2026-11-02 |
 | For Wardrobe Designer's Nexus page: three screenshots (the window beside V with the pants restyled; one item in four looks; the reshaped cowboy hat) (the Equipment-EX link, `mods/6945`, is checked) | The placeholders in `apps/wardrobe-designer/nexus/README.md` | 2026-11-03 |
-| Update to 0.3.1 from the Marketplace in a normal VS Code (not the development host), check the Library, Find and New Material open, then run Connect an Assistant | The release's install test and the new one ([Tests](testing.html#install-of-the-release), [Connect an assistant](testing.html#connect-an-assistant)) | 2026-10-21 |
 | Decide whether the 0.3 preview goes on Nexus, after reviewing the roadmap to M7 | The page is ready in `nexus/` (description, form fields, the download zip from each release); the design planned Nexus for M7 | 2026-10-19 |
 | Screenshots: the Nexus page has the owner's nine. Screenshots 1 to 5 and 8 show a Windows user name in VS Code's Output panel (`C:\Users\...`); replace them on Nexus if that matters. Still open: the placeholders in the EDGEmat wiki ([edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/)). The tutorials' in-game shots are in (2026-10-20); their UI shots still wait | The pages say what each should show; drop wiki shots in EDGEweb's `docs/assets/shots/inbox/` | 2026-10-19, tutorials 2026-10-20 |
 | Report back when the other sessions finish the requests below | EDGEmat's design and EDGEfab's brief get updated to the shapes that shipped; then the EDGEfab session starts | 2026-10-16 |
@@ -61,6 +60,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
+| **0.3.1's install test** (owner, laptop) | 0.3.1 from the Marketplace installs and opens, with its Library view. The next release's install test is left: on a test build's VSIX, then the Marketplace after the release |
 | **Connect an assistant passed** (owner, laptop) | Steps 1 to 6 on this release's code (14 tools). Found: with the EDGE plugin for Claude Code installed, its own EDGEmat server (npm `@edgemodders/edgemat-mcp` 0.3.1, 10 tools) runs beside the one Connect Claude Code adds, so an assistant sees two sets of tools. Left before the release: the release's install test |
 | **Which item: In the game passed** (owner, laptop) | Steps 1 to 6, the last in the game with REDnode's Console. Left before the release: Connect an assistant and the release's install test |
 | **Open Material in EDGEmat passed** (owner, laptop) | Steps 1 to 6, after rewording steps 1 to 3 and 6 (a click already opens EDGEmat; REDcode CR2W Editor as the other editor; a mesh has Open in EDGEmat, not Open Material). No code change |
