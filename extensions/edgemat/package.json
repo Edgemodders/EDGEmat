@@ -53,7 +53,8 @@
     "onCommand:edgemat.clearImageKey",
     "onCommand:edgemat.connectAssistant",
     "onCommand:edgemat.openMaterial",
-    "onCommand:edgemat.openMesh"
+    "onCommand:edgemat.openMesh",
+    "workspaceContains:*.cpmodproj"
   ],
   "contributes": {
     "viewsContainers": {

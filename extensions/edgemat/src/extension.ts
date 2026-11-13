@@ -115,6 +115,13 @@ function refresh(force = false): Promise<void> {
   building = (async () => {
     const cached = loadLibrary(cacheDir);
     show(cached);
+    // With REDcode installed, wait for its REDbridge (it starts one with VS Code), so EDGEmat uses that one
+    // instead of starting a second, also when EDGEmat starts first, as it does when a project folder opens.
+    const rcExt = vscode.extensions.getExtension<REDcodeApi>(REDcodeId);
+    if (rcExt) {
+      const rc = rcExt.isActive ? rcExt.exports : await rcExt.activate().then((a) => a, () => undefined);
+      for (let i = 0; i < 60 && rc?.apiVersion === 1 && !rc.bridge()?.running; i++) await new Promise((r) => setTimeout(r, 250));
+    }
     const game = await findGame(true);
     if (!game) {
       setState(cached ? "ready" : "noGame");
@@ -227,6 +234,64 @@ function packAndTryFor(project: Project): (() => Promise<unknown>) | undefined {
     const r = await rc.packAndTry!();
     log(`REDcode Pack and Try: ${r ?? "cancelled or failed"}`);
   };
+}
+
+const sameDir = (a: string, b: string) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+
+/** Whether REDcode has this project open (its project is the folder open in this window). */
+function openInRedcode(project: Project): boolean {
+  const open = redcode()?.project?.();
+  return !!open && sameDir(open.dir, project.dir);
+}
+
+/** What to do once a project EDGEmat opened is open: kept across the window's reload. */
+const PendingOpen = "edgemat.pendingProjectOpen";
+interface PendingOpen {
+  dir: string;
+  /** The file to show in REDcode's Project view, such as the mesh just added. */
+  file?: string;
+  /** The "Added ..." message, shown again once the project is open. */
+  message: string;
+  at: number;
+}
+
+/**
+ * Opens a project EDGEmat just wrote into, so the modder sees what went in (the owner, 2026-11-13): in this
+ * window when it has no folder open (it reloads), else in a new window, keeping the modder's folder.
+ * finishProjectOpen picks it up in the window that opens.
+ */
+async function openProject(context: vscode.ExtensionContext, project: Project, file: string | undefined, message: string): Promise<void> {
+  const pending: PendingOpen = { dir: project.dir, file, message, at: Date.now() };
+  await context.globalState.update(PendingOpen, pending);
+  const busy = !!vscode.workspace.workspaceFolders?.length;
+  log(`Opening ${project.dir}${busy ? " in a new window" : ""}${file ? `, to show ${file}` : ""}`);
+  await vscode.commands.executeCommand("vscode.openFolder", vscode.Uri.file(project.dir), { forceNewWindow: busy });
+}
+
+/** In the window a project opened in: focuses REDcode's Project view, shows the added file, says what was added. */
+async function finishProjectOpen(context: vscode.ExtensionContext): Promise<void> {
+  const p = context.globalState.get<PendingOpen>(PendingOpen);
+  if (!p) return;
+  if (Date.now() - p.at > 5 * 60_000) return void context.globalState.update(PendingOpen, undefined);
+  if (!vscode.workspace.workspaceFolders?.some((f) => sameDir(f.uri.fsPath, p.dir))) return; // another window's
+  await context.globalState.update(PendingOpen, undefined);
+  const project = projectAt(p.dir);
+  const ext = vscode.extensions.getExtension<REDcodeApi>(REDcodeId);
+  let shown = false;
+  if (ext) {
+    const rc = ext.isActive ? ext.exports : await ext.activate().then((a) => a, () => undefined);
+    for (let i = 0; i < 40 && !(project && openInRedcode(project)); i++) await new Promise((r) => setTimeout(r, 250));
+    await vscode.commands.executeCommand("redcode.project.focus").then(undefined, () => undefined);
+    // REDcode selects a file in its Project view only from inside; revealInProject is asked for (REDcode #27).
+    const reveal = (rc as { revealInProject?: (f: string) => Promise<boolean> } | undefined)?.revealInProject;
+    if (p.file && typeof reveal === "function") shown = (await reveal.call(rc, p.file).then((ok) => ok !== false, () => false)) ?? false;
+  } else if (p.file && fs.existsSync(p.file)) {
+    shown = await vscode.commands.executeCommand("revealInExplorer", vscode.Uri.file(p.file)).then(() => true, () => false);
+  }
+  const where = p.file && !shown ? ` It is in the Project view under ${path.relative(p.dir, path.dirname(p.file))}.` : "";
+  const pack = project && packAndTryFor(project);
+  const choice = await vscode.window.showInformationMessage(`${p.message}${where}`, ...(pack ? ["Pack and Try"] : []));
+  if (choice === "Pack and Try" && pack) await pack();
 }
 
 /**
@@ -574,6 +639,9 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     const meshes = entries.filter((e) => e.kind === "mesh").length;
     const edited = entries.reduce((n, e) => n + desk.edited(e).length, 0);
     const clearWord = entries.length === 1 ? "Add and Take It Off the Desk" : "Add and Clear the Desk";
+    // A project REDcode does not have open is opened afterwards, so the modder sees what went in.
+    const opens = !openInRedcode(project) && fs.existsSync(project.dir);
+    const opensHow = vscode.workspace.workspaceFolders?.length ? "in a new window" : "in this window, which reloads (the Desk stays as it is)";
     const go = await vscode.window.showWarningMessage(
       `Add ${what} to ${project.name}?`,
       {
@@ -582,7 +650,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
           `${plural(meshes, "mesh")} and ${plural(edited, "setup")} edited on the Desk go into ${project.archive}. ` +
           `Each edited setup is saved as a new setup (named with _${suffix}), and the mesh it was edited on is copied in and pointed at it; the other meshes are copied as they are. ` +
           `Meshes already in the project are kept, and changed only to point at the new setups${conflicts.length ? (replace ? ", except the ones you chose to replace" : "; the kept ones stay on the Desk with their edits") : ""}. ` +
-          `${clearWord} takes off the Desk only what went into the project.`,
+          `${clearWord} takes off the Desk only what went into the project.` +
+          (opens ? `\n\nThen ${project.name} opens in REDcode, ${opensHow}.` : ""),
       },
       "Add to Project",
       clearWord,
@@ -598,8 +667,14 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       const pack = packAndTryFor(project);
       const kept = r.kept.length ? ` ${plural(r.kept.length, "mesh")} stayed on the Desk with ${r.kept.length === 1 ? "its" : "their"} edits, since the project keeps its own.` : "";
       const done = r.written.length ? `${plural(r.written.length, "file")} written` : "nothing new to write: the project has it all already";
+      const message = `Added ${what} to ${project.name}: ${done}.${kept}${r.notes.length ? ` Details in the EDGEmat log.` : ""}`;
+      if (opens) {
+        const mesh = entries.find((e) => e.kind === "mesh" && r.added.includes(e.id)) ?? entries.find((e) => r.added.includes(e.id));
+        await openProject(context, project, mesh && path.join(project.archive, mesh.path), message);
+        return;
+      }
       const choice = await vscode.window.showInformationMessage(
-        `Added ${what} to ${project.name}: ${done}.${kept}${r.notes.length ? ` Details in the EDGEmat log.` : ""}`,
+        message,
         ...(pack && r.written.length ? ["Pack and Try"] : []),
         ...(r.notes.length ? ["Show Log"] : []),
       );
@@ -613,6 +688,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
   installServer(context.extensionPath, log);
   setState("building");
   void refresh();
+  void finishProjectOpen(context);
 
   return {
     apiVersion: 1,
