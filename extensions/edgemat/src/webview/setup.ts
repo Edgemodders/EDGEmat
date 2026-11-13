@@ -33,7 +33,7 @@ export type SetupPageData =
       maskError?: string;
       map?: { image: string; pick: number[] };
       surfaces: Record<string, SurfaceChoices>;
-      /** The mesh look it was opened under and the game's items that wear it (undefined while being found), each with its CET command. */
+      /** The mesh look it was opened under and the game's items that wear it (undefined while being found), each with its REDnode Console command. */
       worn?: { mesh: string; look?: string; items?: { id: string; name: string | null; body: string; command: string }[] };
       /** dirty: edits not saved yet; saves: where Ctrl+S goes, the file itself or into a project. */
       edit: { dirty: boolean; notice?: string; saves: "file" | "desk" | "project" };
@@ -70,7 +70,7 @@ function header(title: string, origin: string, path?: string): HTMLElement {
   return h;
 }
 
-/** The game's items that wear the mesh look, so the modder can give V one in CET once the project is installed. */
+/** The game's items that wear the mesh look, so the modder can give V one in REDnode's Console once the project is installed. */
 function wornBy(w: NonNullable<Extract<SetupPageData, { kind: "setup" }>["worn"]>): HTMLElement {
   const file = w.mesh.split("\\").pop();
   const look = `${file}${w.look ? `, look ${w.look}` : ""}`;
@@ -82,7 +82,7 @@ function wornBy(w: NonNullable<Extract<SetupPageData, { kind: "setup" }>["worn"]
   if (!w.items) box.append(el("div", { class: "note" }, `Finding the items that wear ${look}... (the first time reads every clothing item: about ten seconds)`));
   else if (!w.items.length) box.append(el("div", { class: "note" }, `No clothing item in the game wears ${look}. It may be worn by an NPC, or added by a mod.`));
   else {
-    box.append(el("div", { class: "note" }, `Worn by ${w.items.length === 1 ? "this item" : "these items"} (${look}). Once the project is installed, give V one in the CET console:`));
+    box.append(el("div", { class: "note" }, `Worn by ${w.items.length === 1 ? "this item" : "these items"} (${look}). Once the project is installed, give V one in REDnode's Console (F10 › the launcher › Console):`));
     for (const i of w.items)
       box.append(el("div", { class: "item" }, el("span", {}, i.name ?? "(no in-game name)"), el("code", {}, i.command), i.body !== "any" ? el("span", { class: "note" }, `${i.body} body`) : undefined, copy(i.command, "Copy")));
   }

@@ -457,8 +457,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     }),
     vscode.commands.registerCommand("edgemat.openFoundSetup", (setup: string, mask?: string, via?: string, root?: string, deskId?: string, mesh?: string, look?: string) =>
       openFoundSetup(setup, mask, via, root, deskId, mesh, look)),
-    // CET's command that gives V the item wearing a mesh look: what to type in the game after installing the project.
-    vscode.commands.registerCommand("edgemat.copyCetCommand", async (node) => {
+    // REDnode's Console command that gives V the item wearing a mesh look: what to type in the game after installing the project.
+    vscode.commands.registerCommand("edgemat.copyRednodeCommand", async (node) => {
       const of = FindView.wornOf(node);
       if (!of) return;
       let id: string | undefined;
@@ -476,7 +476,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       }
       if (!id) return;
       await vscode.env.clipboard.writeText(addToInventory(id));
-      vscode.window.setStatusBarMessage(`Copied ${addToInventory(id)}: paste it in CET's console once the project is installed`, 5000);
+      vscode.window.setStatusBarMessage(`Copied ${addToInventory(id)}: paste it in REDnode's Console (F10 › the launcher › Console) once the project is installed`, 5000);
     }),
     vscode.commands.registerCommand("edgemat.copyGamePath", async (node) => {
       const p = LibraryView.gamePathOf(node) ?? FindView.gamePathOf(node);

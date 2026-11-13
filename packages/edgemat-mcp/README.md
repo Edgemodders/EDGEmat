@@ -40,7 +40,7 @@ Game Materials, the extension's list of every surface and microblend, is built f
 | `mat_library` | Whether Game Materials is built and current; builds it |
 | `mat_templates`, `mat_microblends` | Search the game's surfaces and detail textures |
 | `mat_colors` | A surface's colors in plain words, and the closest to one you name |
-| `mat_find` | A garment or mesh, down to its looks per body, meshes and materials; for a mesh, the items that wear each look, with the CET command that gives V one |
+| `mat_find` | A garment or mesh, down to its looks per body, meshes and materials; for a mesh, the items that wear each look, with the REDnode Console command that gives V one |
 | `mat_describe` | A setup's layers in plain words |
 | `mat_edit` | Recolor a setup's layers in words, and save it into a project |
 | `mat_restyle` | Restyle a clothing item in one call: its look's layers to plan on, then a recipe of layer changes saved into a project with its meshes |

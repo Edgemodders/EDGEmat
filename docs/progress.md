@@ -60,6 +60,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
+| **Copy REDnode Command, not CET** (the owner: EDGE no longer supports CET) | Find's and the Desk's right-click **Copy CET Command** is now **Copy REDnode Command** (`edgemat.copyRednodeCommand`): `addItem("Items....")`, for REDnode's Console (F10 › the launcher › Console). The setup editor's **In the game** section, the tooltips and `mat_find`'s `worn_by` (its field `cet` is now `rednode`) say the same. Test [Which item: In the game](testing.html#which-item-in-the-game) follows. Past test records keep the CET commands they were run with |
 | **Copy the Claude Code command names the keys** (the owner, Keys in VS Code step 6) | The copied command had no `-e` for the image key, so no `<key>` to fill in: Copy skipped the keys, as in 0.3.1. It now has `-e <NAME>=<key>` for each key EDGEmat holds, masked (`mcp.ts`). Rerun step 6 |
 | **A microblend's tooltip shows its picture** (the owner, running Game Materials name) | Surfaces in Game Materials had a tooltip with the picture, name and path; microblends only the path. They now match (`libraryView.ts`). Step 9 added to [Game Materials name](testing.html#game-materials-name). Step 6 of that test was reworded the same day: each title bar button by its look and tooltip |
 
@@ -328,6 +329,7 @@ Last updated 2026-11-03.
 
 | Decision | Why | Date |
 |---|---|---|
+| EDGEmat names REDnode's Console, not Cyber Engine Tweaks, for giving V an item: `addItem("Items....")` | The owner: EDGE no longer supports CET; REDnode's Console adds items by TweakDB id (REDnode 0.42.1) | 2026-11-13 |
 | EDGEmat keeps its keys in VS Code's secret storage and asks for them itself; the EDGE tools' shared key store is shelved (owner, for every EDGE VS Code extension) | The Marketplace refused EDGEhack 0.1.0 with the store's PowerShell decryption inside; EDGEdeck and EDGEwave, without it, passed | 2026-11-11 |
 | EDGEmat's Library view is **Game Materials**; **Library** means only the shared EDGE Library | Two things called Library would clash once a modder has both. Not two sections in one view: a read-only list from the game and a modder's store are different things, and the title bar's Search and Rebuild fit only one. Not plain "Materials": a modder would look there for what they generated | 2026-11-06 |
 | The tool driving a new feature may carry a small piece that belongs elsewhere (a Tripo client, say) instead of first asking the other tool for it; it moves to its better home later, as a design improvement. Weigh case by case: how complex the piece is, whether it truly belongs in the other tool, and whether the feature is a proof of concept that may not work. Lightweight, temporary debt for an exploration is fine. Once a home tool has all of a feature, EDGEmat may depend on it, keeping in mind what a user without that tool loses. For now Wardrobe Designer drives the player-facing features | Other tools may take a while to catch up, and a request for a feature that turns out not to work can be obsolete moments later (owner) | 2026-10-31 |

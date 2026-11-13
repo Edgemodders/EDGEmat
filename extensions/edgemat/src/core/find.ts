@@ -311,7 +311,7 @@ export async function itemMaterials(bridge: BridgeClient, item: ItemEntry): Prom
 
 /** An item that wears a mesh look in the game. */
 export interface WornBy {
-  /** The TweakDB record, for CET's Game.AddToInventory. */
+  /** The TweakDB record, for REDnode's Console's addItem. */
   id: string;
   name: string | null;
   slot: string;
@@ -323,8 +323,8 @@ type WornIndex = Record<string, Record<string, WornBy[]>>;
 const WornFile = "worn.json";
 const wornBuilds = new Map<string, Promise<WornIndex>>();
 
-/** The CET console command that gives V an item. */
-export const addToInventory = (id: string) => `Game.AddToInventory("${id}", 1)`;
+/** The command that gives V an item, typed in REDnode's Console (F10 › the launcher › Console). */
+export const addToInventory = (id: string) => `addItem("${id}")`;
 
 /**
  * Every clothing item's meshes and mesh appearances, both bodies, first and third person: the walk of
@@ -375,7 +375,7 @@ async function wornIndex(bridge: BridgeClient, dir: string): Promise<WornIndex> 
 
 /**
  * The game's items that wear a mesh (a game path), by mesh appearance: in `appearance` only, else in each
- * of its looks. A mesh a project or the Desk changes shows on these items, so CET can give V one of them.
+ * of its looks. A mesh a project or the Desk changes shows on these items, so REDnode's Console can give V one of them.
  */
 export async function itemsWearing(bridge: BridgeClient, dir: string, mesh: string, appearance?: string): Promise<{ appearance: string; items: WornBy[] }[]> {
   const k = dir.toLowerCase();

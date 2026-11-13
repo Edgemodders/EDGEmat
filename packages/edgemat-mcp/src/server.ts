@@ -532,7 +532,7 @@ server.registerTool(
       "Finds what to recolor. query: words that match clothing items by in-game name or record id ('punk jeans', 'Sunny Ammo', 'CasualShoes_01') and meshes by path ('s1_055'); returns both lists. " +
       "item: a clothing record id (Items.Pants_03_basic_01), or words matching one item: walks item > clothing.csv > root entity > .app appearance (one per body type: masculine, feminine) > mesh and mesh appearance > materials, " +
       "and for each multilayered material its setup (.mlsetup) and the mask set (.mlmask) it names. The two bodies can use different meshes. " +
-      "mesh (with optional appearance): a mesh's materials, in one appearance or all, and for each appearance the game's clothing items that wear it (worn_by: id, name, body, and cet, the CET console command that gives V the item: " +
+      "mesh (with optional appearance): a mesh's materials, in one appearance or all, and for each appearance the game's clothing items that wear it (worn_by: id, name, body, and rednode, the command for REDnode's Console that gives V the item: " +
       "a mesh a project changes shows on those items, so the modder can try it in the game). Pass a found setup and its mask to mat_describe. Items from mods (ArchiveXL) are not followed yet.",
     inputSchema: { query: z.string().optional(), item: z.string().optional(), mesh: z.string().optional(), appearance: z.string().optional(), limit: z.number().int().min(1).max(500).default(30) },
   },
@@ -542,7 +542,7 @@ server.registerTool(
       if (mesh) {
         const looks = await meshMaterials(b, mesh, appearance);
         const worn = await itemsWearing(b, cacheDir, mesh);
-        const wornBy = (a: string) => (worn.find((w) => w.appearance.toLowerCase() === a.toLowerCase())?.items ?? []).map((w) => ({ id: w.id, name: w.name, body: w.body, cet: addToInventory(w.id) }));
+        const wornBy = (a: string) => (worn.find((w) => w.appearance.toLowerCase() === a.toLowerCase())?.items ?? []).map((w) => ({ id: w.id, name: w.name, body: w.body, rednode: addToInventory(w.id) }));
         return text({ mesh, appearances: looks.map((l) => ({ ...meshOut(l), worn_by: wornBy(l.appearance) })) });
       }
       const items = await loadItems(b, cacheDir);
@@ -556,7 +556,7 @@ server.registerTool(
         }
         const m = await itemMaterials(b, found[0]);
         return text({
-          item: { id: m.item.id, name: m.item.name, slot: m.item.slot, cet: addToInventory(m.item.id) },
+          item: { id: m.item.id, name: m.item.name, slot: m.item.slot, rednode: addToInventory(m.item.id) },
           root: m.root,
           looks: m.looks.map((l) => ({ body: l.body, app: l.app, appearance: l.appAppearance, meshes: l.meshes.map(meshOut) })),
           warnings: m.warnings.length ? m.warnings : undefined,

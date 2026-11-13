@@ -203,8 +203,8 @@
         "icon": "$(add)"
       },
       {
-        "command": "edgemat.copyCetCommand",
-        "title": "Copy CET Command",
+        "command": "edgemat.copyRednodeCommand",
+        "title": "Copy REDnode Command",
         "category": "EDGEmat",
         "icon": "$(terminal)"
       },
@@ -390,7 +390,7 @@
           "group": "copy@1"
         },
         {
-          "command": "edgemat.copyCetCommand",
+          "command": "edgemat.copyRednodeCommand",
           "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.(mesh|item|material)/",
           "group": "copy@2"
         },
@@ -454,7 +454,7 @@
           "when": "false"
         },
         {
-          "command": "edgemat.copyCetCommand",
+          "command": "edgemat.copyRednodeCommand",
           "when": "false"
         },
         {

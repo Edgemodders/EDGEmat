@@ -256,14 +256,14 @@ try {
     "taking an entry off deletes its folder; a Desk from before entries had folders gets ids, and its shared edit is copied into the entry");
   desk.clear();
 
-  // The items that wear a mesh look, for CET's Game.AddToInventory once a project changes the mesh.
+  // The items that wear a mesh look, for REDnode's Console's addItem once a project changes the mesh.
   console.log("\nitems wearing a mesh");
   t3 = Date.now();
   const wornLeather = await core.itemsWearing(bridge, path.join(tmp, "worn_cache"), deskMesh, "leather");
   const wornMs = Date.now() - t3;
   const wornAll = await core.itemsWearing(bridge, path.join(tmp, "worn_cache"), deskMesh);
   check(wornLeather[0]?.items[0]?.id === "Items.Pants_01_basic_01" && wornLeather[0].items[0].body === "feminine" && wornAll.length > 5 && !wornAll.some((l) => l.appearance === "default")
-    && core.addToInventory("Items.Pants_01_basic_01") === 'Game.AddToInventory("Items.Pants_01_basic_01", 1)',
+    && core.addToInventory("Items.Pants_01_basic_01") === 'addItem("Items.Pants_01_basic_01")',
     `the slim-fits' leather look is worn by Items.Pants_01_basic_01 (feminine); ${wornAll.length} of its looks are worn by items; index built in ${wornMs} ms`);
 
   // Microblends cut the masks (owner's in-game check, 2026-10-26): the denim layer (mask near 0.55, lint_01)

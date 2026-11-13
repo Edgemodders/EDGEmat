@@ -149,7 +149,7 @@ export class FindView implements vscode.TreeDataProvider<Node> {
     const worn = await this.wornBy(node.mesh.mesh, node.mesh.appearance).catch(() => undefined);
     if (!worn) return item;
     const lines = worn.map((w) => `${w.name ?? "(no in-game name)"}: ${w.id}${w.body === "any" ? "" : ` (${w.body})`}`);
-    const said = worn.length ? ["Worn in the game by:", ...lines, "Right-click › Copy CET Command gives V one."] : ["No clothing item in the game wears this look."];
+    const said = worn.length ? ["Worn in the game by:", ...lines, "Right-click › Copy REDnode Command gives V one."] : ["No clothing item in the game wears this look."];
     item.tooltip = [item.tooltip, "", ...said].join("\n");
     return item;
   }
@@ -285,7 +285,7 @@ export class FindView implements vscode.TreeDataProvider<Node> {
     return n?.kind === "meshFile" ? { mesh: at(n.path, n.root), appearance: n.appearance } : n?.kind === "mesh" ? { mesh: at(n.mesh.mesh, n.root), appearance: n.mesh.appearance } : undefined;
   }
 
-  /** For Copy CET Command: an item's own id, or the mesh look (or whole mesh) whose items to offer. */
+  /** For Copy REDnode Command: an item's own id, or the mesh look (or whole mesh) whose items to offer. */
   static wornOf(node: unknown): { item: ItemEntry } | { mesh: string; appearance?: string } | undefined {
     const n = node as Node | undefined;
     return n?.kind === "item" ? { item: n.item } : n?.kind === "meshFile" ? { mesh: n.path } : n?.kind === "mesh" ? { mesh: n.mesh.mesh, appearance: n.mesh.appearance } : n?.kind === "material" ? { mesh: n.mesh, appearance: n.look } : undefined;
