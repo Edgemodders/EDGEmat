@@ -520,7 +520,7 @@ Added 2026-10-21, when REDcode marked `.mlsetup` files in its Project view for E
 | 3 | Open the same file in REDcode's editor: in the Explorer, right-click the `.mlsetup` › **Open With...** › in the list at the top of the window, **REDcode CR2W Editor**. A second tab opens with the file's raw fields. Right-click that tab's name in the tab bar | **Open Material in EDGEmat...** in the tab's menu. Choose it: EDGEmat's setup editor tab comes forward |
 | 4 | With REDcode 0.10.3 or later: REDcode's Project view, right-click the `.mlsetup` | **Open Material in EDGEmat...**; it opens the setup editor |
 | 5 | Right-click a `.mltemplate` under `source\archive` (in the Explorer) › **Open Material in EDGEmat...** | Its surface page, when the surface is in the library; else "not in the library" |
-| 6 | Right-click a `.mesh` or `.xbm` | No EDGEmat entry |
+| 6 | Right-click a `.mesh`, then an `.xbm` (in the Explorer or REDcode's Project view) | The `.mesh`: **Open in EDGEmat** (it goes on the Desk), and no **Open Material in EDGEmat...**. The `.xbm`: no EDGEmat entry at all. 2026-11-13: reworded; the step predated Open in EDGEmat for meshes (2026-10-24) |
 
 ### Wardrobe Designer W0
 
