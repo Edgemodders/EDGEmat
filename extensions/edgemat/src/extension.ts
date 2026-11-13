@@ -424,8 +424,9 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     vscode.commands.registerCommand("edgemat.rebuildLibrary", () => refresh(true)),
     vscode.commands.registerCommand("edgemat.setGameFolder", setGameFolder),
     vscode.commands.registerCommand("edgemat.showLog", () => output.show()),
+    // A filter, not a search: it narrows the Game Materials list in place (ids kept from when it was called Search).
     vscode.commands.registerCommand("edgemat.searchLibrary", async () => {
-      const q = await vscode.window.showInputBox({ title: "Search Game Materials", prompt: "Plain words, such as leather, worn chrome or denim", value: view.query });
+      const q = await vscode.window.showInputBox({ title: "Filter Game Materials", prompt: "Plain words, each in the name, such as leather, worn chrome or denim. Empty shows everything.", value: view.query });
       if (q === undefined) return;
       view.setFilter(q);
       tree.message = view.summary() || undefined;

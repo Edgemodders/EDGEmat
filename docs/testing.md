@@ -13,7 +13,7 @@ Last updated 2026-10-26.
 | [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's six checks (entries, variations, the move from the old Desk), and the items that wear a mesh look (2026-10-26: the slim-fits' leather look, `Items.Pants_01_basic_01`; index in 11 s), and microblends in the color map (the slim-fits' leather: base 87.1%, denim with lint 0.5%, piping 6.7%) |
 | [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache. 2026-10-26: `mat_desk` add twice reuses the unedited entry (same id); remove of an unknown id is refused. `mat_find` with the slim-fits mesh and look `leather`: `worn_by` `Items.Pants_01_basic_01` (feminine) with its `cet` command; with item `Items.Pants_01_basic_01`, `cet` |
 | [Game Materials view](#game-materials-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass (as the Library view) |
-| [Game Materials name](#game-materials-name) | By hand, F5 | After 0.3.1 | 2026-11-13 | **Pass** (owner, laptop: steps 1 to 9). On the way: step 6 reworded (each title bar button by its look and tooltip); step 9 added after the owner saw a microblend's tooltip had no picture (fixed the same day) |
+| [Game Materials name](#game-materials-name) | By hand, F5 | After 0.3.1 | 2026-11-13 | **Pass** (owner, laptop: steps 1 to 9); then the magnifier became **Filter Game Materials**, a funnel (2026-11-13, the owner: search and filter are different actions): rerun steps 2 to 4 and 7. On the way: step 6 reworded (each title bar button by its look and tooltip); step 9 added after the owner saw a microblend's tooltip had no picture (fixed the same day) |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
@@ -115,12 +115,12 @@ Added 2026-11-06 (EDGEmat #8): the Library view is now Game Materials. Step 8 ad
 | # | Do | Expected |
 |---|---|---|
 | 1 | Click EDGEmat's icon in the activity bar (left edge) | The views are **DESK**, **GAME MATERIALS** and **FIND**, in that order. None is called Library. Your open and folded views are as you left them |
-| 2 | Hover the **GAME MATERIALS** header, then hold the pointer over its magnifier and its refresh icon | Their tooltips say **Search Game Materials** and **Rebuild Game Materials** |
-| 3 | Press the magnifier, type `leather`, press Enter | The box is titled **Search Game Materials**; the view shows 7 surfaces |
-| 4 | Press the magnifier again, type `zzzz`, press Enter | The view says **Nothing in Game Materials matches your search**, with a **Clear Search** button. Press it: the full list returns |
+| 2 | Hover the **GAME MATERIALS** header, then hold the pointer over its funnel icon and its refresh icon | Their tooltips say **Filter Game Materials** and **Rebuild Game Materials** |
+| 3 | Press the funnel, type `leather`, press Enter | The box is titled **Filter Game Materials**; the view shows 7 surfaces |
+| 4 | Press the funnel again, type `zzzz`, press Enter | The view says **Nothing in Game Materials matches your filter**, with a **Clear Filter** button. Press it: the full list returns |
 | 5 | Press the refresh icon (**Rebuild Game Materials**), then the view's **...** menu › **Show Log** | The view shows progress. The log (Output › EDGEmat) has a line `Game Materials built in ...` |
-| 6 | Hover the **GAME MATERIALS** header again. Its title bar has, from left to right: a sparkle (tooltip **New Material...**), a page with an arrow pointing into it (tooltip **Open Setup...**), the magnifier, the refresh icon, and three dots at the right end (tooltip **More Actions...**). (a) Press the sparkle. (b) Go back to EDGEmat's view, press the page with the arrow. (c) Press the three dots | (a) A **New Material** tab opens; close it. (b) A box titled **Open Setup** at the top of the window, with **From the game...** and **A file on disk...**; press Esc. (c) A menu with **Set Game Folder**, **Show Log** and **Connect an Assistant (MCP)...**; press Esc |
-| 7 | Press Ctrl+Shift+P and type `EDGEmat: ` | The list has **EDGEmat: Search Game Materials** and **EDGEmat: Rebuild Game Materials**, and nothing named Library |
+| 6 | Hover the **GAME MATERIALS** header again. Its title bar has, from left to right: a sparkle (tooltip **New Material...**), a page with an arrow pointing into it (tooltip **Open Setup...**), the funnel, the refresh icon, and three dots at the right end (tooltip **More Actions...**). (a) Press the sparkle. (b) Go back to EDGEmat's view, press the page with the arrow. (c) Press the three dots | (a) A **New Material** tab opens; close it. (b) A box titled **Open Setup** at the top of the window, with **From the game...** and **A file on disk...**; press Esc. (c) A menu with **Set Game Folder**, **Show Log** and **Connect an Assistant (MCP)...**; press Esc |
+| 7 | Press Ctrl+Shift+P and type `EDGEmat: ` | The list has **EDGEmat: Filter Game Materials** and **EDGEmat: Rebuild Game Materials**, and nothing named Library |
 | 8 | Put something on the Desk if it is empty (Find › a garment › its mesh line › **+**, Add to Desk), then hover the entry's line on the **DESK** | Its Add to Project button is a page with a corner folded and a small plus (VS Code's new-file icon, as on EDGEfab's Desk), with the tooltip **Add to Project...**. The Desk's title bar keeps its **+** (Add the Desk to Project...) |
 | 9 | In **GAME MATERIALS**, unfold **Microblends** (the second group, below **Surfaces**) and hold the pointer over one, such as **dirt stains**. Then unfold **Surfaces**, a category in it, and hold the pointer over a surface, to compare | Both tooltips have the same shape: the picture, the name in bold, a line saying what it is (for a microblend: "a small detail texture that breaks up a layer's mask edge"), and the game path in a box. Before the fix, a microblend showed only its path |
 
@@ -138,7 +138,7 @@ Run 2026-10-16 and again 2026-10-17 by the owner: **all pass.**
 | 3 | Surfaces | Grouped by category (fabric, metal, plastic and so on), each with a thumbnail |
 | 4 | Hover a surface | A larger thumbnail, its color count and its game path |
 | 5 | Microblends: the second top-level group, below all the surface categories (Collapse All in the view's title bar shows both groups) | Listed with thumbnails when opened |
-| 6 | Search (magnifier) for `leather` | 7 surfaces. Clear search restores the full list |
+| 6 | Filter (funnel) for `leather` | 7 surfaces. **Clear Filter** restores the full list |
 | 7 | Rebuild (refresh) | Progress in the view; done in a few seconds |
 | 8 | Output › EDGEmat | Names the bridge used: "Using REDcode's REDbridge" when REDcode is active with the same game, otherwise "Starting REDbridge from ...". The first line was added after the 2026-10-16 run; before it, only EDGEmat's own bridge was named |
 

@@ -113,7 +113,7 @@
       },
       {
         "view": "edgemat.library",
-        "contents": "Nothing in Game Materials matches your search.\n[Clear Search](command:edgemat.clearSearch)",
+        "contents": "Nothing in Game Materials matches your filter.\n[Clear Filter](command:edgemat.clearSearch)",
         "when": "edgemat.state == ready && edgemat.filtered"
       }
     ],
@@ -158,13 +158,13 @@
       },
       {
         "command": "edgemat.searchLibrary",
-        "title": "Search Game Materials",
+        "title": "Filter Game Materials",
         "category": "EDGEmat",
-        "icon": "$(search)"
+        "icon": "$(filter)"
       },
       {
         "command": "edgemat.clearSearch",
-        "title": "Clear Search",
+        "title": "Clear Filter",
         "category": "EDGEmat",
         "icon": "$(clear-all)"
       },
