@@ -1,0 +1,105 @@
+# Finishes a release whose run stopped partway (2026-11-13: 0.3.2's VS Code Marketplace step failed on an
+# expired VSCE_PAT, so the npm job never ran). Works from the release's tag: the VS Code Marketplace gets the
+# VSIX already on the GitHub release (the same file as Open VSX and Nexus), and npm gets the MCP server and the
+# core built from the tag. It does nothing else: no tag, GitHub release, Open VSX or Nexus.
+#
+#   Actions › Finish a release › Run workflow › version (such as 0.3.2), tick what is still missing
+#   gh workflow run finish-release.yml --ref main -f version=0.3.2 -f marketplace=true -f npm=true
+#
+# Release gate: only for a version whose release run already started, after every test passed.
+name: Finish a release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The released version, such as 0.3.2 (its tag v<version> and GitHub release must exist)
+        type: string
+        required: true
+      marketplace:
+        description: Publish the release's VSIX to the VS Code Marketplace (VSCE_PAT)
+        type: boolean
+        default: false
+      npm:
+        description: Publish @edgemodders/edgemat-mcp and @edgemodders/edgemat-core from the tag (NPM_TOKEN)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  marketplace:
+    if: inputs.marketplace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: v${{ inputs.version }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: The release's VSIX
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "v${{ inputs.version }}" --pattern "edgemat-${{ inputs.version }}.vsix" --dir dist
+
+      - name: VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: node_modules/.bin/vsce publish --packagePath "dist/edgemat-${{ inputs.version }}.vsix"
+
+  npm:
+    if: inputs.npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: v${{ inputs.version }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      # As release.yml's npm job: the bundles, then the license and the notices beside the packages.
+      - name: Build
+        id: build
+        run: |
+          npm run build
+          node tools/release/notices.mjs
+          cp dist/THIRD-PARTY-NOTICES.txt LICENSE packages/edgemat-mcp/
+          cp LICENSE packages/edgemat-core/
+
+      # A package already at this version is left as it is, so the job can run again after one failed.
+      - name: npm, the MCP server
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if npm view "@edgemodders/edgemat-mcp@${{ inputs.version }}" version >/dev/null 2>&1; then
+            echo "@edgemodders/edgemat-mcp ${{ inputs.version }} is on npm already"
+          else
+            npm publish --workspace packages/edgemat-mcp --provenance --access public
+          fi
+
+      - name: npm, the core
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if npm view "@edgemodders/edgemat-core@${{ inputs.version }}" version >/dev/null 2>&1; then
+            echo "@edgemodders/edgemat-core ${{ inputs.version }} is on npm already"
+          else
+            npm publish --workspace packages/edgemat-core --provenance --access public
+          fi
