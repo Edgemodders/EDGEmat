@@ -13,7 +13,7 @@ Last updated 2026-10-26.
 | [Smoke test](#smoke-test-the-library-against-the-game) | Automated, needs the game | M1 to M3 | 2026-10-26 | Pass, with the Desk's six checks (entries, variations, the move from the old Desk), and the items that wear a mesh look (2026-10-26: the slim-fits' leather look, `Items.Pants_01_basic_01`; index in 11 s), and microblends in the color map (the slim-fits' leather: base 87.1%, denim with lint 0.5%, piping 6.7%) |
 | [MCP server](#mcp-server) | By hand, over stdio | M1 to M3 | 2026-10-20 | Pass. 2026-10-25: 11 tools listed; `mat_desk` adds, refuses a `.ent`, lists and clears, in a scratch cache. 2026-10-26: `mat_desk` add twice reuses the unedited entry (same id); remove of an unknown id is refused. `mat_find` with the slim-fits mesh and look `leather`: `worn_by` `Items.Pants_01_basic_01` (feminine) with its `cet` command; with item `Items.Pants_01_basic_01`, `cet` |
 | [Game Materials view](#game-materials-view-in-vs-code) | By hand, F5 | M1 | 2026-10-17 | Pass (as the Library view) |
-| [Game Materials name](#game-materials-name) | By hand, F5 | After 0.3.1 | Not run | Open |
+| [Game Materials name](#game-materials-name) | By hand, F5 | After 0.3.1 | 2026-11-13 | **Pass** (owner, laptop: steps 1 to 9). On the way: step 6 reworded (each title bar button by its look and tooltip); step 9 added after the owner saw a microblend's tooltip had no picture (fixed the same day) |
 | [Surface page](#surface-page) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Setup editor](#setup-editor) | By hand, F5 | M2 | 2026-10-17 | Pass |
 | [Find view](#find-view) | By hand, F5 | M2 | 2026-10-19 | Pass |
