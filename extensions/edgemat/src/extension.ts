@@ -8,7 +8,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import { addToInventory, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, deskProjectName, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, materialsFromModel, renderMaterials, resolveBridge, resolveGame, suffixFor, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
 import { DeskView } from "./deskView";
-import { FindView, openFoundSetup } from "./findView";
+import { FindView, openFoundSetup, type Node } from "./findView";
 import { LibraryView } from "./libraryView";
 import { MaterialPage } from "./materialPage";
 import { connectAssistant, installServer, registerWithEditor } from "./mcp";
@@ -472,6 +472,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       if (node) await deskTree.reveal(node, { select: true, focus: true, expand: true });
       if (created && there) vscode.window.setStatusBarMessage(`$(layers) EDGEmat: the Desk had this one edited already; this is a fresh copy, ${deskLabel(entry)}`, 10000);
       if (node?.kind === "setupFile") await openFoundSetup(entry.path, undefined, "the Desk", entry.root, entry.id);
+      else if (node?.kind === "meshFile") await openLookSetup(node);
     }),
     // A mesh found in Find onto the Desk, with the look it was found in open: as Open in EDGEmat from REDcode.
     vscode.commands.registerCommand("edgemat.addToDesk", (node) => {
@@ -574,6 +575,27 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     }),
     { dispose: () => ownBridge?.stop() },
   );
+
+  /**
+   * A mesh just put on the Desk: the open look's layered material opens in the setup editor (a tab already
+   * open on it comes forward), so the editor area shows what was opened, not only the side bar (the owner,
+   * 2026-11-13). A look with several layered materials leaves the choice to the Desk, and says so.
+   */
+  async function openLookSetup(meshNode: Node): Promise<void> {
+    try {
+      const look = (await deskView.getChildren(meshNode)).find((n) => n.kind === "mesh" && n.open !== undefined);
+      if (look?.kind !== "mesh") return;
+      const layered = (await deskView.getChildren(look)).filter((n): n is Extract<Node, { kind: "material" }> => n.kind === "material" && n.use.multilayered && !!n.use.setup);
+      if (layered.length === 1) {
+        const m = layered[0];
+        await openFoundSetup(m.use.setup!, m.use.mask, m.via, m.root, m.desk, m.mesh, m.look);
+      } else if (layered.length > 1) {
+        vscode.window.setStatusBarMessage(`$(layers) EDGEmat: look ${look.mesh.appearance} has ${layered.length} layered materials; click one on the Desk to open it`, 10000);
+      }
+    } catch (e) {
+      log(`Open in EDGEmat: the look's setup did not open: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
 
   /**
    * The Desk's + buttons, after the modder confirms: one entry (`only`, the + on its line), or everything on

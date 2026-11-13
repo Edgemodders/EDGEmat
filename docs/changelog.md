@@ -25,6 +25,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **Changed**
 
+- **Open in EDGEmat** on a mesh (and **Add to Desk** in Find) also opens the look's layered material in the setup editor, or brings its tab forward, so you see where it went. A look with several layered materials asks you, in the status bar, to click one on the Desk.
 - The Desk's **Add to Project** into a project that is not open in REDcode opens that project afterwards (the window reloads, or a new window opens when this one has a folder open), brings REDcode's Project view forward and says where the mesh went, with **Pack and Try**. Before, the files went in out of sight.
 - **Set Image Service Key...** checks a key looks right before saving it (an OpenAI key starts with `sk-`), and **Clear Image Service Key...** asks first. Keys stay in VS Code's secret storage, as in 0.3; a key you set in a development build since 2026-10-30, which went to the EDGE tools' shared key store, is asked for once more.
 - The **Library** view is now **Game Materials**, with **Filter Game Materials** (a funnel: it narrows the list, as REDcode's Filter Game Assets does, and **Clear Filter** brings it all back; a filter opens the groups down to what it found) and **Rebuild Game Materials**, because **Library** now means the EDGE Library, the folder of your own work that the EDGE tools share. It holds the same list as before, and assistants still call `mat_library`.
