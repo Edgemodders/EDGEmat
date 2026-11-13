@@ -119,7 +119,7 @@ Added 2026-11-06 (EDGEmat #8): the Library view is now Game Materials. Step 8 ad
 | 3 | Press the magnifier, type `leather`, press Enter | The box is titled **Search Game Materials**; the view shows 7 surfaces |
 | 4 | Press the magnifier again, type `zzzz`, press Enter | The view says **Nothing in Game Materials matches your search**, with a **Clear Search** button. Press it: the full list returns |
 | 5 | Press the refresh icon (**Rebuild Game Materials**), then the view's **...** menu › **Show Log** | The view shows progress. The log (Output › EDGEmat) has a line `Game Materials built in ...` |
-| 6 | In the same title bar, press the sparkle icon, then the go-to-file icon. Then **...** menu | **New Material** opens, **Open Setup** asks where from (press Esc), and the menu lists **Connect an Assistant (MCP)...** |
+| 6 | Hover the **GAME MATERIALS** header again. Its title bar has, from left to right: a sparkle (tooltip **New Material...**), a page with an arrow pointing into it (tooltip **Open Setup...**), the magnifier, the refresh icon, and three dots at the right end (tooltip **More Actions...**). (a) Press the sparkle. (b) Go back to EDGEmat's view, press the page with the arrow. (c) Press the three dots | (a) A **New Material** tab opens; close it. (b) A box titled **Open Setup** at the top of the window, with **From the game...** and **A file on disk...**; press Esc. (c) A menu with **Set Game Folder**, **Show Log** and **Connect an Assistant (MCP)...**; press Esc |
 | 7 | Press Ctrl+Shift+P and type `EDGEmat: ` | The list has **EDGEmat: Search Game Materials** and **EDGEmat: Rebuild Game Materials**, and nothing named Library |
 | 8 | Put something on the Desk if it is empty (Find › a garment › its mesh line › **+**, Add to Desk), then hover the entry's line on the **DESK** | Its Add to Project button is a page with a corner folded and a small plus (VS Code's new-file icon, as on EDGEfab's Desk), with the tooltip **Add to Project...**. The Desk's title bar keeps its **+** (Add the Desk to Project...) |
 
@@ -175,7 +175,7 @@ Run 2026-10-17 by the owner: **all pass**, including opening from REDcode's Game
 
 | # | Check | Expected |
 |---|---|---|
-| 1 | **Open Setup** (the go-to-file icon in the Game Materials title bar) › From the game › `s1_055 red yellow` › `ml_s1_055_pma_shoe__red_yellow_graphic` | A tab "ml_s1_055_pma_shoe__red_yellow_graphic", "Setup · game file", "19 of 20 layers show · ratio 1". A color map of the sneaker's texture (yellow canvas, red panels, black sole) and 20 layers |
+| 1 | **Open Setup** (in the Game Materials title bar, hover the header: the page with an arrow pointing into it, second from the left) › From the game › `s1_055 red yellow` › `ml_s1_055_pma_shoe__red_yellow_graphic` | A tab "ml_s1_055_pma_shoe__red_yellow_graphic", "Setup · game file", "19 of 20 layers show · ratio 1". A color map of the sneaker's texture (yellow canvas, red panels, black sole) and 20 layers |
 | 2 | The layers | Each with its index, color swatch, surface thumbnail, "Surface · color", finish words, and its share of the texture with a bar. Layer 11 is dimmed: "not shown: opacity 0" |
 | 3 | Click layer 7 | Its details open: surface (rubber bumper damaged, with Open), color, roughness, metal, bumps, tiling ×10.1, opacity, microblend, "Shows on 11% of the texture". The map switches to Selected layer, with the sole and rubber band lit in yellow |
 | 4 | Click spots on the map: a red panel, the yellow canvas, the sole | The layer that shows there is selected and scrolled into view |
