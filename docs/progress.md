@@ -19,7 +19,6 @@ Last updated 2026-11-03.
 
 | To-do | Why | Since |
 |---|---|---|
-| Check that the npm token in the Edgemodders secret `NPM_TOKEN` may publish a new package under `@edgemodders` (on npmjs.com: the token's packages and scopes) | `@edgemodders/edgemat-core` is new at the next release; a token for `edgemat-mcp` only would refuse it, after the rest of the release is out | 2026-11-12 |
 | Delete `EDGEmat_GlowCheck.archive` from the game's `archive\pc\mod`, with the game closed | It changes the same hat as the Reshape test; the glow check is done | 2026-11-05 |
 | Run [Wardrobe Designer Reshape and keys](testing.html#wardrobe-designer-reshape-and-keys) in the game, on REDnode 0.56.1 (the dev PC has it since 2026-11-03) | W3's first version in the app; with [Wardrobe Designer install](testing.html#wardrobe-designer-install), the gate for Wardrobe Designer's first release | 2026-11-02 |
 | For Wardrobe Designer's Nexus page: three screenshots (the window beside V with the pants restyled; one item in four looks; the reshaped cowboy hat) (the Equipment-EX link, `mods/6945`, is checked) | The placeholders in `apps/wardrobe-designer/nexus/README.md` | 2026-11-03 |
@@ -60,7 +59,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
-| **0.3.2's release prep** | The changelog's 0.3.2 section (dated 2026-11-13; change it if the release is later), the README's status line and badge (`readme-check` passes), and the Nexus description for 0.3.2 (the Desk's variations and Add to Project, which item to give V with REDnode's Console, the Game Materials filter, REDnode in Requirements; the live page unchanged since the last pull). Waiting: the owner's `NPM_TOKEN` check, then the owner's go for the release run |
+| **0.3.2's release prep** | The changelog's 0.3.2 section (dated 2026-11-13; change it if the release is later), the README's status line and badge (`readme-check` passes), and the Nexus description for 0.3.2 (the Desk's variations and Add to Project, which item to give V with REDnode's Console, the Game Materials filter, REDnode in Requirements; the live page unchanged since the last pull). The owner checked `NPM_TOKEN`: read and write access to all packages (a new package unverified until the run). Waiting: the owner's go for the release run |
 | **Every test for 0.3.2 has passed** (owner, laptop) | The test build's install passed too. Left before the release run: the changelog's 0.3.2 section, the README's status line and badge, the Nexus description, and the owner's check that `NPM_TOKEN` can publish `@edgemodders/edgemat-core` |
 | **0.3.2 test build** | The version set to 0.3.2 (`tools/version.mjs`: extension, MCP server, core package) for the release's install test. Packaged locally: 14 files, about 380 KB, no PowerShell decryption in it. The release workflow builds it as a test build (no Make a release): nothing published |
 | **0.3.1's install test** (owner, laptop) | 0.3.1 from the Marketplace installs and opens, with its Library view. The next release's install test is left: on a test build's VSIX, then the Marketplace after the release |
