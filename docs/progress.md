@@ -60,6 +60,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
+| **Copy the Claude Code command names the keys** (the owner, Keys in VS Code step 6) | The copied command had no `-e` for the image key, so no `<key>` to fill in: Copy skipped the keys, as in 0.3.1. It now has `-e <NAME>=<key>` for each key EDGEmat holds, masked (`mcp.ts`). Rerun step 6 |
 | **A microblend's tooltip shows its picture** (the owner, running Game Materials name) | Surfaces in Game Materials had a tooltip with the picture, name and path; microblends only the path. They now match (`libraryView.ts`). Step 9 added to [Game Materials name](testing.html#game-materials-name). Step 6 of that test was reworded the same day: each title bar button by its look and tooltip |
 
 ### 2026-11-12

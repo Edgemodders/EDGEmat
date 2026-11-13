@@ -38,6 +38,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **Fixed**
 
+- **Connect an Assistant (MCP)...** › **Copy the Claude Code command** left out your image service key's `-e`, though its message said to put your key in place of `<key>`. The copied line now has `-e OPENAI_API_KEY=<key>` (or Gemini's) for each key you set, never the key itself.
 - A material of a mesh in your project opened the game's setup even when your project held its own copy, such as one saved with Save to Project. It now opens your project's copy.
 - The setup editor lost its unsaved edits from view when you switched to another tab and back (the edits were kept, and the tab still showed them as unsaved).
 - **Save to Project** › **As a new setup** looked for the meshes that use the setup only in the setup's own folder. A garment that uses a setup kept with another garment (V's slim-fits use the citizen jeans' setup) had the other garment's game meshes copied into the project instead of its own. It now looks at every mesh in your project too, and ticks only your project's meshes when any of them use the setup. The MCP server's `mat_edit` does the same.

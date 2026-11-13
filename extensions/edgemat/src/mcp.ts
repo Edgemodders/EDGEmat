@@ -123,7 +123,10 @@ export async function connectAssistant(context: vscode.ExtensionContext, log: Lo
   let env = { ...run.env };
   const keys = await keyEnv(context);
   const names = (Object.keys(Services) as ServiceId[]).filter((id) => keys[Services[id].env]).map((id) => Services[id].name);
-  if (names.length && picked.action !== "copy") {
+  // The copied command names each key EDGEmat holds as <key> (masked below), never the key itself; the
+  // user puts theirs in or leaves that -e out.
+  if (picked.action === "copy") env = { ...env, ...keys };
+  else if (names.length) {
     const give = await vscode.window.showQuickPick(
       [
         { label: `Yes, include my ${names.join(" and ")} key`, detail: "So the assistant can make materials from words (mat_generate). The client stores the key in its own settings file, in plain text.", give: true },
