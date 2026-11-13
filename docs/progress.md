@@ -60,6 +60,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
+| **Every test for 0.3.2 has passed** (owner, laptop) | The test build's install passed too. Left before the release run: the changelog's 0.3.2 section, the README's status line and badge, the Nexus description, and the owner's check that `NPM_TOKEN` can publish `@edgemodders/edgemat-core` |
 | **0.3.2 test build** | The version set to 0.3.2 (`tools/version.mjs`: extension, MCP server, core package) for the release's install test. Packaged locally: 14 files, about 380 KB, no PowerShell decryption in it. The release workflow builds it as a test build (no Make a release): nothing published |
 | **0.3.1's install test** (owner, laptop) | 0.3.1 from the Marketplace installs and opens, with its Library view. The next release's install test is left: on a test build's VSIX, then the Marketplace after the release |
 | **Connect an assistant passed** (owner, laptop) | Steps 1 to 6 on this release's code (14 tools). Found: with the EDGE plugin for Claude Code installed, its own EDGEmat server (npm `@edgemodders/edgemat-mcp` 0.3.1, 10 tools) runs beside the one Connect Claude Code adds, so an assistant sees two sets of tools. Left before the release: the release's install test |
