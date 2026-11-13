@@ -442,7 +442,7 @@ Added 2026-10-25: the Desk view, Open in EDGEmat from REDcode's views, saving on
 | Step | Do | Expect |
 |---|---|---|
 | 1 | Click EDGEmat's icon in the activity bar (left edge); if the Desk has entries, hover its title bar › **Clear the Desk...** | Three views: **Desk** at the top, then Game Materials and Find. The Desk is empty and says how to put something on it |
-| 2 | Click REDcode's icon in the activity bar › **Game Assets** view › search or browse to the slim-fits `.mesh` › right-click it | **Open in EDGEmat** in the menu, beside Open in Editor |
+| 2 | Click REDcode's icon in the activity bar › **Game Assets** view › search `l1_012_pwa_pants__jeans_tight.mesh` (or browse to `base\characters\garment\player_equipment\legs\l1_012_pants__jeans_tight\`). That one file is "the slim-fits" in every step below (the feminine body's; `pwa`) › right-click it | **Open in EDGEmat** in the menu, beside Open in Editor |
 | 3 | Choose **Open in EDGEmat** | EDGEmat's activity bar opens on the Desk. The mesh is there, selected and open: its looks, with the first look an item wears open on its materials (since 2026-10-26; on the slim-fits, **leather**) |
 | 3b | EDGEmat's **Find** view: search `comfy rocker`, open the item and its body, right-click the slim-fits mesh › **Add to Desk** | The Desk comes forward with the mesh selected, its look **leather** open on its materials. The same line as step 3 when it has no edits yet (no second one) |
 | 4 | Right-click a `.ent` or `.app` in Game Assets › **Open in EDGEmat** | The entry is there for now (REDcode #15); a message says it takes a mesh, a setup or a surface. Nothing goes on the Desk |
