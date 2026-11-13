@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://edgemodders.github.io/EDGEmat/"><img src="docs/assets/brand/badges/docs.svg" alt="docs: read the docs"></a>
-  <img src="docs/assets/brand/badges/status.svg" alt="status: 0.3.1 preview">
+  <img src="docs/assets/brand/badges/status.svg" alt="status: 0.3.2 preview">
   <img src="docs/assets/brand/badges/game.svg" alt="game: Cyberpunk 2077">
   <img src="docs/assets/brand/badges/files.svg" alt="edits: .mi .mt .mlsetup">
   <a href="LICENSE"><img src="docs/assets/brand/badges/license.svg" alt="license: MIT"></a>
@@ -17,7 +17,7 @@ It edits multilayered materials (`.mlsetup`, `.mltemplate`, `.mlmask`) first, th
 **[Read the docs](https://edgemodders.github.io/EDGEmat/)** &middot; [Design](docs/design.md) &middot; [Dev setup](docs/dev-setup.md)
 
 > [!NOTE]
-> **Status: 0.3.1 preview released on 2026-10-21** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat), with its MCP server on npm (`@edgemodders/edgemat-mcp`) and a page on [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35422). A list of every surface and microblend in your game, built from the game (M1; the **Game Materials** view, called Library up to 0.3.1). Surface pages, the setup editor, Find and View in 3D (M2). Editing and Save to Project, and New Material from words or a photo (M3), each seen in the game. Assistants get all of it through MCP; since 0.3.1 the MCP server comes with the extension (**Connect an Assistant (MCP)...**). Built since 0.3.1, not released yet: the Desk, colors closer to the game (a microblend cuts its mask), `mat_restyle` and `mat_reshape` for assistants, and the Wardrobe Designer, a REDnode app with its own release. Next: materials for new meshes (M4). The manual, with two tutorials: [edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/).
+> **Status: 0.3.2 preview released on 2026-11-13** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat), with its MCP server on npm (`@edgemodders/edgemat-mcp`), the core for other tools (`@edgemodders/edgemat-core`), and a page on [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35422). New in 0.3.2: **the Desk**, where meshes and setups wait, with your edits and variations, until they go into a project; **which item to try it on**, with the REDnode Console command that gives V the item; colors closer to the game (a microblend cuts its mask); **Open in EDGEmat** and **Open Material in EDGEmat** on a right-click; the **Game Materials** view (called Library up to 0.3.1), with a filter; and for assistants `mat_desk`, `mat_restyle` (with patterns), `mat_reshape` and `mat_from_model`. Before it: a list of every surface and microblend in your game, built from the game (M1); surface pages, the setup editor, Find and View in 3D (M2); editing and Save to Project, and New Material from words or a photo (M3), each seen in the game. The Wardrobe Designer, a REDnode app for players, has its own release. Next: materials for new meshes (M4). The manual, with two tutorials: [edgemodders.ai/wiki/edgemat](https://edgemodders.ai/wiki/edgemat/).
 
 ## Repository layout
 

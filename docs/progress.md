@@ -60,6 +60,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
+| **0.3.2's release prep** | The changelog's 0.3.2 section (dated 2026-11-13; change it if the release is later), the README's status line and badge (`readme-check` passes), and the Nexus description for 0.3.2 (the Desk's variations and Add to Project, which item to give V with REDnode's Console, the Game Materials filter, REDnode in Requirements; the live page unchanged since the last pull). Waiting: the owner's `NPM_TOKEN` check, then the owner's go for the release run |
 | **Every test for 0.3.2 has passed** (owner, laptop) | The test build's install passed too. Left before the release run: the changelog's 0.3.2 section, the README's status line and badge, the Nexus description, and the owner's check that `NPM_TOKEN` can publish `@edgemodders/edgemat-core` |
 | **0.3.2 test build** | The version set to 0.3.2 (`tools/version.mjs`: extension, MCP server, core package) for the release's install test. Packaged locally: 14 files, about 380 KB, no PowerShell decryption in it. The release workflow builds it as a test build (no Make a release): nothing published |
 | **0.3.1's install test** (owner, laptop) | 0.3.1 from the Marketplace installs and opens, with its Library view. The next release's install test is left: on a test build's VSIX, then the Marketplace after the release |

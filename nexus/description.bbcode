@@ -7,7 +7,7 @@
 [line]
 
 [quote][size=4][b][color=#fcee0a]STATUS: PREVIEW[/color][/b][/size]
-Version 0.4 finds, recolors and makes materials, and keeps what you are working on at hand on the Desk. Everything on this page is built and tested on the developer's PC. It reads game version 2.5; the in-game checks were made on 2.31.
+Version 0.3.2 finds, recolors and makes materials, keeps what you are working on at hand on the Desk, and tells you which item to give V to see it. Everything on this page is built and tested on the developer's PC. It reads game version 2.5; the in-game checks were made on 2.31.
 [b]This is a VS Code extension, not a game mod.[/b] It never changes your game's files: it saves into a WolvenKit project, which REDcode packs into a mod. Do not install it with Vortex.[/quote]
 
 [line]
@@ -29,7 +29,10 @@ Type "punk jeans" or "Sunny Ammo". EDGEmat walks the game's chain of files for y
 [img]https://staticdelivery.nexusmods.com/mods/3333/images/35422/35422-1792555213-90041381.png[/img]
 
 [size=4][b][color=#19f3ff]The Desk[/color][/b][/size]
-Right-click a [i].mesh[/i] in REDcode's Game Assets or Project view and choose [b]Open in EDGEmat[/b]. It goes on the Desk, at the top of EDGEmat's sidebar, open on its looks and materials. Click a material to edit it; Ctrl+S keeps your edit on the Desk, and the Desk keeps everything across restarts. When you are happy, the [b]+[/b] in the Desk's title bar puts it all into your project in one go.
+Right-click a [i].mesh[/i] in REDcode's Game Assets or Project view and choose [b]Open in EDGEmat[/b]. It goes on the Desk, at the top of EDGEmat's sidebar, open on its looks and materials. Its look the most items wear opens first, and its layered material opens in the editor. Ctrl+S keeps your edit on the Desk, and the Desk keeps everything across restarts. Open the same mesh again and it comes in fresh as [b]variation 2[/b], so you can try versions side by side. When you are happy, the new-file icon on a line puts that one into your project, or the [b]+[/b] in the Desk's title bar all of them in one go; a project that is not open yet opens, so you see what went in.
+
+[size=4][b][color=#19f3ff]Which item to give V[/color][/b][/size]
+A mesh can be worn by several items, or only by NPCs. EDGEmat shows which of the game's items wear the look you changed, each with its command for REDnode's Console ([i]addItem("Items.Pants_01_basic_01")[/i]) and a Copy button. Install your project, press F10 in the game, open the Console, paste: V has it, in your colors.
 
 [size=4][b][color=#19f3ff]Every layer in plain words, and a map you can click[/color][/b][/size]
 "Leather, black, mostly glossy, faint bumps, 6% of the jacket." Each layer's surface, color, shine, metal, bumps, tiling and detail texture, and how much of the garment it covers, beside a color map of where each layer goes. Click a spot to find its layer; select a layer to light up exactly where it goes. Tick Raw values for the game's own names and numbers. Layers that don't show say why, and EDGEmat flags what looks wrong, such as a color the surface doesn't have (the game draws it white).
@@ -49,7 +52,7 @@ One click opens the mesh in REDcode's 3D viewer, with its colors from EDGEmat: e
 [img]https://staticdelivery.nexusmods.com/mods/3333/images/35422/35422-1792555416-1046393162.png[/img]
 
 [size=4][b][color=#19f3ff]Every surface and every color, named[/color][/b][/size]
-Game Materials, a list of all the game's surfaces (about 390) and detail textures (about 130), built from your own game with thumbnails. Each surface's page shows every color it offers as a swatch with a plain name ("dark muted blue"), and sorts them by how close they are to a color you type or pick.
+Game Materials, a list of all the game's surfaces (about 390) and detail textures (about 130), built from your own game with thumbnails, and a filter: type "leather" and the list shows only those. Each surface's page shows every color it offers as a swatch with a plain name ("dark muted blue"), and sorts them by how close they are to a color you type or pick.
 
 [img]https://staticdelivery.nexusmods.com/mods/3333/images/35422/35422-1792555604-1072948209.png[/img]
 
@@ -91,6 +94,7 @@ Nothing from the game is in it: EDGEmat builds its list of materials from your o
 [*][url=https://code.visualstudio.com/]VS Code[/url] 1.70 or later (or VSCodium, or EDGEkit).[/*]
 [*]REDbridge 0.8.0 or later, the engine that reads the game's files. The easy way: install [url=https://www.nexusmods.com/cyberpunk2077/mods/35421]REDcode[/url] and run its [b]Install REDbridge[/b], which also fetches .NET 10 for your Windows user. With REDcode set up, EDGEmat needs no configuration at all.[/*]
 [*]To save into a mod and pack it: a WolvenKit project, and REDcode to pack it (REDcode makes the project too). For View in 3D, Open in EDGEmat and the Desk's menus: REDcode.[/*]
+[*]To give V the item you changed: [url=https://www.nexusmods.com/cyberpunk2077/mods/35419]REDnode[/url] and its Console. Optional.[/*]
 [*]For materials from words: your own Google Gemini or OpenAI API key. Optional.[/*]
 [*]For the assistant: Node.js 20 or later, and Claude Code or another MCP client.[/*]
 [/list]
