@@ -61,6 +61,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
+| **Which item: In the game passed** (owner, laptop) | Steps 1 to 6, the last in the game with REDnode's Console. Left before the release: Connect an assistant and the release's install test |
 | **Open Material in EDGEmat passed** (owner, laptop) | Steps 1 to 6, after rewording steps 1 to 3 and 6 (a click already opens EDGEmat; REDcode CR2W Editor as the other editor; a mesh has Open in EDGEmat, not Open Material). No code change |
 | **Open in EDGEmat opens the look's setup** (the owner, Open Mesh in EDGEmat step 7: from REDcode's 3D view the mesh went on the Desk, but nothing came forward in the editor area) | A mesh put on the Desk (Open in EDGEmat from any view, Find's Add to Desk) now also opens its open look's layered material in the setup editor, or brings that tab forward; with several layered materials, the status bar says to click one on the Desk (`openLookSetup` in `extension.ts`). Steps 1 and 7 passed (owner); then the whole test |
 | **Tooltip paths wrap** (the owner, Open Mesh in EDGEmat step 2: paths cut off on the right) | The paths were in code blocks, which VS Code cuts at the tooltip's edge, and an extension cannot set a tooltip's width or padding. They are now text that wraps at each backslash (`src/tips.ts`, `appendPaths`), in Find's and the Desk's material tooltips and Game Materials' surface and microblend tooltips. Step 2 passed on the rerun, and with it all of [Open Mesh in EDGEmat](testing.html#open-mesh-in-edgemat) (owner) |
