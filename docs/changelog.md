@@ -34,6 +34,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 - REDcode's 3D view draws the materials again after you save a setup or put a new material on a mesh, so the change shows without reopening it.
 - A live preview in REDcode's 3D view: while a setup is open in EDGEmat's setup editor, the 3D view shows it as edited, before you save, and follows each edit, undo and redo. Close the editor without saving and the 3D view goes back to the saved setup. It shows on meshes from the same place as the setup: opened from the Desk, on the Desk's meshes; a project's file, on that project's; a game file, on the game's.
 - **View in 3D** on a mesh in your project opens the project's copy.
+- Hovering a microblend in **Game Materials** shows its picture, name and game path, as a surface does; before, only its path.
 
 **Fixed**
 

@@ -56,6 +56,12 @@ Last updated 2026-11-03.
 
 ## Log
 
+### 2026-11-13
+
+| What | Detail |
+|---|---|
+| **A microblend's tooltip shows its picture** (the owner, running Game Materials name) | Surfaces in Game Materials had a tooltip with the picture, name and path; microblends only the path. They now match (`libraryView.ts`). Step 9 added to [Game Materials name](testing.html#game-materials-name). Step 6 of that test was reworded the same day: each title bar button by its look and tooltip |
+
 ### 2026-11-12
 
 | What | Detail |

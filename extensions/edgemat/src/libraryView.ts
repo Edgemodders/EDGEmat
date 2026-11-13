@@ -99,12 +99,18 @@ export class LibraryView implements vscode.TreeDataProvider<Node> {
         return this.templateItem(node.template);
       case "microblend": {
         const m = node.microblend;
-        const item = new vscode.TreeItem(m.name.replace(/_/g, " "));
-        item.tooltip = m.path;
+        const title = m.name.replace(/_/g, " ");
+        const item = new vscode.TreeItem(title);
         item.contextValue = "edgemat.gamePath";
         item.id = m.path;
         item.command = { command: "edgemat.openItem", title: "Open", arguments: [node] };
         if (m.thumbnail) item.iconPath = vscode.Uri.file(thumbnailFile(this.cacheDir, m.thumbnail));
+        // The same kind of tooltip as a surface's: the picture, the name, the game path.
+        const tip = new vscode.MarkdownString();
+        if (m.thumbnail) tip.appendMarkdown(`![](${vscode.Uri.file(thumbnailFile(this.cacheDir, m.thumbnail)).toString()}|width=96)\n\n`);
+        tip.appendMarkdown(`**${title}**\n\nMicroblend: a small detail texture that breaks up a layer's mask edge\n\n`);
+        tip.appendCodeblock(m.path, "text");
+        item.tooltip = tip;
         return item;
       }
     }

@@ -107,7 +107,7 @@ The counts change after a game patch. A patch that adds surfaces is fine as long
 
 ### Game Materials name
 
-Added 2026-11-06 (EDGEmat #8): the Library view is now Game Materials. Step 8 added 2026-11-10: a Desk entry's Add to Project has EDGEfab's new-file icon. Only names changed, and the view's id is the same, so this checks the names and that its buttons still work.
+Added 2026-11-06 (EDGEmat #8): the Library view is now Game Materials. Step 8 added 2026-11-10: a Desk entry's Add to Project has EDGEfab's new-file icon. Step 9 added 2026-11-13: a microblend's tooltip shows its picture, as a surface's does (the owner saw only a path). Only names changed, and the view's id is the same, so this checks the names and that its buttons still work.
 
 1. Open this repo in VS Code, run `npm run build`, press **F5** and choose **Run EDGEmat**.
 2. In the second VS Code window that opens, check:
@@ -122,6 +122,7 @@ Added 2026-11-06 (EDGEmat #8): the Library view is now Game Materials. Step 8 ad
 | 6 | Hover the **GAME MATERIALS** header again. Its title bar has, from left to right: a sparkle (tooltip **New Material...**), a page with an arrow pointing into it (tooltip **Open Setup...**), the magnifier, the refresh icon, and three dots at the right end (tooltip **More Actions...**). (a) Press the sparkle. (b) Go back to EDGEmat's view, press the page with the arrow. (c) Press the three dots | (a) A **New Material** tab opens; close it. (b) A box titled **Open Setup** at the top of the window, with **From the game...** and **A file on disk...**; press Esc. (c) A menu with **Set Game Folder**, **Show Log** and **Connect an Assistant (MCP)...**; press Esc |
 | 7 | Press Ctrl+Shift+P and type `EDGEmat: ` | The list has **EDGEmat: Search Game Materials** and **EDGEmat: Rebuild Game Materials**, and nothing named Library |
 | 8 | Put something on the Desk if it is empty (Find › a garment › its mesh line › **+**, Add to Desk), then hover the entry's line on the **DESK** | Its Add to Project button is a page with a corner folded and a small plus (VS Code's new-file icon, as on EDGEfab's Desk), with the tooltip **Add to Project...**. The Desk's title bar keeps its **+** (Add the Desk to Project...) |
+| 9 | In **GAME MATERIALS**, unfold **Microblends** (the second group, below **Surfaces**) and hold the pointer over one, such as **dirt stains**. Then unfold **Surfaces**, a category in it, and hold the pointer over a surface, to compare | Both tooltips have the same shape: the picture, the name in bold, a line saying what it is (for a microblend: "a small detail texture that breaks up a layer's mask edge"), and the game path in a box. Before the fix, a microblend showed only its path |
 
 ### Game Materials view in VS Code
 
