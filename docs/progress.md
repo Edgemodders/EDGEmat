@@ -61,6 +61,7 @@ Last updated 2026-11-03.
 
 | What | Detail |
 |---|---|
+| **Connect an assistant passed** (owner, laptop) | Steps 1 to 6 on this release's code (14 tools). Found: with the EDGE plugin for Claude Code installed, its own EDGEmat server (npm `@edgemodders/edgemat-mcp` 0.3.1, 10 tools) runs beside the one Connect Claude Code adds, so an assistant sees two sets of tools. Left before the release: the release's install test |
 | **Which item: In the game passed** (owner, laptop) | Steps 1 to 6, the last in the game with REDnode's Console. Left before the release: Connect an assistant and the release's install test |
 | **Open Material in EDGEmat passed** (owner, laptop) | Steps 1 to 6, after rewording steps 1 to 3 and 6 (a click already opens EDGEmat; REDcode CR2W Editor as the other editor; a mesh has Open in EDGEmat, not Open Material). No code change |
 | **Open in EDGEmat opens the look's setup** (the owner, Open Mesh in EDGEmat step 7: from REDcode's 3D view the mesh went on the Desk, but nothing came forward in the editor area) | A mesh put on the Desk (Open in EDGEmat from any view, Find's Add to Desk) now also opens its open look's layered material in the setup editor, or brings that tab forward; with several layered materials, the status bar says to click one on the Desk (`openLookSetup` in `extension.ts`). Steps 1 and 7 passed (owner); then the whole test |
