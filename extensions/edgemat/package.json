@@ -85,7 +85,7 @@
     "viewsWelcome": [
       {
         "view": "edgemat.desk",
-        "contents": "The Desk holds the meshes and setups you are working on before they go into a project, and keeps them across restarts.\nRight-click a mesh in REDcode's Game Assets or Project view and pick Open in EDGEmat: it lands here with its looks and materials. A setup you open from here saves on the Desk; + on a line puts that one into a project, + in the title bar the whole Desk. Open the same mesh again after editing it to start a new variation."
+        "contents": "The Desk holds the meshes and setups you are working on before they go into a project, and keeps them across restarts.\nRight-click a mesh in REDcode's Game Assets or Project view and pick Open in EDGEmat: it lands here with its looks and materials. A setup you open from here saves on the Desk; the new-file icon on a line puts that one into a project, + in the title bar the whole Desk. Open the same mesh again after editing it to start a new variation."
       },
       {
         "view": "edgemat.find",
