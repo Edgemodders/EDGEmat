@@ -763,7 +763,7 @@ server.registerTool(
         .optional()
         .describe("Glow per material; replaces the model's own for the materials it names"),
       made: z.record(z.unknown()).optional().describe("Where the model came from (a Tripo task, a file) and its license, kept in the record"),
-      flip_normal_green: z.boolean().optional().describe("Flip the normal maps' green channel (unverified which way the game reads them)"),
+      flip_normal_green: z.boolean().optional().describe("Flip the normal maps' green from glTF's green up to the game's green down (DirectX). Default true, settled in the game; false only for maps that are green down already"),
     },
   },
   async ({ project, model, materials, mesh, folder, glow, made, flip_normal_green }) => {

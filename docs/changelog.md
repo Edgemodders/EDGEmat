@@ -11,6 +11,11 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+**Fixed**
+
+- Bumps on the materials EDGEmat makes from your words or a photo (New Material, `mat_generate`, `mat_from_image`, and patterns) came out backwards: raised details looked like dents under light from above. The game reads a normal map's green the other way (found in the game with rows of test dots). New materials are right; make an older one again to fix its bumps.
+- `mat_from_model` (and `materialsFromModel` for EDGEfab) now flips a model's normal maps to the game's way by default, since a model's (glTF's) are the other way round; `flip_normal_green: false` keeps a map that is right already.
+
 **Other**
 
 - `@edgemodders/edgemat-core`'s source map names its files inside the package (`../src/core/...`, with their text in the map), so a tool that bundles it can tell its code apart. In 0.3.2 the paths led out of the package.

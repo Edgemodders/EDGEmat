@@ -140,10 +140,11 @@ function heights(img: Image): Float32Array {
 
 /**
  * A normal map from the image's brightness, read as height (bright is raised), across the wrap so it
- * tiles too. `strength` 0 is flat; 1 is a moderate relief. Green points up the image (unverified
- * against the game's convention: one flag flips it).
+ * tiles too. `strength` 0 is flat; 1 is a moderate relief. Green points down the image (DirectX), the
+ * way the game reads it through EDGEmat's import: settled in the game on 2026-11-15 (test "Normal check",
+ * EDGEmat #11; green up showed bumps as dents under light from above). `greenUp` true gives glTF's way.
  */
-export function normalMap(img: Image, strength = 1, greenUp = true): Image {
+export function normalMap(img: Image, strength = 1, greenUp = false): Image {
   const { width: w, height: h } = img;
   const raw = heights(img);
   // A light 3 × 3 blur, so single-pixel noise does not read as bumps.

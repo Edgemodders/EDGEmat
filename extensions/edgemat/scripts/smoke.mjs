@@ -322,6 +322,17 @@ try {
   const dotsTile = core.tiling(dots), rampTile = core.tiling(ramp), seamTile = core.tiling(core.makeSeamless(ramp));
   check(dotsTile.across && !dotsTile.down && !rampTile.across && !rampTile.down && seamTile.across && seamTile.down,
     `tiling: dots tile across, not down (cut at the bottom); a ramp neither way; the ramp made seamless both ways`);
+  // Normal maps' green points down the image, as the game reads it (test "Normal check", #11): on a dome,
+  // the side nearer the image's top has low green.
+  const dome = { width: 64, height: 64, data: new Uint8Array(64 * 64 * 4) };
+  for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+    const d = Math.hypot(x - 32, y - 32) / 20, v = d < 1 ? Math.round(255 * Math.sqrt(1 - d * d)) : 0;
+    dome.data.set([v, v, v, 255], (y * 64 + x) * 4);
+  }
+  const green = (img, y) => img.data[(y * 64 + 32) * 4 + 1];
+  const nDown = core.normalMap(dome, 8), nUp = core.normalMap(dome, 8, true);
+  check(green(nDown, 20) + 10 < green(nDown, 44) && green(nUp, 20) > green(nUp, 44) + 10,
+    `normal maps: green down by default (a dome's upper side ${green(nDown, 20)}, lower side ${green(nDown, 44)}), as the game reads it; green up on request`);
   t3 = Date.now();
   const newMat = await core.makeMaterial(bridge, project.archive, { name: "Smoke Test Ramp", image: core.writePng(ramp), repeat: 3, shine: "glossy", made: { words: "a ramp" } }, [{ mesh: slim, material: "flames_blue_pink" }]);
   const readRoot = async (p) => JSON.parse((await bridge.fileToJson(path.join(project.archive, p))).json).Data.RootChunk;

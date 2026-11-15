@@ -82,7 +82,10 @@ export interface FromModelRequest {
   glow?: ModelGlow[];
   /** Where the model came from (a Tripo task, a file) and its license, kept in the record. */
   made?: Record<string, unknown>;
-  /** Flip normal maps' green (glTF's are green-up). Unverified which way the game reads them; off by default. */
+  /**
+   * Flip normal maps' green, from glTF's green up to the game's green down (DirectX). On by default: settled
+   * in the game on 2026-11-15 (test "Normal check", EDGEmat #11). False keeps a map that is green down already.
+   */
   flipNormalGreen?: boolean;
   log?: (line: string) => void;
 }
@@ -200,6 +203,7 @@ function channel(img: Image, c: number): { img: Image; flat?: number } {
  */
 export async function materialsFromModel(bridge: BridgeClient, req: FromModelRequest): Promise<FromModelResult> {
   const log = req.log ?? (() => undefined);
+  const flipGreen = req.flipNormalGreen ?? true;
   if (!req.model && !req.materials?.length) throw new Error("Give a model (.glb) or texture files per material.");
   const plans: Plan[] = [];
   if (req.model) {
@@ -297,12 +301,12 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
     }
     if (p.normal) {
       let img = await picture(p.normal);
-      if (req.flipNormalGreen) {
+      if (flipGreen) {
         const data = new Uint8Array(img.data);
         for (let k = 1; k < data.length; k += 4) data[k] = 255 - data[k];
         img = { ...img, data };
       }
-      m.normal = await tex(p.normal, "n01", img, "normal", req.flipNormalGreen ? "normal-flipped" : "normal");
+      m.normal = await tex(p.normal, "n01", img, "normal", flipGreen ? "normal-flipped" : "normal");
       if (!near(p.normalScale, 1)) m.normalStrength = p.normalScale;
     }
     let glow: FromModelMaterial["glow"];
@@ -336,7 +340,7 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
     const left = [...entries.entries()].filter(([k]) => !covered.has(k)).map(([, v]) => v);
     if (left.length) notes.push(`the mesh's ${left.join(", ")} kept ${left.length === 1 ? "its" : "their"} material: the model has none by ${left.length === 1 ? "that name" : "those names"}`);
   }
-  if (out.some((m) => m.textures.some((t) => /_n01\.xbm$/i.test(t)))) notes.push(`normal maps written ${req.flipNormalGreen ? "with green flipped" : "as glTF has them (green up)"}; which way the game reads them is unverified`);
+  if (out.some((m) => m.textures.some((t) => /_n01\.xbm$/i.test(t)))) notes.push(`normal maps written ${flipGreen ? "with green flipped to the game's green down" : "as given, without flipping green (the game reads green down)"}`);
 
   const record = path.join(req.project.raw, folder, `${stem}.from_model.json`);
   fs.mkdirSync(path.dirname(record), { recursive: true });
