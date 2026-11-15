@@ -571,7 +571,8 @@
     "tiling-check": "node scripts/tiling-check.mjs",
     "paint-check": "node scripts/paint-check.mjs",
     "reshape-check": "node scripts/reshape-check.mjs",
-    "glow-check": "node scripts/glow-check.mjs"
+    "glow-check": "node scripts/glow-check.mjs",
+    "normal-check": "node scripts/normal-check.mjs"
   },
   "dependencies": {
     "pngjs": "7.0.0",
