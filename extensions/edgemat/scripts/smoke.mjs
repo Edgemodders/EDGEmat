@@ -12,6 +12,7 @@ import * as path from "node:path";
 
 const require = createRequire(import.meta.url);
 const core = require("../dist/core.js");
+const { PNG } = require("pngjs");
 
 const i = process.argv.indexOf("--cache");
 const cache = i >= 0 ? process.argv[i + 1] : core.defaultCacheDir();
@@ -287,6 +288,22 @@ try {
   const share = (i) => leatherCut.info.layers[i].share ?? 0;
   check(share(0) > 0.75 && share(5) < 0.02 && share(6) > 0.03 && !!core.readMicroblend(cutCache, "base\\surfaces\\microblends\\lint_01.xbm"),
     `the slim-fits' leather: base ${(share(0) * 100).toFixed(1)}%, denim with lint ${(share(5) * 100).toFixed(1)}%, piping ${(share(6) * 100).toFixed(1)}%; opened with its microblends in ${cutMs} ms`);
+
+  // The bake's color (bake.ts): presets read as linear, each surface's texture under its color. Lighter than
+  // the flat color map, which shows presets as screen values, and with the surface's grain in it.
+  t3 = Date.now();
+  const bakedFile = core.bakeColor(leatherCut, lib, cutCache);
+  const bakeMs = Date.now() - t3;
+  const lum = (file) => {
+    const png = PNG.sync.read(fs.readFileSync(file));
+    const v = [];
+    for (let i = 0; i < png.width * png.height; i += 7) v.push((png.data[i * 4] + png.data[i * 4 + 1] + png.data[i * 4 + 2]) / 3);
+    v.sort((a, b) => a - b);
+    return { width: png.width, median: v[v.length >> 1], spread: v[Math.floor(v.length * 0.9)] - v[Math.floor(v.length * 0.1)] };
+  };
+  const bakedLum = bakedFile ? lum(bakedFile) : undefined, flat = lum(leatherCut.composite.file);
+  check(!!bakedLum && bakedLum.width === core.BakeSize && bakedLum.median > flat.median + 20 && bakedLum.spread > flat.spread,
+    `the bake's color of the slim-fits' leather in ${bakeMs} ms: ${bakedLum?.width} px, median ${bakedLum?.median.toFixed(0)} against the flat map's ${flat.median.toFixed(0)}, with the surfaces' grain (spread ${bakedLum?.spread.toFixed(0)} against ${flat.spread.toFixed(0)})`);
 
   // Generate's first slice: a texture from a PNG, a textured .mi on metal_base, and one material of a mesh pointed at it.
   const genTex = "edgemat\\smoke\\uv_test_pattern_d01.xbm", mi = "edgemat\\smoke\\uv_test.mi";

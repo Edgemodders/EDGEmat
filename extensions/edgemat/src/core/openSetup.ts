@@ -5,6 +5,7 @@
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { loadSurfaceTextures } from "./bake";
 import type { BridgeClient } from "./bridgeClient";
 import type { Library } from "./library";
 import { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, type MaskSet, type MaskSource } from "./masks";
@@ -98,7 +99,10 @@ export async function openSetup(bridge: BridgeClient | undefined, lib: Library |
     maskError = "No mask set found beside this setup or named by a mesh that uses it. Choose one to see where each layer shows.";
   }
 
-  if (masks && bridge) await loadMicroblends(bridge, dir, setup.layers.map((l) => l.microblend));
+  if (masks && bridge) {
+    await loadMicroblends(bridge, dir, setup.layers.map((l) => l.microblend));
+    await loadSurfaceTextures(bridge, lib, dir, setup.layers.filter((l) => l.opacity > 0).map((l) => l.material));
+  }
   const maskFrom = masks ? (mask ? "given" : named ? "material" : "beside") : undefined;
   return withSetup({ source, setup, info: describeSetup(setup, lib), masks, maskFrom, maskChoices, maskError }, setup, lib, dir);
 }

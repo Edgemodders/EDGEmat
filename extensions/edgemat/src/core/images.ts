@@ -34,13 +34,18 @@ export async function textureImage(bridge: BridgeClient, dir: string, texture: s
   }
 }
 
+/** Where wholeTexture caches a texture, whether it is there yet or not. */
+export function wholeTextureFile(dir: string, texture: { gamePath: string } | { file: string }, maxSide = 1024): string {
+  const id = "file" in texture ? `${texture.file}:${fs.statSync(texture.file).mtimeMs}` : texture.gamePath;
+  return imageFile(dir, crypto.createHash("sha1").update(`whole:${maxSide}:${id}`).digest("hex").slice(0, 20) + ".png");
+}
+
 /**
  * A texture as it is, for showing on a mesh: whole, not cropped, at most `maxSide` pixels on its longer
  * side. From the game, or from a file on disk (a project's copy). Returns the image's full path; cached.
  */
 export async function wholeTexture(bridge: BridgeClient, dir: string, texture: { gamePath: string } | { file: string }, maxSide = 1024): Promise<string> {
-  const id = "file" in texture ? `${texture.file}:${fs.statSync(texture.file).mtimeMs}` : texture.gamePath;
-  const out = imageFile(dir, crypto.createHash("sha1").update(`whole:${maxSide}:${id}`).digest("hex").slice(0, 20) + ".png");
+  const out = wholeTextureFile(dir, texture, maxSide);
   if (fs.existsSync(out)) return out;
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const png = `${out}.tmp-${process.pid}.png`;

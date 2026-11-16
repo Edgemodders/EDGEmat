@@ -188,7 +188,9 @@ function draw(parts: DrawPart[], cam: Vec3, center: number[], scale: number, siz
           let nn: Vec3 = face;
           if (p.nrm) nn = unit([0, 1, 2].map((q) => w0 * p.nrm![a * 3 + q] + w1 * p.nrm![b * 3 + q] + w2 * p.nrm![c * 3 + q]));
           if (dot(nn, cam) < 0) nn = [-nn[0], -nn[1], -nn[2]];
-          const shade = 0.45 + 0.6 * Math.max(0, dot(nn, light));
+          // A flat light: Tripo paints the pictures' shading into the model's texture, and the game lights
+          // it again (2026-11-16: the made hat came out darker at the sides). Enough to show the form.
+          const shade = 0.8 + 0.2 * Math.max(0, dot(nn, light));
           let rgb = [150, 150, 150];
           if (tex && p.uv) {
             let u = w0 * p.uv[a * 2] + w1 * p.uv[b * 2] + w2 * p.uv[c * 2];

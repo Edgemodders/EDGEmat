@@ -10,7 +10,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  addToInventory, applyLayerEdit, Desk, deskLabel, describeSurface, gamePathInProject, isGameFile, itemsWearing, loadMicroblends, meshesToPoint, meshesUsing, newPathFor, openSetup, projectArchive, readMicroblend, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
+  addToInventory, applyLayerEdit, bakeColor, Desk, deskLabel, describeSurface, gamePathInProject, isGameFile, itemsWearing, loadMicroblends, meshesToPoint, meshesUsing, newPathFor, openSetup, projectArchive, readMicroblend, sameSetup, saveToProject, setupToJson, suffixFor, withSetup,
   type BridgeClient, type LayerPatch, type Library, type MeshSearch, type OpenedSetup, type Project, type Setup, type SetupSource, type WornBy,
 } from "./core";
 import type { SetupPageData, SurfaceChoices } from "./webview/setup";
@@ -169,13 +169,19 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     const want = setup.toLowerCase();
     const same = (a?: string, b?: string) => (a ? path.resolve(a).toLowerCase() : "") === (b ? path.resolve(b).toLowerCase() : "");
     for (const doc of this.open) {
-      if (doc.savedTo?.toLowerCase() === want) return doc.view?.composite?.file;
+      if (doc.savedTo?.toLowerCase() === want) return this.look(doc);
       if (doc.gamePath?.toLowerCase() !== want) continue;
       const file = "file" in doc.source ? doc.source.file : undefined;
       const place = doc.deskId ? this.host.desk.archiveOf({ id: doc.deskId }) : file ? projectArchive(file) : undefined;
-      if (roots.some((r) => same(r, place))) return doc.view?.composite?.file;
+      if (roots.some((r) => same(r, place))) return this.look(doc);
     }
     return undefined;
+  }
+
+  /** A document's setup as edited, as the game draws its color (core bake.ts); its flat color map without a mask set. */
+  private look(doc: SetupDocument): string | undefined {
+    if (!doc.view) return undefined;
+    return bakeColor(doc.view, this.host.library(), this.host.cacheDir()) ?? doc.view.composite?.file;
   }
 
   /** The setups open from the Desk (from the entries `ids`, else any) with edits not saved yet, by name. */

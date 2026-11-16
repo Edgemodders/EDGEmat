@@ -19,8 +19,9 @@ export {
   applyLayerEdit, patchFromWords, presetNames, sameSetup, setupToJson, templateOf, DefaultMicroblend, PresetWhat, type EditResult, type LayerPatch, type LayerWords,
 } from "./edit";
 export { isGameFile, meshesToPoint, meshesUsing, meshUses, newPathFor, projectArchive, projectAt, saveToProject, suffixFor, type MeshSearch, type MeshUse, type Project, type SaveRequest, type SaveResult } from "./project";
-export { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, MaskSize, PickSize, type Composite, type MaskSet, type MaskSource } from "./masks";
+export { compositeSetup, coverage, loadMaskSet, maskSetsBeside, rankMaskSets, MaskSize, PickSize, type Composite, type MaskSet, type MaskSource } from "./masks";
 export { loadMicroblends, readMicroblend, type MicroblendMask } from "./microblend";
+export { bakeColor, BakeSize, loadSurfaceTextures } from "./bake";
 export { gamePathInProject, openSetup, readSetup, withSetup, type OpenedSetup, type SetupSource } from "./openSetup";
 export { addToInventory, isFilePath, itemMaterials, itemsWearing, loadItems, meshMaterials, namedMaterials, searchItems, type ItemEntry, type ItemLook, type ItemMaterials, type MaterialUse, type MeshLook, type WornBy } from "./find";
 export { Desk, deskLabel, deskProjectName, type DeskConflict, type DeskEntry, type DeskResult } from "./desk";

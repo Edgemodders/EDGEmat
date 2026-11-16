@@ -5,6 +5,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { bakeColor } from "./bake";
 import type { BridgeClient } from "./bridgeClient";
 import { Desk } from "./desk";
 import { isFilePath, namedMaterials, meshMaterials, type MaterialUse } from "./find";
@@ -67,7 +68,7 @@ async function colorMap(bridge: BridgeClient, lib: Library | undefined, dir: str
     const file = local(use.setup);
     const source: SetupSource = file ? { file, gamePath: use.setup } : { gamePath: use.setup };
     const opened = await openSetup(bridge, lib, dir, source, use.mask ? local(use.mask) ?? use.mask : undefined);
-    return opened.composite?.file;
+    return bakeColor(opened, lib, dir) ?? opened.composite?.file;
   }
   if (!use.baseColor) return undefined;
   const file = local(use.baseColor);

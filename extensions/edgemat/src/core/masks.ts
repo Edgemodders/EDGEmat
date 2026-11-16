@@ -131,12 +131,19 @@ export interface Composite {
   pick: number[];
 }
 
+/** How much each shown layer shows at each mask pixel, after the layers above it took their part. */
+export interface Coverage {
+  /** By layer index: MaskSize × MaskSize weights, 0 to 1, row by row. Only layers that show at all. */
+  weights: Map<number, Float32Array>;
+  /** What no layer covers, per pixel. */
+  remain: Float32Array;
+}
+
 /**
- * Lays each shown layer's color over the ones below through its mask, cut by its microblend when given
- * (opacity up to 1), and writes the result to `outFile`: flat colors in texture space, not the game's look.
- * Layers without a mask are left out.
+ * Each shown layer's coverage through its mask, cut by its microblend when given, times its opacity (up
+ * to 1). Top layer first: each takes what the layers above leave. Layers without a mask are left out.
  */
-export function compositeSetup(masks: MaskSet, layers: CompositeLayer[], outFile: string): Composite {
+export function coverage(masks: MaskSet, layers: Pick<CompositeLayer, "shown" | "opacity" | "microblend">[]): Coverage {
   const n = MaskSize * MaskSize;
   const read = (f: string) => {
     const png = PNG.sync.read(fs.readFileSync(f));
@@ -145,34 +152,55 @@ export function compositeSetup(masks: MaskSet, layers: CompositeLayer[], outFile
     return m;
   };
   const used = layers.map((l, i) => (l.shown && i < masks.files.length ? i : -1)).filter((i) => i >= 0);
-  const mask = new Map(used.map((i) => [i, read(masks.files[i])]));
-  const rgb = new Float32Array(n * 3);
   const remain = new Float32Array(n).fill(1);
+  const weights = new Map<number, Float32Array>();
+  for (const i of [...used].reverse()) {
+    const m = read(masks.files[i]);
+    const o = Math.min(1, Math.max(0, layers[i].opacity));
+    const mb = layers[i].microblend;
+    const cover = mb ? microblendCut(mb) : (_p: number, v: number) => v;
+    const w = new Float32Array(n);
+    let any = false;
+    for (let p = 0; p < n; p++) {
+      if (m[p] <= 0) continue;
+      const v = cover(p, m[p]) * o * remain[p];
+      if (v <= 0) continue;
+      remain[p] -= v;
+      w[p] = v;
+      any = true;
+    }
+    if (any) weights.set(i, w);
+  }
+  return { weights, remain };
+}
+
+/**
+ * Lays each shown layer's color over the ones below through its mask, cut by its microblend when given
+ * (opacity up to 1), and writes the result to `outFile`: flat colors in texture space, not the game's look
+ * (bake.ts draws that). Layers without a mask are left out.
+ */
+export function compositeSetup(masks: MaskSet, layers: CompositeLayer[], outFile: string): Composite {
+  const n = MaskSize * MaskSize;
+  const { weights, remain } = coverage(masks, layers);
+  const rgb = new Float32Array(n * 3);
   const shares = layers.map(() => 0);
   const best = new Float32Array(PickSize * PickSize);
   const pick = new Array<number>(PickSize * PickSize).fill(-1);
   const step = MaskSize / PickSize;
 
-  // Top layer first: each takes what the layers above leave.
-  for (const i of [...used].reverse()) {
-    const m = mask.get(i)!;
-    const o = Math.min(1, Math.max(0, layers[i].opacity));
+  for (const [i, w] of weights) {
     const hex = layers[i].hex;
     const c = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16) / 255);
-    const mb = layers[i].microblend;
-    const cover = mb ? microblendCut(mb) : (_p: number, v: number) => v;
     let sum = 0;
     for (let p = 0; p < n; p++) {
-      if (m[p] <= 0) continue;
-      const w = cover(p, m[p]) * o * remain[p];
-      if (w <= 0) continue;
-      remain[p] -= w;
-      sum += w;
-      rgb[p * 3] += c[0] * w; rgb[p * 3 + 1] += c[1] * w; rgb[p * 3 + 2] += c[2] * w;
+      const v = w[p];
+      if (v <= 0) continue;
+      sum += v;
+      rgb[p * 3] += c[0] * v; rgb[p * 3 + 1] += c[1] * v; rgb[p * 3 + 2] += c[2] * v;
       const y = Math.floor(p / MaskSize), x = p % MaskSize;
       if (y % step === step / 2 && x % step === step / 2) {
         const q = (y - step / 2) / step * PickSize + (x - step / 2) / step;
-        if (w > best[q]) { best[q] = w; pick[q] = i; }
+        if (v > best[q]) { best[q] = v; pick[q] = i; }
       }
     }
     shares[i] = sum / n;
