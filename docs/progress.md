@@ -59,6 +59,13 @@ Last updated 2026-11-03.
 
 ## Log
 
+### 2026-11-16
+
+| What | Detail |
+|---|---|
+| **The bake (M5) starts now, before Wardrobe Designer 0.1.0** (owner) | The Reshape test made the Cowboy hat with a wide brim, on the head, the badge in front, but in a dark grey-tan where the game's felt is near white. The cause is EDGEmat's drawing, not the AI: the pictures' hat is 81 of 255 at its median, GPT Image's change 87, and Tripo painted what it was given. The drawing lays each layer's preset color flat through its mask, as a screen color, with no surface texture. The felt's preset is 0.465 grey: 119 of 255 as a screen color, 182 read as linear, and the game shows a light grey, so the presets look linear (one item, one light; the open question "Preset colors: sRGB or linear"). The owner chose to build the faithful bake now (design, "Phases", M5): Reshape's pictures, REDcode's 3D view and EDGEmat's own previews all need it |
+| Wardrobe Designer fixes found in the Reshape test | The window runs off the bottom of the screen; the item buttons do not follow V's clothes until **Refresh**; after a Refresh the picked item stays the old one; the pictures are dark (the bake); clicking a picture opened no larger window (cause not found yet); Equipment-EX's outfit panel shows through the window. Built after the test, then the touched steps again |
+
 ### 2026-11-13
 
 | What | Detail |
