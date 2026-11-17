@@ -62,6 +62,7 @@ Last updated 2026-11-03.
 | What | Detail |
 |---|---|
 | **Request [EDGEmat #12](https://github.com/Edgemodders/EDGEmat/issues/12) from EDGEfab** (the owner's ask) | Game materials on an EDGEfab prop's parts, per part: Use a Game Surface (a one-layer setup), Use a Game Material (a standalone `.mi` that suits any shape), Generate, Back to the Model's Texture; in the UI, MCP and API. It is M4's "Game materials on a new mesh". The owner calls it the core of the creative workflow and may hold EDGEfab 0.1.0 for it, after an in-game look at a prop EDGEfab prepared with `mat_edit` and `mat_apply`. Found by EDGEfab: a game `ml_*.mi` embeds its `.mlsetup` (`EmbeddedFiles`, `Flags` Embedded), so a copy pointed at a new setup must drop it and set `Flags` to Default. Not started |
+| [EDGEmat #1](https://github.com/Edgemodders/EDGEmat/issues/1) and [#2](https://github.com/Edgemodders/EDGEmat/issues/2) closed | Both long done: #1 the changelog that feeds the release notes and Nexus (2026-10-19), #2 Open Material in EDGEmat in REDcode's Project view (0.3.2, hand test passed 2026-11-13). The owner: this session closes a request once it has done it |
 | Requests EDGEmat waited on, all shipped | REDcode #15 (0.10.5), #27 (0.10.10), #28 (0.10.11); REDnode #38 and #40 (0.58.0). Using them is EDGEmat's work now |
 
 ### 2026-11-16
