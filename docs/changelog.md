@@ -13,6 +13,8 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **Changed**
 
+- `mat_reshape`'s **make** keeps the game's own materials on the new shape by default: the item's UVs are carried over, so every look of it keeps its colors and it can still be restyled; small parts lying over it (a hat's band and buckle) stay the game's own, bent onto the new shape. `wears: "tripo"` puts Tripo's painted texture on it instead, as before. Reshape's pictures are drawn under a brighter soft light, on dark grey behind a light garment and white behind a dark one.
+
 - View in 3D shows a layered material much closer to the game: each layer's own surface (felt, leather, plastic) with its grain, under its color, and as light as the game shows it. Before, each layer was one flat color and many came out far too dark (a light grey felt hat looked mid-grey). Still approximate: no shine or bumps yet. This is the first part of the material preview planned for later (M5).
 
 **Fixed**

@@ -2,7 +2,7 @@
 // at a time, through EDGEmat's core (`reshape.ts`), as Wardrobe Designer runs it. 1. Views: the garment
 // drawn from four sides. 2. Change: the views changed by words (GPT Image by default). 3. Model: Tripo's
 // multiview to model and its retopology. 4. Fit (one-bone garments): imported over the mesh in the
-// project, Tripo's texture as its material, packed. Each step's files stay in the project's
+// project, keeping the game's materials (--wears tripo: Tripo's texture as its material), packed. Each step's files stay in the project's
 // source\raw\edgemat\reshape\<item> folder and are reused, so a step can be looked at before paying for
 // the next. Run `npm run build` first. Steps and what to look for: docs/testing.md, "Reshape check".
 //
@@ -10,6 +10,7 @@
 //        [--words "make the brim twice as wide"] [--what "cowboy hat"] [--until views|edit|model|fit]
 //        [--redraw] [--again] [--from last|game] [--service openai|gemini] [--model <model>]
 //        [--task <Tripo task id>] [--faces 6000] [--front -z] [--model-front +x] [--anchor 0.3]
+//        [--wears game|tripo]
 //
 // --until stops after that step (default: views, so nothing is paid for until asked). The views are drawn
 // once per work folder; --redraw draws them again and starts the changes over. A change with the same words
@@ -132,6 +133,9 @@ try {
   // 4. Fit.
   const r = await core.reshapeFit(bridge, v, change, made, project, {
     folder: `edgemat\\reshape\\${core.materialSlug(words)}`,
+    wears: opt("wears", "game"),
+    lib: core.loadLibrary(core.defaultCacheDir()),
+    cacheDir: core.defaultCacheDir(),
     anchor: Number(opt("anchor", "0.3")),
     modelFront: core.axis(opt("model-front", "+x")),
     log,

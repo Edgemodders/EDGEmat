@@ -19,6 +19,7 @@ import type { Library } from "./library";
 import { readPng, resize, writePng, type Image } from "./maps";
 import { imageAsPng, materialSlug } from "./material";
 import { renderMaterials } from "./render";
+import { bendOnto, carryOnto, coveredTriangles, tuckUnder, uvIslands } from "./transfer";
 import { Tripo } from "./tripo";
 
 type Vec3 = [number, number, number];
@@ -60,9 +61,16 @@ export interface ReshapeViews {
   meshes: ReshapeMesh[];
   /** Whether step 4 can fit this garment yet, and why not. */
   fit: { ok: boolean; bone?: string; why?: string };
+  /** The views' background: dark behind a light garment, white behind a dark one (none: white, before 2026-11-17). */
+  background?: ReshapeBackground;
   /** The changes made so far, newest last. */
   changes: ReshapeChange[];
 }
+
+export type ReshapeBackground = "white" | "dark";
+
+/** The views' background colors. Dark is not black, so a black garment's edge still shows. */
+const Backgrounds: Record<ReshapeBackground, [number, number, number]> = { white: [255, 255, 255], dark: [26, 26, 28] };
 
 export interface ReshapeChange {
   words: string;
@@ -91,7 +99,10 @@ export interface ReshapeFit {
   /** Every project file written, relative to the archive folder. */
   written: string[];
   mesh: string;
-  material: string;
+  /** What the made piece wears: the game's own materials (every look keeps its own), or Tripo's paint. */
+  wears: "game" | "tripo";
+  /** The material Tripo's paint went on, when it did. */
+  material?: string;
   notes: string[];
   /** The fitted model drawn as the views, for a look before the game. */
   sheet: string;
@@ -147,15 +158,20 @@ interface DrawPart {
 }
 
 /**
- * Draws parts orthographically from `cam` on white: each texel from the part's color map, lit softly from
- * above the camera. Drawn at twice the size and halved, for smooth edges. `scale` is pixels per metre.
+ * Draws parts orthographically from `cam` on `bg`: each texel from the part's color map, under a soft
+ * studio light (a key light above the camera to its left, a fill from the right, and plenty of ambient
+ * light). Drawn at twice the size and halved, for smooth edges. `scale` is pixels per metre. `lum` is the
+ * garment's median brightness (0 to 255), for choosing the background.
  */
-function draw(parts: DrawPart[], cam: Vec3, center: number[], scale: number, size: number): Image {
+function draw(parts: DrawPart[], cam: Vec3, center: number[], scale: number, size: number, bg: readonly number[] = Backgrounds.white): Image & { lum: number } {
   const S = size * 2;
   const right = unit(cross(Up, cam));
-  const light = unit([cam[0] * 0.8 - right[0] * 0.3, 0.6, cam[2] * 0.8 - right[2] * 0.3]);
+  const key = unit([cam[0] * 0.8 - right[0] * 0.4, 0.6, cam[2] * 0.8 - right[2] * 0.4]);
+  const fill = unit([cam[0] * 0.5 + right[0] * 0.8, 0.2, cam[2] * 0.5 + right[2] * 0.8]);
   const depth = new Float64Array(S * S).fill(-Infinity);
-  const color = new Float64Array(S * S * 3).fill(255);
+  const color = new Float64Array(S * S * 3);
+  for (let i = 0; i < S * S; i++) color.set(bg, i * 3);
+  const hist = new Float64Array(256);
   for (const p of parts) {
     const n = p.pos.length / 3;
     const sx = new Float64Array(n), sy = new Float64Array(n), sz = new Float64Array(n);
@@ -188,9 +204,11 @@ function draw(parts: DrawPart[], cam: Vec3, center: number[], scale: number, siz
           let nn: Vec3 = face;
           if (p.nrm) nn = unit([0, 1, 2].map((q) => w0 * p.nrm![a * 3 + q] + w1 * p.nrm![b * 3 + q] + w2 * p.nrm![c * 3 + q]));
           if (dot(nn, cam) < 0) nn = [-nn[0], -nn[1], -nn[2]];
-          // A flat light: Tripo paints the pictures' shading into the model's texture, and the game lights
-          // it again (2026-11-16: the made hat came out darker at the sides). Enough to show the form.
-          const shade = 0.8 + 0.2 * Math.max(0, dot(nn, light));
+          // A soft studio light, bright enough that nothing reads as dark: the shading shows the image
+          // service and Tripo the form, while the colors stay near the game's. Tripo's paint keeps some of
+          // it (2026-11-16: under a harder light the made hat came out darker at the sides), which matters
+          // only when the made piece wears Tripo's paint; by default it wears the game's materials.
+          const shade = 0.62 + 0.42 * Math.max(0, dot(nn, key)) + 0.12 * Math.max(0, dot(nn, fill));
           let rgb = [150, 150, 150];
           if (tex && p.uv) {
             let u = w0 * p.uv[a * 2] + w1 * p.uv[b * 2] + w2 * p.uv[c * 2];
@@ -206,6 +224,10 @@ function draw(parts: DrawPart[], cam: Vec3, center: number[], scale: number, siz
       }
     }
   }
+  for (let i = 0; i < S * S; i++) if (depth[i] > -Infinity) hist[Math.round(0.2126 * color[i * 3] + 0.7152 * color[i * 3 + 1] + 0.0722 * color[i * 3 + 2])]++;
+  const total = hist.reduce((a, b) => a + b, 0);
+  let lum = 0;
+  for (let s = 0; lum < 255 && s + hist[lum] < total / 2; lum++) s += hist[lum];
   const out = new Uint8Array(size * size * 4);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -217,7 +239,7 @@ function draw(parts: DrawPart[], cam: Vec3, center: number[], scale: number, siz
       out[(y * size + x) * 4 + 3] = 255;
     }
   }
-  return { width: size, height: size, data: out };
+  return { width: size, height: size, data: out, lum };
 }
 
 /** Four square pictures as one, two by two, in the cameras' order. */
@@ -243,13 +265,25 @@ function cut(img: Image, size: number): Image[] {
   });
 }
 
-/** The box of a picture's non-white pixels, in pixels. */
+/**
+ * The box of a picture's garment, in pixels: what differs from its background, read from its corners (the
+ * views' own white or dark, or near it in a picture an image service made).
+ */
 function outline(img: Image): { x0: number; y0: number; x1: number; y1: number; w: number; h: number } | undefined {
+  const corner: number[][] = [];
+  const m = Math.max(1, Math.floor(img.width / 64));
+  for (const [cx, cy] of [[0, 0], [img.width - m, 0], [0, img.height - m], [img.width - m, img.height - m]]) {
+    for (let y = cy; y < cy + m; y++) for (let x = cx; x < cx + m; x++) {
+      const o = (y * img.width + x) * 4;
+      corner.push([img.data[o], img.data[o + 1], img.data[o + 2]]);
+    }
+  }
+  const bg = [0, 1, 2].map((q) => corner.map((c) => c[q]).sort((a, b) => a - b)[Math.floor(corner.length / 2)]);
   let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
   for (let y = 0; y < img.height; y++) {
     for (let x = 0; x < img.width; x++) {
       const o = (y * img.width + x) * 4;
-      if (img.data[o] > 245 && img.data[o + 1] > 245 && img.data[o + 2] > 245) continue;
+      if (Math.abs(img.data[o] - bg[0]) < 12 && Math.abs(img.data[o + 1] - bg[1]) < 12 && Math.abs(img.data[o + 2] - bg[2]) < 12) continue;
       x0 = Math.min(x0, x);
       y0 = Math.min(y0, y);
       x1 = Math.max(x1, x);
@@ -265,14 +299,16 @@ export const ReshapeDark = [12, 14, 18] as const;
 /**
  * A copy of a reshape picture for a dark window: the white background around the garment, flooded in
  * from the picture's edges, turned dark, and the light fringe at the garment's edge blended into it. The
- * picture itself stays white: the image service is asked for a white background, and the fit reads the
- * outline against it. Written beside it as `<name>.dark.png` (again only when the picture is newer).
+ * picture itself keeps its background, which the image service is asked to keep and the fit reads the
+ * outline against; a picture already on the views' dark background is copied as it is. Written beside it
+ * as `<name>.dark.png` (again only when the picture is newer).
  */
 export function reshapeOnDark(sheet: string): string {
   const out = sheet.replace(/\.png$/i, "") + ".dark.png";
   if (fs.existsSync(out) && fs.statSync(out).mtimeMs >= fs.statSync(sheet).mtimeMs) return out;
   const img = readPng(fs.readFileSync(sheet));
   const { width: W, height: H, data } = img;
+  // A picture on the views' dark background has nothing to flood: the white flood below finds no seed.
   const light = (i: number) => Math.min(data[i * 4], data[i * 4 + 1], data[i * 4 + 2]);
   const bg = new Uint8Array(W * H);
   const stack: number[] = [];
@@ -383,7 +419,11 @@ export async function reshapeViews(bridge: BridgeClient, lib: Library | undefine
   // WolvenKit's export turns the game's forward (+Y) into glTF's -Z.
   const front = opts.front ?? ([0, 0, -1] as Vec3);
   const cams = cameras(front);
-  const drawn = cams.map((c) => draw(lod, c.cam, center, scale, size));
+  let drawn = cams.map((c) => draw(lod, c.cam, center, scale, size));
+  // A light garment (the white cowboy hat) on dark, so its edge and its light parts stay clear; a dark one on white.
+  const lum = drawn.reduce((s, d) => s + d.lum, 0) / drawn.length;
+  const background: ReshapeBackground = lum > 140 ? "dark" : "white";
+  if (background === "dark") drawn = cams.map((c) => draw(lod, c.cam, center, scale, size, Backgrounds.dark));
   const views = cams.map((c, i) => {
     const file = path.join(work, `view_${c.view}.png`);
     fs.writeFileSync(file, writePng(drawn[i]));
@@ -395,21 +435,22 @@ export async function reshapeViews(bridge: BridgeClient, lib: Library | undefine
   const fit = bones.length === 1
     ? { ok: true, bone: bones[0] }
     : { ok: false, why: `it moves with ${bones.length} bones; Reshape fits garments that move with one bone (hats, helmets, glasses) so far` };
-  const v: ReshapeViews = { work, sheet, views, frame: { front, center, scale, size, box }, meshes: out, fit, changes: [] };
+  const v: ReshapeViews = { work, sheet, views, frame: { front, center, scale, size, box }, meshes: out, fit, background, changes: [] };
   saveReshape(v);
-  log(`Views: ${out.length} mesh(es), ${box.size.map((x) => x.toFixed(2)).join(" x ")} m${fit.ok ? `, on ${fit.bone}` : `; not fittable yet: ${fit.why}`}`);
+  log(`Views: ${out.length} mesh(es), ${box.size.map((x) => x.toFixed(2)).join(" x ")} m, on ${background === "dark" ? "dark grey" : "white"}${fit.ok ? `, on ${fit.bone}` : `; not fittable yet: ${fit.why}`}`);
   return v;
 }
 
 // ---------- 2. change ----------
 
 /** The words sent with the views (design, "Reshape", step 2). */
-export function reshapePrompt(what: string, words: string): string {
+export function reshapePrompt(what: string, words: string, background: ReshapeBackground = "white"): string {
+  const bg = background === "dark" ? "plain very dark grey" : "plain white";
   return [
-    `The picture shows one ${what} from four sides, on a plain white background, as a 2 by 2 grid of orthographic views: top left from the front, top right from its left side, bottom left from the back, bottom right from its right side.`,
+    `The picture shows one ${what} from four sides, on a ${bg} background, as a 2 by 2 grid of orthographic views: top left from the front, top right from its left side, bottom left from the back, bottom right from its right side. It is lit by a soft studio light, and its colors are its true colors.`,
     `Change it: ${words.trim()}.`,
     `A changed part replaces the old one: the old part is gone, not kept inside, under or beside the new one, so the ${what} still has each of its parts once.`,
-    `Show the changed ${what} in the same four views and the same grid, with the same straight-on camera at the same distance and scale: the parts the words do not change keep their size and place, and a part made bigger may reach past where the old one did. Soft light, plain white background.`,
+    `Show the changed ${what} in the same four views and the same grid, with the same straight-on camera at the same distance and scale: the parts the words do not change keep their size and place, and a part made bigger may reach past where the old one did. The same soft studio light, ${bg} background.`,
     "Change it the same way in every view, so the four views show one object. Each view keeps its own details where they are: what shows only from the front stays only in the front view. Keep its colors and materials unless the words change them. No text, labels, shadows on the ground or borders.",
   ].join(" ");
 }
@@ -424,7 +465,7 @@ export async function reshapeChange(bridge: BridgeClient, v: ReshapeViews, words
   const base = opts.from === "game" ? undefined : v.changes.at(-1);
   const sheet = base?.sheet ?? v.sheet;
   const t = Date.now();
-  const img = await editImage(service, model, reshapePrompt(opts.what, words), [{ bytes: fs.readFileSync(sheet), mime: "image/png" }], {
+  const img = await editImage(service, model, reshapePrompt(opts.what, words, v.background), [{ bytes: fs.readFileSync(sheet), mime: "image/png" }], {
     key: opts.key,
     aspect: "1:1",
     size: v.frame.size * 2,
@@ -609,31 +650,25 @@ function tangents(pos: Float64Array, nrm: Float64Array, uv: Float64Array, idx: n
   return out;
 }
 
+/** A submesh's data as the fit writes it. */
+interface ChunkData {
+  pos: Float64Array;
+  nrm: Float64Array | null;
+  uv: Float64Array | null;
+  uv1?: Float64Array | null;
+  /** RGBA per vertex. */
+  color?: Float64Array | null;
+  idx: ArrayLike<number>;
+}
+
 /**
  * The exported .glb with its mesh parts replaced by one: the fitted parts merged, each vertex fully on
  * the skin's joint `boneIndex`. The armature, the skin and the first part's names and extras are kept,
  * so WolvenKit's import reads it as the game's mesh.
  */
 function gameGlb(orig: Glb, parts: DrawPart[], boneIndex: number): Buffer {
-  const json = structuredClone(orig.json);
-  const meshNodes: number[] = json.nodes.map((n: any, i: number) => (n.mesh != null ? i : -1)).filter((i: number) => i >= 0);
-  const keepNode = meshNodes.find((i) => /submesh_0*0(_|$)/i.test(json.nodes[i].name ?? "")) ?? meshNodes[0];
-  const drop = new Set(meshNodes.filter((i) => i !== keepNode));
-  const remap = new Map<number, number>();
-  json.nodes.forEach((_: unknown, i: number) => {
-    if (!drop.has(i)) remap.set(i, remap.size);
-  });
-  const fix = (list?: number[]) => list?.filter((i) => remap.has(i)).map((i) => remap.get(i)!);
-  json.nodes = json.nodes.filter((_: unknown, i: number) => !drop.has(i)).map((n: any) => (n.children ? { ...n, children: fix(n.children) } : n));
-  for (const s of json.scenes ?? []) s.nodes = fix(s.nodes);
-  for (const s of json.skins ?? []) {
-    s.joints = fix(s.joints);
-    if (s.skeleton != null) s.skeleton = remap.get(s.skeleton);
-  }
-  const mesh = json.meshes[orig.json.nodes[keepNode].mesh];
-  json.meshes = [mesh];
-  json.nodes[remap.get(keepNode)!].mesh = 0;
-
+  const meshNodes: number[] = orig.json.nodes.map((n: any, i: number) => (n.mesh != null ? i : -1)).filter((i: number) => i >= 0);
+  const keepNode = meshNodes.find((i) => /submesh_0*0(_|$)/i.test(orig.json.nodes[i].name ?? "")) ?? meshNodes[0];
   const count = parts.reduce((s, p) => s + p.pos.length / 3, 0);
   const pos = new Float64Array(count * 3), nrm = new Float64Array(count * 3), uv = new Float64Array(count * 2);
   const idx: number[] = [];
@@ -645,6 +680,66 @@ function gameGlb(orig: Glb, parts: DrawPart[], boneIndex: number): Buffer {
     for (const i of p.idx) idx.push(i + base);
     base += p.pos.length / 3;
   }
+  return gameGlbParts(orig, [{ node: keepNode, part: { pos, nrm, uv, idx } }], boneIndex);
+}
+
+/**
+ * The exported .glb with the mesh nodes in `chunks` given new data and every other mesh node dropped,
+ * each vertex fully on the skin's joint `boneIndex`. The armature, the skin and the kept nodes' names and
+ * extras stay, so WolvenKit's import reads it as the game's mesh, its submeshes in the same order.
+ */
+function gameGlbParts(orig: Glb, chunks: { node: number; part: ChunkData }[], boneIndex: number): Buffer {
+  const json = structuredClone(orig.json);
+  const meshNodes: number[] = json.nodes.map((n: any, i: number) => (n.mesh != null ? i : -1)).filter((i: number) => i >= 0);
+  const keepNodes = new Set(chunks.map((c) => c.node));
+  const drop = new Set(meshNodes.filter((i) => !keepNodes.has(i)));
+  const remap = new Map<number, number>();
+  json.nodes.forEach((_: unknown, i: number) => {
+    if (!drop.has(i)) remap.set(i, remap.size);
+  });
+  const fix = (list?: number[]) => list?.filter((i) => remap.has(i)).map((i) => remap.get(i)!);
+  json.nodes = json.nodes.filter((_: unknown, i: number) => !drop.has(i)).map((n: any) => (n.children ? { ...n, children: fix(n.children) } : n));
+  for (const s of json.scenes ?? []) s.nodes = fix(s.nodes);
+  for (const s of json.skins ?? []) {
+    s.joints = fix(s.joints);
+    if (s.skeleton != null) s.skeleton = remap.get(s.skeleton);
+  }
+  // The kept nodes' meshes, in node order, so the submeshes keep their order.
+  const ordered = [...keepNodes].sort((a, b) => a - b);
+  json.meshes = ordered.map((n) => json.meshes[orig.json.nodes[n].mesh]);
+  ordered.forEach((n, i) => (json.nodes[remap.get(n)!].mesh = i));
+  const chunksBin: Buffer[] = [orig.bin];
+  let offset = orig.bin.length;
+  const put = (typed: Float32Array | Uint16Array | Uint32Array, type: string, componentType: number, extra: Record<string, unknown> = {}) => {
+    const pad = (4 - (offset % 4)) % 4;
+    if (pad) {
+      chunksBin.push(Buffer.alloc(pad));
+      offset += pad;
+    }
+    const bytes = Buffer.from(typed.buffer, typed.byteOffset, typed.byteLength);
+    json.bufferViews.push({ buffer: 0, byteOffset: offset, byteLength: bytes.length });
+    chunksBin.push(bytes);
+    offset += bytes.length;
+    const comps = ({ SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 } as Record<string, number>)[type];
+    json.accessors.push({ bufferView: json.bufferViews.length - 1, componentType, count: typed.length / comps, type, ...extra });
+    return json.accessors.length - 1;
+  };
+  for (const n of ordered) {
+    const part = chunks.find((c) => c.node === n)!.part;
+    writePrimitive(json.meshes[json.nodes[remap.get(n)!].mesh], part, boneIndex, put);
+  }
+  const bin = Buffer.concat(chunksBin);
+  json.buffers = [{ byteLength: bin.length }];
+  return writeGlb(json, bin);
+}
+
+/** One submesh's data written as a mesh's only primitive, through `put` (which adds an accessor). */
+function writePrimitive(mesh: any, part: ChunkData, boneIndex: number, put: (typed: Float32Array | Uint16Array | Uint32Array, type: string, componentType: number, extra?: Record<string, unknown>) => number): void {
+  const count = part.pos.length / 3;
+  const pos = part.pos;
+  const nrm = part.nrm && part.nrm.length === pos.length ? Float64Array.from(part.nrm) : new Float64Array(count * 3);
+  const uv = part.uv && part.uv.length === count * 2 ? part.uv : new Float64Array(count * 2);
+  const idx = Array.from(part.idx);
   // Parts without normals get their faces'.
   for (let i = 0; i < idx.length; i += 3) {
     const [a, b, c] = [idx[i], idx[i + 1], idx[i + 2]];
@@ -653,22 +748,6 @@ function gameGlb(orig: Glb, parts: DrawPart[], boneIndex: number): Buffer {
     const f = unit(cross(sub([pos[b * 3], pos[b * 3 + 1], pos[b * 3 + 2]], pa), sub([pos[c * 3], pos[c * 3 + 1], pos[c * 3 + 2]], pa)));
     for (const v of [a, b, c]) nrm.set(f, v * 3);
   }
-  const chunks: Buffer[] = [orig.bin];
-  let offset = orig.bin.length;
-  const put = (typed: Float32Array | Uint16Array | Uint32Array, type: string, componentType: number, extra: Record<string, unknown> = {}) => {
-    const pad = (4 - (offset % 4)) % 4;
-    if (pad) {
-      chunks.push(Buffer.alloc(pad));
-      offset += pad;
-    }
-    const bytes = Buffer.from(typed.buffer, typed.byteOffset, typed.byteLength);
-    json.bufferViews.push({ buffer: 0, byteOffset: offset, byteLength: bytes.length });
-    chunks.push(bytes);
-    offset += bytes.length;
-    const comps = ({ SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 } as Record<string, number>)[type];
-    json.accessors.push({ bufferView: json.bufferViews.length - 1, componentType, count: typed.length / comps, type, ...extra });
-    return json.accessors.length - 1;
-  };
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
   for (let v = 0; v < count; v++) for (let c = 0; c < 3; c++) {
     lo[c] = Math.min(lo[c], pos[v * 3 + c]);
@@ -680,24 +759,26 @@ function gameGlb(orig: Glb, parts: DrawPart[], boneIndex: number): Buffer {
     weights[v * 4] = 1;
   }
   const uv32 = Float32Array.from(uv);
+  const uv1 = part.uv1 && part.uv1.length === count * 2 ? Float32Array.from(part.uv1) : uv32.slice();
+  const color = part.color && part.color.length === count * 4 ? Float32Array.from(part.color) : new Float32Array(count * 4);
   const prim = mesh.primitives[0];
   prim.attributes = {
     POSITION: put(Float32Array.from(pos), "VEC3", 5126, { min: lo, max: hi }),
     NORMAL: put(Float32Array.from(nrm), "VEC3", 5126),
     TANGENT: put(tangents(pos, nrm, uv, idx), "VEC4", 5126),
-    COLOR_0: put(new Float32Array(count * 4), "VEC4", 5126),
+    COLOR_0: put(color, "VEC4", 5126),
     TEXCOORD_0: put(uv32, "VEC2", 5126),
-    TEXCOORD_1: put(uv32.slice(), "VEC2", 5126),
+    TEXCOORD_1: put(uv1, "VEC2", 5126),
     JOINTS_0: put(joints, "VEC4", 5123),
     WEIGHTS_0: put(weights, "VEC4", 5126),
   };
   prim.indices = put(Uint32Array.from(idx), "SCALAR", 5125);
   delete prim.targets;
   mesh.primitives = [prim];
-  const bin = Buffer.concat(chunks);
-  json.buffers = [{ byteLength: bin.length }];
-  return writeGlb(json, bin);
 }
+
+/** A part's level of detail: WolvenKit names the parts submesh_NN_LOD_N, LOD_1 the most detailed. */
+const lodOf = (p: { mesh: string }) => Number(/lod_?(\d+)/i.exec(p.mesh)?.[1] ?? 0);
 
 const fittedFile = (work: string) => path.join(work, "fitted.json");
 
@@ -711,13 +792,19 @@ function readFitted(work: string): string[] {
 }
 
 /**
- * Tripo's model fitted onto the game's garment and imported over the look's first mesh in the project,
- * with Tripo's color and roughness as its material (in `folder`, a game path such as
- * `edgemat\reshape\<words>`). One-bone garments only (`v.fit`). Placed where the change's views show it:
- * each view's outline gives the garment's extent, by the views' own scale; then the top `anchor` of its
- * height (a hat's crown) is centred where the game's is, since that part sits on the body.
+ * Tripo's model fitted onto the game's garment and imported over the look's first mesh in the project.
+ * One-bone garments only (`v.fit`). Placed where the change's views show it: each view's outline gives
+ * the garment's extent, by the views' own scale; then the top `anchor` of its height (a hat's crown) is
+ * centred where the game's is, since that part sits on the body.
+ *
+ * `wears`: "game" (the default) keeps the game's materials: the game mesh is bent onto the new shape and
+ * its submeshes, UVs and vertex colors carried over (`transfer.ts`), so every look of the item keeps its
+ * own materials and can be restyled. "tripo" puts Tripo's color and roughness on it as a new material (in
+ * `folder`, a game path such as `edgemat\reshape\<words>`), on the look's first part only. `lib` and
+ * `cacheDir` let the fitted picture show the game's materials.
  */
-export async function reshapeFit(bridge: BridgeClient, v: ReshapeViews, change: ReshapeChange, model: ReshapeModel, project: Project, opts: { folder: string; anchor?: number; modelFront?: Vec3; log?: Log }): Promise<ReshapeFit> {
+export async function reshapeFit(bridge: BridgeClient, v: ReshapeViews, change: ReshapeChange, model: ReshapeModel, project: Project, opts: { folder: string; wears?: "game" | "tripo"; anchor?: number; modelFront?: Vec3; lib?: Library; cacheDir?: string; log?: Log }): Promise<ReshapeFit> {
+  const wears = opts.wears ?? "game";
   if (!v.fit.ok || !v.fit.bone) throw new Error(`This garment cannot be fitted yet: ${v.fit.why}`);
   const log = opts.log ?? (() => {});
   const notes: string[] = [];
@@ -785,7 +872,6 @@ export async function reshapeFit(bridge: BridgeClient, v: ReshapeViews, change: 
   });
   const anchor = opts.anchor ?? 0.3;
   const game = (await Promise.all(v.meshes.map(async (m) => primitives(readGlb(fs.readFileSync(m.glb)))))).flat();
-  const lodOf = (p: GlbPart) => Number(/lod_?(\d+)/i.exec(p.mesh)?.[1] ?? 0);
   const best = Math.min(...game.map(lodOf));
   const gameParts = game.filter((p) => lodOf(p) === best);
   if (anchor > 0) {
@@ -806,8 +892,8 @@ export async function reshapeFit(bridge: BridgeClient, v: ReshapeViews, change: 
     for (const p of placed) for (let k = 0; k < p.pos.length; k += 3) for (const c of [0, 2]) p.pos[k + c] += shift[c];
     log(`Fit: ${[0, 1, 2].map((k) => (hi[k] - lo[k]).toFixed(2)).join(" x ")} m; the top centred on the game's (moved ${(Math.hypot(shift[0], shift[2]) * 100).toFixed(1)} cm)`);
   }
-  const sheet = path.join(v.work, `${path.basename(change.sheet, ".png")}_fitted.png`);
-  fs.writeFileSync(sheet, writePng(grid(cams.map((c) => draw(placed, c.cam, center, scale, size)))));
+  const stemOf = path.basename(change.sheet, ".png");
+  const sheet = path.join(v.work, `${stemOf}_fitted${wears === "game" ? "_game" : ""}.png`);
 
   // The look's first mesh, rebuilt from the fitted model, imported over the project's copy.
   const target = v.meshes[0];
@@ -815,6 +901,84 @@ export async function reshapeFit(bridge: BridgeClient, v: ReshapeViews, change: 
   const joints: number[] = orig.json.skins?.[0]?.joints ?? [];
   const boneIndex = joints.findIndex((j) => orig.json.nodes[j].name === v.fit.bone);
   if (boneIndex < 0) throw new Error(`No bone ${v.fit.bone} in ${path.basename(target.mesh)}`);
+  let glbBytes: Buffer;
+  if (wears === "game") {
+    // The game mesh's own submeshes (its most detailed level), bent onto the new shape and carried over.
+    const own = primitives(orig);
+    const ownBest = Math.min(...own.map(lodOf));
+    const src = own.filter((p) => lodOf(p) === ownBest);
+    const t0 = Date.now();
+    const merged = mergeParts(placed);
+    // What another part covers closely (the crown under the band) gives the new shape no material.
+    const { hidden, over } = coveredTriangles(src, 0.012);
+    const bent = bendOnto(src, merged, { hidden });
+    // Kept as the game's own geometry, bent onto the new shape and lifted a little off it so the new
+    // surface does not show through: small submeshes (under a fifth of what shows: a hat's buckle, its
+    // glass) and small UV islands lying over another surface (a hat's band). A band only a triangle or two
+    // of the new shape tall would come out jagged, and a buckle would lose its detail. The rest takes the
+    // new shape, with the materials of the nearest game surface that shows.
+    const area = src.map((p, k) => {
+      const a = new Float64Array(p.idx.length / 3);
+      for (let t = 0; t < a.length; t++) {
+        if (hidden[k][t]) continue;
+        const [x, y, z] = [p.idx[t * 3], p.idx[t * 3 + 1], p.idx[t * 3 + 2]].map((i) => [p.pos[i * 3], p.pos[i * 3 + 1], p.pos[i * 3 + 2]] as Vec3);
+        a[t] = Math.hypot(...cross(sub(y, x), sub(z, x))) / 2;
+      }
+      return a;
+    });
+    const total = area.reduce((s, a) => s + a.reduce((x, y) => x + y, 0), 0) || 1;
+    const partShare = area.map((a) => a.reduce((x, y) => x + y, 0) / total);
+    const main = partShare.map((s) => s >= 0.2);
+    if (!main.some(Boolean)) main[partShare.indexOf(Math.max(...partShare))] = true;
+    const { island, count } = uvIslands(src);
+    const islArea = new Float64Array(count), islOver = new Float64Array(count);
+    src.forEach((p, k) => {
+      for (let t = 0; t < island[k].length; t++) {
+        islArea[island[k][t]] += area[k][t];
+        if (over[k][t]) islOver[island[k][t]] += area[k][t];
+      }
+    });
+    const overlay = (i: number) => islArea[i] / total < 0.2 && islOver[i] >= 0.3 * islArea[i];
+    const kept = src.map((p, k) => Uint8Array.from(island[k], (i) => (!main[k] || overlay(i) ? 1 : 0)));
+    const skip = src.map((p, k) => Uint8Array.from(kept[k], (x, t) => x | hidden[k][t]));
+    const lifted: Float64Array[] = [];
+    const keptIdx = src.map((p, k) => {
+      const out: number[] = [];
+      for (let t = 0; t < kept[k].length; t++) if (kept[k][t]) out.push(p.idx[t * 3], p.idx[t * 3 + 1], p.idx[t * 3 + 2]);
+      const l = Float64Array.from(bent[k]);
+      if (p.nrm) for (let i = 0; i < l.length; i++) l[i] += p.nrm[i] * 0.0025;
+      lifted[k] = l;
+      return out;
+    });
+    // The new shape's own version of a kept part (Tripo's band) tucked under the game's, 4 mm down.
+    const tucked = tuckUnder(merged, src.map((p, k) => ({ pos: lifted[k], nrm: p.nrm, idx: keptIdx[k] })), 0.004, 0.03);
+    const carried = carryOnto(src, bent, merged, skip);
+    const chunks = src.map((p, k) => {
+      const keepTris = keptIdx[k];
+      if (main[k] && !carried[k].idx.length && !keepTris.length) {
+        notes.push(`${p.mesh}: no part of the new shape is nearest to it, so the game's part stays, bent onto the new shape`);
+        for (let t = 0; t < p.idx.length; t++) keepTris.push(p.idx[t]);
+      }
+      return { node: p.node, part: joinChunks(carried[k], { ...p, pos: lifted[k], idx: keepTris }), keptTris: keepTris.length / 3 };
+    });
+    const covered = hidden.reduce((s, h) => s + h.reduce((a, b) => a + b, 0), 0);
+    log(`The game's materials carried onto the new shape in ${((Date.now() - t0) / 1000).toFixed(1)} s (${covered} covered game triangles left out, ${tucked} points of the new shape tucked under the kept ones): ${chunks.map((c, k) => `${src[k].mesh} ${c.part.idx.length / 3} triangles, ${c.keptTris} of them the game's, bent`).join("; ")}`);
+    glbBytes = gameGlbParts(orig, chunks, boneIndex);
+    // The fitted picture in the look's own materials, when the library is at hand.
+    let textures = new Map<string, Image>();
+    if (opts.cacheDir) {
+      const maps = await renderMaterials(bridge, opts.lib, opts.cacheDir, { mesh: target.mesh, appearance: target.appearance }, log).catch(() => ({}) as Awaited<ReturnType<typeof renderMaterials>>);
+      textures = new Map(Object.entries(maps).filter(([, m]) => m.baseColor).map(([k, m]) => [k, readPng(Buffer.from(m.baseColor!))]));
+    }
+    const drawn: DrawPart[] = chunks.map((c, k) => {
+      const chunk = Number(/submesh_(\d+)/i.exec(src[k].mesh)?.[1] ?? k);
+      return { pos: c.part.pos, nrm: c.part.nrm, uv: c.part.uv, idx: Float64Array.from(c.part.idx), texture: textures.get(target.chunkMaterials[chunk]) };
+    });
+    fs.writeFileSync(sheet, writePng(grid(cams.map((c) => draw(drawn, c.cam, center, scale, size, Backgrounds[v.background ?? "white"])))));
+  } else {
+    glbBytes = gameGlb(orig, placed, boneIndex);
+    fs.writeFileSync(sheet, writePng(grid(cams.map((c) => draw(placed, c.cam, center, scale, size, Backgrounds[v.background ?? "white"])))));
+  }
   const meshFile = path.join(project.archive, target.mesh);
   if (!fs.existsSync(meshFile)) {
     fs.mkdirSync(path.dirname(meshFile), { recursive: true });
@@ -822,13 +986,17 @@ export async function reshapeFit(bridge: BridgeClient, v: ReshapeViews, change: 
   }
   const glbOut = path.join(project.raw, target.mesh.replace(/\.mesh$/i, ".glb"));
   fs.mkdirSync(path.dirname(glbOut), { recursive: true });
-  fs.writeFileSync(glbOut, gameGlb(orig, placed, boneIndex));
+  fs.writeFileSync(glbOut, glbBytes);
   const imported = await bridge.importFile(glbOut, project.raw, project.archive, true);
   if (!imported.ok) throw new Error(`WolvenKit's import of the new ${path.basename(target.mesh)} failed`);
   const fitted = new Set(readFitted(v.work));
   fitted.add(target.mesh.toLowerCase());
   fs.writeFileSync(fittedFile(v.work), JSON.stringify([...fitted], null, 2));
   if (v.meshes.length > 1) notes.push(`${v.meshes.length - 1} other mesh(es) of the look left as they were`);
+  if (wears === "game") {
+    log(`Fitted on ${v.fit.bone}, imported over ${path.basename(target.mesh)}; it keeps the game's materials`);
+    return { written: [target.mesh], mesh: target.mesh, wears, notes, sheet };
+  }
 
   // Tripo's colors and roughness as a textured material, on the material the look puts on the first part.
   const stem = materialSlug(path.basename(target.mesh, ".mesh")).slice(0, 40);
@@ -852,5 +1020,55 @@ export async function reshapeFit(bridge: BridgeClient, v: ReshapeViews, change: 
   const material = target.chunkMaterials[0];
   for (const f of await applyMaterial(bridge, project.archive, target.mesh, material, mi)) written.add(f);
   log(`Fitted on ${v.fit.bone}, imported over ${path.basename(target.mesh)}; ${material} wears Tripo's texture`);
-  return { written: [...written], mesh: target.mesh, material, notes, sheet };
+  return { written: [...written], mesh: target.mesh, wears, material, notes, sheet };
+}
+
+/**
+ * A submesh from the new shape's carried triangles and the game's own triangles kept (only the vertices
+ * they use), as one.
+ */
+function joinChunks(a: ChunkData, b: ChunkData): ChunkData {
+  const used = new Map<number, number>();
+  const bIdx: number[] = [];
+  const na = a.pos.length / 3;
+  for (const v of Array.from(b.idx)) {
+    if (!used.has(v)) used.set(v, na + used.size);
+    bIdx.push(used.get(v)!);
+  }
+  const n = na + used.size;
+  const pos = new Float64Array(n * 3), nrm = new Float64Array(n * 3), uv = new Float64Array(n * 2), uv1 = new Float64Array(n * 2), color = new Float64Array(n * 4);
+  const copy = (dst: Float64Array, src: ArrayLike<number> | null | undefined, k: number, from: number, to: number) => {
+    if (src) for (let q = 0; q < k; q++) dst[to * k + q] = src[from * k + q];
+  };
+  for (let v = 0; v < na; v++) {
+    copy(pos, a.pos, 3, v, v);
+    copy(nrm, a.nrm, 3, v, v);
+    copy(uv, a.uv, 2, v, v);
+    copy(uv1, a.uv1 ?? a.uv, 2, v, v);
+    copy(color, a.color, 4, v, v);
+  }
+  for (const [v, w] of used) {
+    copy(pos, b.pos, 3, v, w);
+    copy(nrm, b.nrm, 3, v, w);
+    copy(uv, b.uv, 2, v, w);
+    copy(uv1, b.uv1 ?? b.uv, 2, v, w);
+    copy(color, b.color, 4, v, w);
+  }
+  return { pos, nrm, uv, uv1, color, idx: [...Array.from(a.idx), ...bIdx] };
+}
+
+/** Parts merged into one surface, normals kept. */
+function mergeParts(parts: DrawPart[]): { pos: Float64Array; nrm: Float64Array | null; idx: number[] } {
+  const count = parts.reduce((s, p) => s + p.pos.length / 3, 0);
+  const pos = new Float64Array(count * 3);
+  const nrm = parts.every((p) => p.nrm) ? new Float64Array(count * 3) : null;
+  const idx: number[] = [];
+  let base = 0;
+  for (const p of parts) {
+    pos.set(p.pos, base * 3);
+    if (nrm) nrm.set(p.nrm!, base * 3);
+    for (const i of p.idx) idx.push(i + base);
+    base += p.pos.length / 3;
+  }
+  return { pos, nrm, idx };
 }

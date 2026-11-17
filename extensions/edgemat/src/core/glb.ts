@@ -16,6 +16,10 @@ export interface GlbPart {
   pos: Float64Array;
   nrm: Float64Array | null;
   uv: Float64Array | null;
+  /** The second UV set (TEXCOORD_1), when there is one. */
+  uv1?: Float64Array | null;
+  /** Vertex colors (COLOR_0) as RGBA, when there are any. */
+  color?: Float64Array | null;
   idx: Float64Array;
   material?: number;
 }
@@ -141,8 +145,16 @@ export function primitives(glb: Glb): GlbPart[] {
         }
       }
       const uv = p.attributes.TEXCOORD_0 != null ? accessor(glb, p.attributes.TEXCOORD_0) : null;
+      const uv1 = p.attributes.TEXCOORD_1 != null ? accessor(glb, p.attributes.TEXCOORD_1) : null;
+      let color: Float64Array | null = null;
+      if (p.attributes.COLOR_0 != null) {
+        const c = accessor(glb, p.attributes.COLOR_0);
+        const n = Comps[glb.json.accessors[p.attributes.COLOR_0].type];
+        color = new Float64Array((c.length / n) * 4).fill(1);
+        for (let k = 0; k < c.length / n; k++) for (let q = 0; q < n; q++) color[k * 4 + q] = c[k * n + q];
+      }
       const idx = p.indices != null ? accessor(glb, p.indices) : Float64Array.from({ length: pos.length / 3 }, (_, i) => i);
-      out.push({ mesh: mesh.name ?? `mesh ${node.mesh}`, node: ni, meshIndex: node.mesh, primitive: pi, pos, nrm, uv, idx, material: p.material });
+      out.push({ mesh: mesh.name ?? `mesh ${node.mesh}`, node: ni, meshIndex: node.mesh, primitive: pi, pos, nrm, uv, uv1, color, idx, material: p.material });
     });
   });
   return out;

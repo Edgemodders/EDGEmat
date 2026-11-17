@@ -447,7 +447,7 @@ server.registerTool(
       "Changes a clothing item's shape by words, as Wardrobe Designer's Reshape does, a step at a time into a WolvenKit project. step views: draws the item's look from four sides (front, left, back, right) as one picture and says whether it can be fitted yet " +
       "(garments that move with one bone, such as hats, helmets and glasses, for now). step change: an AI image service changes that picture by words ('make the brim twice as wide'); OpenAI's GPT Image by default, with OPENAI_API_KEY or GEMINI_API_KEY from this server's environment, spending the user's credits " +
       "(a few tens of US cents); each change builds on the last unless from is 'game'. Look at the picture it returns before going on: Tripo and the fit follow it faithfully, mistakes included (an old part kept beside the new one). step back: takes the last change away. " +
-      "step make: Tripo makes a 3D model from the last change's four views and brings it to a game's face count (about 60 Tripo credits and 4 minutes, the user's Tripo key, TRIPO_API_KEY in this server's environment), then fits it onto the garment and imports it over the look's mesh in the project with Tripo's texture as its material. " +
+      "step make: Tripo makes a 3D model from the last change's four views and brings it to a game's face count (about 60 Tripo credits and 4 minutes, the user's Tripo key, TRIPO_API_KEY in this server's environment), then fits it onto the garment and imports it over the look's mesh in the project. By default (wears 'game') the made piece keeps the game's own materials: the game mesh's UVs are carried onto the new shape, so every look of the item keeps its colors and Restyle still works on it; small parts lying over the garment (a hat's band, its buckle) stay the game's own, bent onto the new shape. wears 'tripo' puts Tripo's painted texture on it instead (one look only, colors taken from the pictures). " +
       "Pack and install the project afterwards (REDcode: Pack and Try), or let Wardrobe Designer swap it in. Only the chosen body's mesh and its look's material are changed.",
     inputSchema: {
       item: z.string().describe("A clothing record id (Items.Hat_02_basic_01), or words matching one item"),
@@ -459,9 +459,10 @@ server.registerTool(
       from: z.enum(["last", "game"]).default("last").describe("For change: build on the last change, or change the game's look"),
       service: z.enum(["openai", "gemini"]).default("openai"),
       task: z.string().optional().describe("For make: a finished Tripo multiview task to reuse instead of paying for a new one"),
+      wears: z.enum(["game", "tripo"]).default("game").describe("For make: keep the game's materials on the new shape (default), or wear Tripo's painted texture"),
     },
   },
-  async ({ item, body, project, step, words, what, from, service, task }) => {
+  async ({ item, body, project, step, words, what, from, service, task, wears }) => {
     try {
       const b = await getBridge();
       const items = await loadItems(b, cacheDir);
@@ -506,10 +507,10 @@ server.registerTool(
       const tripoKey = envKey("tripo");
       if (!tripoKey) return failure(new Error("No Tripo key: set TRIPO_API_KEY in the MCP server's environment (for Claude Code: claude mcp add ... -e TRIPO_API_KEY=<key>). Tripo was not asked."));
       const made = await reshapeModel(new Tripo(tripoKey, { log }), v, change, { task, log });
-      const r = await reshapeFit(b, v, change, made, proj, { folder: `edgemat\\reshape\\${materialSlug(change.words)}`, log });
+      const r = await reshapeFit(b, v, change, made, proj, { folder: `edgemat\\reshape\\${materialSlug(change.words)}`, wears, lib: loadLibrary(cacheDir), cacheDir, log });
       return {
         content: [
-          text({ saved: { project: p.dir, mesh: r.mesh, material: r.material, written: r.written }, tripo: { task: made.task, credits: made.credits }, notes: r.notes.length ? r.notes : undefined, next: "Pack the project and install it (REDcode: Pack and Try), then wear the item in the game." }).content[0],
+          text({ saved: { project: p.dir, mesh: r.mesh, wears: r.wears, material: r.material, written: r.written }, tripo: { task: made.task, credits: made.credits }, notes: r.notes.length ? r.notes : undefined, next: "Pack the project and install it (REDcode: Pack and Try), then wear the item in the game." }).content[0],
           picture(r.sheet),
         ],
       };
