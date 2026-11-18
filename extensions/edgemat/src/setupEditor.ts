@@ -851,6 +851,14 @@ button.link { background: none; border: none; color: var(--accent); padding: 0; 
 @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
 .side { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 8px; }
 .map { position: relative; aspect-ratio: 1; border: 1px solid var(--line); background: #1f1f1f; cursor: crosshair; overflow: hidden; }
+.map { touch-action: none; user-select: none; }
+.map.zoomed { cursor: grab; }
+.map.dragging { cursor: grabbing; }
+.map .view { position: absolute; inset: 0; transform-origin: 0 0; }
+.map .view.px img { image-rendering: pixelated; }
+.map .tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 2px; align-items: center; background: color-mix(in srgb, var(--vscode-editor-background) 80%, transparent); border: 1px solid var(--line); padding: 2px; cursor: default; }
+.map .tools button { min-width: 24px; padding: 1px 6px; }
+.map .tools .zoom { font-size: 11px; color: var(--vscode-descriptionForeground); padding: 0 4px; min-width: 28px; text-align: right; }
 .map img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: auto; }
 .map img.dim { filter: brightness(.3) saturate(.4); }
 .map .lit { position: absolute; inset: 0; background: var(--accent); opacity: .85; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; mask-mode: luminance; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }

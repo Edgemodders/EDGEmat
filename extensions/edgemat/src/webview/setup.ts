@@ -138,7 +138,68 @@ function render(d: Extract<SetupPageData, { kind: "setup" }>): void {
   if (info.warnings.length) document.body.append(el("div", { class: "warnings" }, ...info.warnings.map((w) => el("div", {}, w))));
 
   // ---- the map --------------------------------------------------------------------------------------
-  const map = el("div", { class: "map", title: "Click to select the layer that shows there" });
+  const map = el("div", { class: "map", title: "Click to select the layer that shows there. Scroll to zoom, drag to move" });
+  // Zoom and pan: the images sit in `view`, scaled from its top-left corner and moved by `pan` (pixels of
+  // the map's box). The wheel zooms on the point under the cursor; a drag moves; a click without a drag
+  // still selects the layer there. Kept while the map is drawn again (another layer, another view).
+  const view = el("div", { class: "view" });
+  const zoomLabel = el("span", { class: "zoom" }, "1×");
+  let zoom = 1, panX = 0, panY = 0;
+  const applyZoom = () => {
+    const w = map.clientWidth, h = map.clientHeight;
+    panX = Math.min(0, Math.max(w - w * zoom, panX));
+    panY = Math.min(0, Math.max(h - h * zoom, panY));
+    view.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    view.classList.toggle("px", zoom >= 4);
+    map.classList.toggle("zoomed", zoom > 1);
+    zoomLabel.textContent = `${Math.round(zoom * 10) / 10}×`;
+  };
+  /** Zooms to `z` keeping the point (cx, cy) of the map's box where it is; the middle when not given. */
+  const zoomTo = (z: number, cx = map.clientWidth / 2, cy = map.clientHeight / 2) => {
+    const next = Math.min(16, Math.max(1, z));
+    panX = cx - (cx - panX) * (next / zoom);
+    panY = cy - (cy - panY) * (next / zoom);
+    zoom = next;
+    applyZoom();
+  };
+  const tools = el("div", { class: "tools" },
+    button("+", () => zoomTo(zoom * 2), "small", "Zoom in (or scroll up over the map)"),
+    button("−", () => zoomTo(zoom / 2), "small", "Zoom out (or scroll down)"),
+    button("Fit", () => zoomTo(1), "small", "The whole map"),
+    zoomLabel);
+  tools.addEventListener("pointerdown", (ev) => ev.stopPropagation());
+  tools.addEventListener("click", (ev) => ev.stopPropagation());
+  map.addEventListener("wheel", (ev) => {
+    if (!d.map) return;
+    ev.preventDefault();
+    const r = map.getBoundingClientRect();
+    zoomTo(zoom * (ev.deltaY < 0 ? 1.25 : 0.8), ev.clientX - r.left, ev.clientY - r.top);
+  }, { passive: false });
+  let drag: { x: number; y: number; panX: number; panY: number; moved: boolean } | undefined;
+  map.addEventListener("pointerdown", (ev) => {
+    if (!d.map || ev.button !== 0) return;
+    drag = { x: ev.clientX, y: ev.clientY, panX, panY, moved: false };
+    map.setPointerCapture(ev.pointerId);
+  });
+  map.addEventListener("pointermove", (ev) => {
+    if (!drag) return;
+    const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    map.classList.add("dragging");
+    panX = drag.panX + dx;
+    panY = drag.panY + dy;
+    applyZoom();
+  });
+  const endDrag = (ev: PointerEvent) => {
+    const was = drag;
+    drag = undefined;
+    map.classList.remove("dragging");
+    if (ev.type === "pointerup" && was && !was.moved) pick(ev);
+  };
+  map.addEventListener("pointerup", endDrag);
+  map.addEventListener("pointercancel", endDrag);
+  new ResizeObserver(() => applyZoom()).observe(map);
   const segAll = button("All layers", () => setView("all"));
   const segOne = button("Selected layer", () => setView("layer"));
   const setView = (v: "all" | "layer") => { state.view = v; save(); paintMap(); };
@@ -149,11 +210,12 @@ function render(d: Extract<SetupPageData, { kind: "setup" }>): void {
   const paintMap = () => {
     segAll.classList.toggle("on", state.view !== "layer");
     segOne.classList.toggle("on", state.view === "layer");
-    map.replaceChildren();
     if (!d.map) {
-      map.append(el("div", { class: "none" }, "The color map needs the mask set."));
+      map.replaceChildren(el("div", { class: "none" }, "The color map needs the mask set."));
       return;
     }
+    if (view.parentElement !== map) map.replaceChildren(view, tools);
+    view.replaceChildren();
     const sel = state.selected;
     const maskImg = sel !== undefined ? d.mask?.images[sel] : undefined;
     if (state.view === "layer" && maskImg) {
@@ -161,14 +223,16 @@ function render(d: Extract<SetupPageData, { kind: "setup" }>): void {
       const lit = el("div", { class: "lit" });
       lit.style.setProperty("mask-image", `url("${maskImg}")`);
       lit.style.setProperty("-webkit-mask-image", `url("${maskImg}")`);
-      map.append(el("img", { src: d.map.image, class: "dim", alt: "" }), lit);
+      view.append(el("img", { src: d.map.image, class: "dim", alt: "", draggable: "false" }), lit);
     } else {
-      map.append(el("img", { src: d.map.image, alt: "The setup's colors in texture space" }));
+      view.append(el("img", { src: d.map.image, alt: "The setup's colors in texture space", draggable: "false" }));
     }
+    applyZoom();
   };
-  map.onclick = (ev) => {
+  /** Selects the layer under the pointer: the spot on the map as drawn, zoomed and moved. */
+  const pick = (ev: PointerEvent) => {
     if (!d.map) return;
-    const r = map.getBoundingClientRect();
+    const r = view.getBoundingClientRect();
     const side = Math.round(Math.sqrt(d.map.pick.length));
     const x = Math.min(side - 1, Math.floor(((ev.clientX - r.left) / r.width) * side));
     const y = Math.min(side - 1, Math.floor(((ev.clientY - r.top) / r.height) * side));
@@ -180,7 +244,7 @@ function render(d: Extract<SetupPageData, { kind: "setup" }>): void {
     map,
     el("div", { class: "row" }, el("span", { class: "seg" }, segAll, segOne)),
     maskLine,
-    el("p", { class: "note" }, "Flat colors laid out on the garment's texture, the way its masks divide it: where each layer goes, not how it looks in the game. Click a spot to find its layer."),
+    el("p", { class: "note" }, "Flat colors laid out on the garment's texture, the way its masks divide it: where each layer goes, not how it looks in the game. Click a spot to find its layer. Scroll over it to zoom, drag to move, Fit for the whole map."),
   );
 
   // ---- the layers -----------------------------------------------------------------------------------

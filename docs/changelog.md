@@ -16,6 +16,8 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 - **Game materials on a prop's parts** (for EDGEfab's props, and any mesh in your project): right-click a material on the Desk › **Use a Game Surface...** (pick a surface, such as car paint or concrete, and a color: EDGEmat writes a one-layer setup the setup editor opens), **Use a Game Material...** (the game's materials that suit any shape: glass, glows, tiling metals and woods; read from your game once, about ten seconds; any other by path, with a warning when it may not fit) and, on a prop EDGEfab made, **Back to the Model's Texture**. A prop's parts show on the Desk with what each wears. Assistants get the same: `mat_apply` takes `surface` (with `color` and `tile`), `mi` or `model: true`; `mat_parts` lists a prop's parts; `mat_materials` finds game materials that suit any shape.
 
+- The setup editor's map zooms and moves, to look at its details: scroll over it, drag it, or its **+**, **−** and **Fit** buttons. A click still selects the layer there.
+
 **Changed**
 
 - `mat_reshape`'s **make** keeps the game's own materials on the new shape by default: the item's UVs are carried over, so every look of it keeps its colors and it can still be restyled; small parts lying over it (a hat's band and buckle) stay the game's own, bent onto the new shape. `wears: "tripo"` puts Tripo's painted texture on it instead, as before. Reshape's pictures are drawn under a brighter soft light, on dark grey behind a light garment and white behind a dark one.

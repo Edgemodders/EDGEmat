@@ -43,7 +43,8 @@ Last updated 2026-10-26.
 | [Parts check](#parts-check) | From `node scripts/parts-check.mjs` | #12 | 2026-11-18 | **Passed** (Claude, outside the game, on a copy of EDGEfab's vending machine): 9 parts listed; red car paint on one (a one-layer setup, nothing embedded, tiling 5.9 from the part's size); 331 of the game's 10,660 materials suit any shape (read in 9 s); bulletproof glass on another; a decal refused; a third back on the model's texture; packed |
 | [Game materials on a prop's parts](#game-materials-on-a-props-parts) | By hand, F5, with REDcode; then in the game with EDGEbuilder | #12, before EDGEfab 0.1.0 | 2026-11-18 | **Passed**, all 11 steps (owner) |
 | [Reshape with the game's materials](#reshape-with-the-games-materials) | From `node scripts/reshape-check.mjs` (no credits: the hat made in the Reshape and keys test), then in the game | W3, before Wardrobe Designer 0.1.0 | | Not run yet. Built 2026-11-17; Claude's fitted picture shows the felt and brim in the game's materials, the band all the way round and the buckle in front |
-| [The bake: color](#the-bake-color) | By hand, F5, with REDcode; then in the game | M5's first part, before Wardrobe Designer 0.1.0 | | Not run yet. Built 2026-11-16; smoke passes (the slim-fits' leather: median 50 against the flat map's 8, with grain). Claude drew the Cowboy hat's Reshape views with it: median 158 (was 81), light grey felt; black specks and peach patches remain |
+| [The bake: color](#the-bake-color) | By hand, F5, with REDcode; then in the game | M5's first part, before Wardrobe Designer 0.1.0 | 2026-11-18 | **Passed**, all 4 steps (owner). Built 2026-11-16; smoke passes (the slim-fits' leather: median 50 against the flat map's 8, with grain). Claude drew the Cowboy hat's Reshape views with it: median 158 (was 81), light grey felt; black specks and peach patches remain |
+| [Zoom on the setup map](#zoom-on-the-setup-map) | By hand, F5 | The setup editor | | Not run yet. Built 2026-11-18 (owner's ask during the bake test) |
 | [Normal check](#normal-check) | From `npm run normal-check`, then in the game | #11, before Wardrobe Designer 0.1.0 | 2026-11-15 | **Done: the game reads green down (DirectX).** The owner, laptop, midday sun from above: the **blue** rows (green down) look raised and the red rows (green up, EDGEmat until then) dented, clearest where the light falls fullest (the hip); some dots on the curving sides read either way. Claude's enlargement of the knee agrees: blue dots bright on top, red dots bright at the bottom. It matches EDGEfab's evidence. Fixed the same day: `normalMap()` green down by default, `materialsFromModel` flips glTF's by default; smoke checks the direction |
 | [Wardrobe Designer install](#wardrobe-designer-install) | By hand, in the game, from the release zip | Each Wardrobe Designer release | | Not run yet. Added 2026-10-30 with the release scaffolding; the draft zip builds (65 KB, the game-folder layout) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | 2026-11-13 | **Pass** (owner, laptop, 2026-11-13: steps 1 to 6, on this release's code: Connect Claude Code's `edgemat` server lists 14 tools). Found: the EDGE plugin's own EDGEmat server (npm 0.3.1, 10 tools) runs beside it, so Claude Code has two. Earlier: Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
@@ -680,6 +681,23 @@ Added 2026-11-16: the first part of the bake (M5, started early; design, "Phases
 | 2 | Compare closely with the game: put the hat on V (REDnode's Console: `addItem("Items.Hat_02_basic_01")`), inventory (**I**), a screenshot of the preview | Tell Claude which parts match and which do not. Known open: black specks and peach patches on the felt (microblend contrast, not yet used), a blurry tan patch at the front left of the brim |
 | 3 | Find `comfy rocker`, expand **Comfy rocker aramid-weave slim-fits**, **Feminine body**, the eye on its mesh row, look **leather** | Black leather, dark grey in the 3D view (no shine yet, so it reads lighter than glossy black in the game). Before, near pure black and flat |
 | 4 | Find `sunny ammo`, the eye on `s1_055_pwa_shoe__converse.mesh`, look **red_yellow_graphic** | The sneaker's colors as before (black sole, red trim, orange-brown upper) but lighter and with fabric grain. Compare with the game if you have it on hand |
+
+### Zoom on the setup map
+
+Added 2026-11-18 (owner: a modder should be able to look closely at the map). The setup editor's map zooms and moves: scroll over it, drag it, or the small **+**, **−** and **Fit** buttons at its top right. A click without a drag still selects the layer there. The map is 512 pixels square, so past 4× its pixels show (drawn sharp-edged from 4×).
+
+1. `npm run build` in `extensions\edgemat`, then **F5** (**Run EDGEmat**).
+2. In the development host, EDGEmat's activity bar container, **FIND**, press **Find...** (the magnifier at the top of the Find view), type `cowboy hat`. Expand **Cowboy hat with hardened-leather band**, **Feminine body**, `h1_021_pwa_hat__cowboy_sheriff.mesh` and its look, then click its material line with the layers icon. The setup editor opens, with the map on the left.
+
+| # | Do | Expect |
+|---|---|---|
+| 1 | Hover the map | **+**, **−**, **Fit** and **1×** at its top right |
+| 2 | Scroll up over the band (the dark area) | The map zooms in on the point under the pointer, not on its middle; the label counts up (1.3×, 1.6×...). At 4× and over, the pixels show as sharp squares. It stops at 16× |
+| 3 | Drag the map | It moves with the pointer (a hand cursor); it stops at the map's edges, so no empty space shows |
+| 4 | Click a spot without dragging | The layer there is selected in the list, as at 1×, and the map shows **Selected layer** lit, still zoomed |
+| 5 | **All layers** below the map, then **Selected layer** again | The zoom stays |
+| 6 | **−** twice, then **+**, then **Fit** | Out by half, in by twice, then the whole map at 1× |
+| 7 | Scroll down over the map | Zooms out; it stops at 1× |
 
 ### Parts check
 
