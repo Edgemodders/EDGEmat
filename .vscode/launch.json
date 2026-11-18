@@ -1,5 +1,9 @@
 {
   // F5 runs EDGEmat in an extension development host. Build first: npm run build.
+  // The host sometimes aborts at startup (exit code 134), only under the debugger: see
+  // docs/dev-setup.md, "When F5's host crashes". Ctrl+F5 (Run Without Debugging) starts it without
+  // the debugger. "trace" writes each session's debugger log (the crash's message among it) to
+  // VS Code's logs folder, under the F5 window's exthost\ms-vscode.js-debug.
   "version": "0.2.0",
   "configurations": [
     {
@@ -7,7 +11,10 @@
       "type": "extensionHost",
       "request": "launch",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}/extensions/edgemat"],
-      "outFiles": ["${workspaceFolder}/extensions/edgemat/dist/**/*.js"]
+      "outFiles": ["${workspaceFolder}/extensions/edgemat/dist/**/*.js"],
+      "debugWebWorkerHost": false,
+      "autoAttachChildProcesses": false,
+      "trace": true
     }
   ]
 }

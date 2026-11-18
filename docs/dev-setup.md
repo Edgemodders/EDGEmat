@@ -85,6 +85,22 @@ For `mat_generate`, the server reads the image service's key from its environmen
 claude mcp add --scope user edgemat -e GEMINI_API_KEY=<your key> -e OPENAI_API_KEY=<your key> -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
 ```
 
+#### When F5's host crashes
+
+The development host sometimes dies at startup with "Extension host terminated unexpectedly". It was seen with EDGEmat, EDGEfab and REDcode; pressing F5 again works, sometimes on the third or fourth try. Found on 2026-11-18 from VS Code's logs (`%APPDATA%\Code\logs\<session>\main.log` and each `window<n>\renderer.log`):
+
+| Fact | Seen |
+|---|---|
+| Exit code | 134 (an abort), about 1.1 s after the host starts, before it writes its own log |
+| Which windows | Only F5's development hosts (EDGEmat and EDGEfab); no normal window crashed in two days of logs |
+| Windows' event log, crash dumps | Nothing for these crashes |
+| The cause | Unverified. The timing points at the debugger connecting to the host, which waits at its first line under F5 |
+
+What to do:
+
+- **Ctrl+F5** (Run Without Debugging) starts the host without the debugger. EDGEmat's work does not need breakpoints, so this is the usual way to run it.
+- `launch.json` turns off the debugger's web worker host and child process attaching (fewer connections at startup) and has `"trace": true`. After a crash, the debugger's log for that session is in the F5 window's log folder, `exthost\ms-vscode.js-debug` (or the folder the Debug Console names); the abort's message is in it. The F5 window's **Debug Console** shows the same message until the next run.
+
 ### Releasing
 
 From 0.3.0, the first preview (0.2.0 was never released). `.github/workflows/release.yml` is the same workflow as REDnode's (from 2026-10-22; before that, `publish.yml` ran on a pushed `v*` tag). In the Actions tab, **Release** › **Run workflow** builds the files and keeps them as the run's artifact `EDGEmat-build`, to install and test before a release. With **Make a release** ticked, it also releases. It checks that both packages have one version (`tools/version.mjs --check`), stops when the run is not on `main` or the version's tag exists, takes the release notes from the version's section of [`docs/changelog.md`](changelog.html) (and stops when there is none), typechecks, builds, packages the VSIX for Windows x64, tags the commit `v<version>` and makes the GitHub release with the VSIX, the MCP server as `edgemat-mcp-<version>.cjs`, the Nexus Mods zip `EDGEmat-<version>-nexus.zip` ([`nexus/README.md`](https://github.com/Edgemodders/EDGEmat/blob/main/nexus/README.md)) and `THIRD-PARTY-NOTICES.txt`. Before the GitHub release it publishes the VSIX to the VS Code Marketplace and Open VSX, as REDcode's workflow does, with the Edgemodders organisation secrets `VSCE_PAT` and `OVSX_PAT`; each step runs even when another failed, and the run fails if any did. The extension's `"preview": true` gives it the Marketplace's Preview badge. The extension carries the MCP server (`dist/mcp/edgemat-mcp.cjs`, built by its `esbuild.mjs` from `packages/edgemat-mcp`). When all of that succeeded, the `npm` job publishes `@edgemodders/edgemat-mcp` with provenance (`NPM_TOKEN`, as REDcode's `redcode-mcp`), with the license and the notices copied beside it, then the core as `@edgemodders/edgemat-core` ([`packages/edgemat-core`](https://github.com/Edgemodders/EDGEmat/tree/main/packages/edgemat-core), EDGEmat #7, from 0.3.2): one CommonJS file built from `extensions/edgemat/src/core` with its types, `pngjs` and `vscode-jsonrpc` as dependencies, for EDGEfab and other tools' MCP servers. It publishes even when the server's step failed. Its first publish makes a new package under `@edgemodders`, so `NPM_TOKEN` must be allowed to (unverified: a token for `edgemat-mcp` only would refuse it).
