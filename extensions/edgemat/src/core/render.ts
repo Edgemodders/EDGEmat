@@ -41,13 +41,13 @@ export interface RenderRequest {
  */
 export async function renderMaterials(bridge: BridgeClient, lib: Library | undefined, dir: string, req: RenderRequest, log: (line: string) => void = () => {}, live?: (setup: string, roots: (string | undefined)[]) => string | undefined): Promise<Record<string, RenderedMaterial>> {
   const root = isFilePath(req.mesh) ? projectArchive(req.mesh) : undefined;
-  const uses = req.materials?.length
-    ? await namedMaterials(bridge, req.mesh, req.materials, root)
-    : (await meshMaterials(bridge, req.mesh, req.appearance ?? "default", root))[0]?.materials ?? [];
   // A game path, or the copy at that path in the mesh's project when there is one. A Desk entry's mesh copy
   // sits in the entry's own project-shaped folder, so its edits are read the same way, then the project it
-  // came from, if any. A game mesh keeps the game's look.
+  // came from, if any (a prop's part materials live there only). A game mesh keeps the game's look.
   const back = new Desk(dir).sourceOf(root);
+  const uses = req.materials?.length
+    ? await namedMaterials(bridge, req.mesh, req.materials, [root, back])
+    : (await meshMaterials(bridge, req.mesh, req.appearance ?? "default", [root, back]))[0]?.materials ?? [];
   const local = (p: string) => [root, back].map((r) => (r ? path.join(r, p) : "")).find((f) => f && fs.existsSync(f));
   const out: Record<string, RenderedMaterial> = {};
   for (const use of uses) {

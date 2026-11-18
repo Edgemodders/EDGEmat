@@ -116,15 +116,19 @@ export const isFilePath = (p: string) => /^[a-z]:[\\/]|^\\\\/i.test(p);
 
 /**
  * Reads files as JSON once per walk: a file on disk, a game path, or a game path that a project
- * overrides (a file at the same path under `root`, its source\archive folder).
+ * overrides (a file at the same path under `root`, its source\archive folder). Several roots are read in
+ * order: a Desk entry's own folder, then the project it came from.
  */
 class Reader {
   private readonly cache = new Map<string, Promise<Json>>();
-  constructor(private readonly bridge: BridgeClient, private readonly root?: string) {}
+  private readonly roots: string[];
+  constructor(private readonly bridge: BridgeClient, root?: string | (string | undefined)[]) {
+    this.roots = (Array.isArray(root) ? root : [root]).filter((r): r is string => !!r);
+  }
   json(p: string): Promise<Json> {
     const k = p.toLowerCase();
     if (!this.cache.has(k)) {
-      const local = isFilePath(p) ? p : this.root && fs.existsSync(path.join(this.root, p)) ? path.join(this.root, p) : undefined;
+      const local = isFilePath(p) ? p : this.roots.map((r) => path.join(r, p)).find((f) => fs.existsSync(f));
       this.cache.set(k, (local ? this.bridge.fileToJson(local) : this.bridge.toJson(p)).then((r) => {
         if (!r.json) throw new Error(`REDbridge returned no JSON for ${p}.`);
         return JSON.parse(r.json) as Json;
@@ -206,14 +210,14 @@ async function materialsOf(read: Reader, mesh: Json, counts: Map<string, number>
  * Named materials of a mesh (a game path or a file), resolved as Find resolves them. A mesh in a
  * project reads the project's own copies of its .mi files first, given `root`, its source\archive folder.
  */
-export async function namedMaterials(bridge: BridgeClient, meshPath: string, names: string[], root?: string): Promise<MaterialUse[]> {
+export async function namedMaterials(bridge: BridgeClient, meshPath: string, names: string[], root?: string | (string | undefined)[]): Promise<MaterialUse[]> {
   const read = new Reader(bridge, root);
   const mesh = (await read.json(meshPath)).Data.RootChunk;
   return materialsOf(read, mesh, new Map(names.map((n) => [n, 0])));
 }
 
 /** A mesh's materials in one appearance, or in every appearance when none is given. */
-export async function meshMaterials(bridge: BridgeClient, meshPath: string, appearance?: string, root?: string): Promise<MeshLook[]> {
+export async function meshMaterials(bridge: BridgeClient, meshPath: string, appearance?: string, root?: string | (string | undefined)[]): Promise<MeshLook[]> {
   const read = new Reader(bridge, root);
   if (appearance) return [await meshLook(read, meshPath, appearance)];
   const mesh = (await read.json(meshPath)).Data.RootChunk;
