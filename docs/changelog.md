@@ -1,13 +1,14 @@
 # Change<span class="y">log</span>
 
-What changed in each EDGEmat release, for modders. Each release takes its notes from its section here: the GitHub release (written by the release workflow), the Changelog tab of the extension in VS Code (written when the extension is packaged), and later the changelog on the Nexus Mods page (pasted by hand).
+What changed in each EDGEmat release, for modders. Each release takes its notes from its section here: the GitHub release (written by the release workflow), the Changelog tab of the extension in VS Code (written when the extension is packaged), and the version's changelog on the Nexus Mods page (the section's short Nexus summary, posted by the release workflow).
 
 How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnode/changelog.html)):
 
 - With each change a modder would notice, add a line under **Unreleased**, in its group: **New**, **Changed**, **Fixed** or **Other**. One change per line. Leave out what only the tests see.
 - Before a release, rename **Unreleased** to `## <version> (<date>)` and start a new empty **Unreleased** above it. The release workflow stops if the version has no section.
-- Links are full URLs, since the same text goes to GitHub, VS Code and Nexus.
-- `npm run release:notes` prints the GitHub notes of the extension's current version (or `-- <version>`); `npm run release:notes -- --nexus` prints plain lines for Nexus's changelog field, one per change. The steps of a release are in [Dev setup](https://edgemodders.github.io/EDGEmat/dev-setup.html#releasing).
+- With the rename, write the section's **Nexus summary** under its heading: an HTML comment that starts `<!-- nexus` and ends `-->`, with one short plain line per change a modder would notice, each starting `New:`, `Changed:`, `Fixed:`, `Removed:`, `Other:` or `Needs:`, at most 120 characters and 12 lines, no markdown. Nexus shows each line as one entry in a small text field and cannot edit it once posted, so write them for someone skimming, not the section's lines cut down. The comment hides it on GitHub, in VS Code and on this site; the release workflow posts it with a "Full changelog" link, and stops if it is missing or breaks a rule (EDGErepo's Nexus tool checks it again).
+- Links are full URLs, since the same text goes to GitHub and VS Code.
+- `npm run release:notes` prints the GitHub notes of the extension's current version (or `-- <version>`); `npm run release:notes -- --nexus` prints the Nexus summary, or says what is wrong with it. `node ../EDGErepo/tools/nexus/nexus.mjs notes --notes <file>` checks a summary written to a file (`--out <file>`). The steps of a release are in [Dev setup](https://edgemodders.github.io/EDGEmat/dev-setup.html#releasing).
 
 ## Unreleased
 
@@ -27,6 +28,21 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 - `@edgemodders/edgemat-core`'s source map names its files inside the package (`../src/core/...`, with their text in the map), so a tool that bundles it can tell its code apart. In 0.3.2 the paths led out of the package.
 
 ## 0.3.2 (2026-11-13)
+
+<!-- nexus
+New: The Desk: meshes and setups you work on, kept across restarts, each put into a project in one click
+New: Open in EDGEmat on a mesh, Open Material in EDGEmat on a setup, from REDcode's views and the Explorer
+New: Which game items wear a look, each with the REDnode Console command that gives it to V
+New: For AI assistants: mat_restyle (with patterns), mat_reshape and mat_from_model
+Changed: The Library view is now Game Materials, with Filter Game Materials
+Changed: A live preview in REDcode's 3D view while you edit; colors closer to the game (microblends)
+Changed: The Desk opens a mesh on the look most items wear, and marks the looks no item wears
+Changed: Image service keys are checked before saving; they stay in VS Code's secret storage
+Fixed: Unsaved edits in the setup editor vanished from view after switching tabs
+Fixed: Your project's own copy of a setup was passed over for the game's
+Fixed: New Material faded the edges of a picture that already tiled (ghost dots)
+Fixed: Gemini always picked its Lite model, and stopped on IMAGE_RECITATION
+-->
 
 **New**
 

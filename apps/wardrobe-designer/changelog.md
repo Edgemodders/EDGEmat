@@ -6,6 +6,7 @@ How to keep it, as EDGEmat's own changelog (`docs/changelog.md`):
 
 - With each change a player would notice, add a line under **Unreleased**, in its group: **New**, **Changed**, **Fixed** or **Other**.
 - Before a release, raise `version` in `rednode-app.json` and `package.json`, rename **Unreleased** to `## <version> (<date>)`, and start a new empty **Unreleased** above it. The release workflow stops if the version has no section, or if anything is left under **Unreleased**.
+- With the rename, write the section's **Nexus summary** under its heading, as in EDGEmat's changelog: an HTML comment from `<!-- nexus` to `-->`, one short plain line per change a player would notice, each starting `New:`, `Changed:`, `Fixed:`, `Removed:`, `Other:` or `Needs:`, at most 120 characters and 12 lines, no markdown. The release workflow posts it on Nexus with a "Full changelog" link and stops without it. Check: `node tools/release/notes.mjs --wardrobe --nexus`.
 
 ## Unreleased
 

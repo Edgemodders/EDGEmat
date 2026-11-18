@@ -2,7 +2,8 @@
 // tools/release/notes.mjs). The release workflow uses it, and stops when the version has no section.
 //
 //   node tools/release/notes.mjs [version]              markdown for the GitHub release, with the install lines
-//   node tools/release/notes.mjs [version] --nexus      plain lines for Nexus's changelog field
+//   node tools/release/notes.mjs [version] --nexus      the section's short Nexus summary (see below), for
+//                                                       Nexus's changelog field; stops when there is none
 //   node tools/release/notes.mjs --extension            writes extensions/edgemat/CHANGELOG.md, the
 //                                                       extension's Changelog tab (vscode:prepublish runs it)
 //   node tools/release/notes.mjs [version] --wardrobe   Wardrobe Designer's, from apps/wardrobe-designer/changelog.md
@@ -26,6 +27,17 @@ const changelog = wardrobe ? "apps/wardrobe-designer/changelog.md" : "docs/chang
 const lines = readFileSync(root + changelog, "utf8").split(/\r?\n/);
 const Docs = "https://edgemodders.github.io/EDGEmat/";
 
+// A section's Nexus summary (below) left out: it is for Nexus only.
+const withoutSummary = (part) => {
+  const kept = [];
+  for (let i = 0, inBlock = false; i < part.length; i++) {
+    if (!inBlock && part[i].trim() === "<!-- nexus") inBlock = true;
+    else if (inBlock && part[i].trim() === "-->") inBlock = false;
+    else if (!inBlock) kept.push(part[i]);
+  }
+  return kept;
+};
+
 if (extension) {
   // Every section from Unreleased down, without the page's own notes on keeping it; an empty Unreleased is left out.
   const first = lines.findIndex((line) => line.startsWith("## "));
@@ -33,7 +45,7 @@ if (extension) {
   for (let i = first; i >= 0 && i < lines.length; ) {
     let end = lines.findIndex((line, j) => j > i && line.startsWith("## "));
     if (end < 0) end = lines.length;
-    const body = lines.slice(i + 1, end);
+    const body = withoutSummary(lines.slice(i + 1, end));
     if (!(/^## Unreleased/.test(lines[i]) && !body.some((line) => line.trim()))) sections.push(lines[i], ...body);
     i = end < lines.length ? end : -1;
   }
@@ -58,29 +70,57 @@ if (!section.some((line) => line.trim())) {
   process.exit(1);
 }
 
+const github = withoutSummary(section);
+
 if (nexus) {
-  // Nexus's changelog takes one plain line per change: no markdown, links as "text (url)".
-  const plain = (text) => text
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 ($2)")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1");
-  const result = [];
-  let group = "";
-  for (const line of section) {
-    const groupHeading = line.match(/^\*\*(.+)\*\*$/);
-    if (groupHeading) group = groupHeading[1];
-    else if (line.startsWith("- ")) result.push((group ? `${group}: ` : "") + plain(line.slice(2)));
-    else if (line.trim()) result.push(plain(line.trim()));
+  // Nexus shows each line of a version's changelog as one entry, as plain text in a small field, and
+  // cannot edit it once posted, so its lines are a short summary written by hand in the section, not
+  // the section itself (EDGEmat #14; EDGErepo's Nexus tool stops a release otherwise):
+  //
+  //   <!-- nexus
+  //   New: The Desk: meshes and setups you work on, kept across restarts
+  //   Fixed: Edits in the setup editor vanished from view after switching tabs
+  //   -->
+  //
+  // An HTML comment, so GitHub and the docs site show none of it. Each line starts with New:,
+  // Changed:, Fixed:, Removed:, Other: or Needs:, has no markdown and at most NexusLine characters;
+  // at most NexusLines lines. A "Full changelog" line with the link is added at the end (13 in all).
+  // Check the result with: node ../EDGErepo/tools/nexus/nexus.mjs notes --notes <file>
+  const NexusLine = 120;
+  const NexusLines = 12;
+  const open = section.findIndex((line) => line.trim() === "<!-- nexus");
+  const close = open < 0 ? -1 : section.findIndex((line, i) => i > open && line.trim() === "-->");
+  if (open < 0 || close < 0) {
+    console.error(`${changelog}: the section for ${version} has no Nexus summary. Add one under its heading:
+
+<!-- nexus
+New: one short line per change, at most ${NexusLine} characters
+-->`);
+    process.exit(1);
   }
-  write(result.join("\n"));
+  const summary = section.slice(open + 1, close).map((line) => line.trim()).filter(Boolean);
+  const wrong = [];
+  if (!summary.length) wrong.push("it is empty");
+  if (summary.length > NexusLines) wrong.push(`${summary.length} lines, at most ${NexusLines}`);
+  for (const line of summary) {
+    if (!/^(New|Changed|Fixed|Removed|Other|Needs): \S/.test(line)) wrong.push(`"${line}" does not start with New:, Changed:, Fixed:, Removed:, Other: or Needs:`);
+    if (line.length > NexusLine) wrong.push(`"${line.slice(0, 50)}..." is ${line.length} characters, at most ${NexusLine}`);
+    if (/`|\*\*|\]\(|^#|^- /.test(line)) wrong.push(`"${line.slice(0, 50)}..." has markdown`);
+  }
+  if (wrong.length) {
+    console.error(`${changelog}: the Nexus summary for ${version}:\n- ${wrong.join("\n- ")}`);
+    process.exit(1);
+  }
+  const full = wardrobe ? "https://github.com/Edgemodders/EDGEmat/blob/main/apps/wardrobe-designer/changelog.md" : `${Docs}changelog.html`;
+  write([...summary, `Full changelog: ${full}`].join("\n"));
 } else if (wardrobe) {
-  write(`${section.join("\n").trim()}
+  write(`${github.join("\n").trim()}
 
 **Install:** with Vortex, or extract \`Wardrobe-Designer-${version}.zip\` below into the Cyberpunk 2077 folder, so the app lands in \`red4ext/plugins/REDnode/apps/wardrobe-designer/\`. In the game: **F10**, the **Mod Manager**, select **Wardrobe Designer**, allow its permissions (REDbridge, REDagent, swapping archives) and switch it on. Needs [REDnode](https://www.nexusmods.com/cyberpunk2077/mods/35419) 0.48.1 or later, with REDbridge and REDagent (your Anthropic key), on game 2.5. On [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/36636) too.
 
 Guide: ${Docs}wardrobe-designer.html (changelog: https://github.com/Edgemodders/EDGEmat/blob/main/apps/wardrobe-designer/changelog.md)`);
 } else {
-  write(`${section.join("\n").trim()}
+  write(`${github.join("\n").trim()}
 
 **Install:** in VS Code's Extensions view, search for **EDGEmat** and press **Install** ([VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat), [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat)). Or download \`edgemat-${version}.vsix\` below and run \`code --install-extension edgemat-${version}.vsix\`. Windows only. Needs Cyberpunk 2077 and REDbridge 0.8.0 or later; with [REDcode](https://github.com/Edgemodders/REDcode) set up, EDGEmat needs no configuration.
 

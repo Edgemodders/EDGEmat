@@ -57,6 +57,12 @@ Last updated 2026-11-03.
 
 ## Log
 
+### 2026-11-18
+
+| What | Detail |
+|---|---|
+| **Nexus changelogs a short summary** ([EDGEmat #14](https://github.com/Edgemodders/EDGEmat/issues/14), from REDnode at the owner's request) | EDGErepo's Nexus tool now stops a release unless the notes are a short summary (lines starting New:, Changed:, Fixed:, Removed:, Other: or Needs:, at most 120 characters, 12 lines and a Full changelog link, no markdown). `tools/release/notes.mjs --nexus` now prints a hand-written `<!-- nexus ... -->` block under the version's heading, as REDnode's does, and stops without one; GitHub notes and the extension's Changelog tab leave it out. 0.3.2 has its block (passes `nexus.mjs notes`). Wardrobe Designer's 0.1.0 needs one when its section is named. Done, #14 closed |
+
 ### 2026-11-17
 
 | What | Detail |
