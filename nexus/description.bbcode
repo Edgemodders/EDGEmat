@@ -7,7 +7,7 @@
 [line]
 
 [quote][size=4][b][color=#fcee0a]STATUS: PREVIEW[/color][/b][/size]
-Version 0.3.2 finds, recolors and makes materials, keeps what you are working on at hand on the Desk, and tells you which item to give V to see it. Everything on this page is built and tested on the developer's PC. It reads game version 2.5; the in-game checks were made on 2.31.
+Version 0.3.3 finds, recolors and makes materials, puts the game's own materials on a prop's parts, keeps what you are working on at hand on the Desk, and tells you which item to give V to see it. Everything on this page is built and tested on the developer's PC. It reads game version 2.5; the in-game checks were made on 2.31.
 [b]This is a VS Code extension, not a game mod.[/b] It never changes your game's files: it saves into a WolvenKit project, which REDcode packs into a mod. Do not install it with Vortex.[/quote]
 
 [line]
@@ -31,11 +31,14 @@ Type "punk jeans" or "Sunny Ammo". EDGEmat walks the game's chain of files for y
 [size=4][b][color=#19f3ff]The Desk[/color][/b][/size]
 Right-click a [i].mesh[/i] in REDcode's Game Assets or Project view and choose [b]Open in EDGEmat[/b]. It goes on the Desk, at the top of EDGEmat's sidebar, open on its looks and materials. Its look the most items wear opens first, and its layered material opens in the editor. Ctrl+S keeps your edit on the Desk, and the Desk keeps everything across restarts. Open the same mesh again and it comes in fresh as [b]variation 2[/b], so you can try versions side by side. When you are happy, the new-file icon on a line puts that one into your project, or the [b]+[/b] in the Desk's title bar all of them in one go; a project that is not open yet opens, so you see what went in.
 
+[size=4][b][color=#19f3ff]Game materials on a prop's parts[/color][/b][/size]
+A prop or object in your project, such as one made with EDGEfab, shows its parts on the Desk with what each wears. Right-click a part's material: [b]Use a Game Surface...[/b] gives it one of the game's surfaces (car paint, concrete, brushed metal) in a color you pick, as a setup you can edit like any other; [b]Use a Game Material...[/b] gives it one of the game's materials that suit any shape, such as glass or a glow; [b]Back to the Model's Texture[/b] undoes it.
+
 [size=4][b][color=#19f3ff]Which item to give V[/color][/b][/size]
 A mesh can be worn by several items, or only by NPCs. EDGEmat shows which of the game's items wear the look you changed, each with its command for REDnode's Console ([i]addItem("Items.Pants_01_basic_01")[/i]) and a Copy button. Install your project, press F10 in the game, open the Console, paste: V has it, in your colors.
 
 [size=4][b][color=#19f3ff]Every layer in plain words, and a map you can click[/color][/b][/size]
-"Leather, black, mostly glossy, faint bumps, 6% of the jacket." Each layer's surface, color, shine, metal, bumps, tiling and detail texture, and how much of the garment it covers, beside a color map of where each layer goes. Click a spot to find its layer; select a layer to light up exactly where it goes. Tick Raw values for the game's own names and numbers. Layers that don't show say why, and EDGEmat flags what looks wrong, such as a color the surface doesn't have (the game draws it white).
+"Leather, black, mostly glossy, faint bumps, 6% of the jacket." Each layer's surface, color, shine, metal, bumps, tiling and detail texture, and how much of the garment it covers, beside a color map of where each layer goes. Click a spot to find its layer; select a layer to light up exactly where it goes. Scroll over the map to zoom in on its details, and drag to move around. Tick Raw values for the game's own names and numbers. Layers that don't show say why, and EDGEmat flags what looks wrong, such as a color the surface doesn't have (the game draws it white).
 
 [img]https://staticdelivery.nexusmods.com/mods/3333/images/35422/35422-1792555298-902814000.png[/img]
 [img]https://staticdelivery.nexusmods.com/mods/3333/images/35422/35422-1792555343-682766462.png[/img]
@@ -44,10 +47,10 @@ A mesh can be worn by several items, or only by NPCs. EDGEmat shows which of the
 Click a layer and change its surface, its color (from the surface's own swatches, filtered by words such as "blue"), its finish, tiling, opacity and detail texture. Each change shows at once; Ctrl+Z undoes it. [b]Save to Project[/b] writes it into your WolvenKit project as a new setup, with copies of the garment's meshes pointed at it, for both bodies: it shows in the game with no other mod. REDcode packs and installs it in one click.
 
 [size=4][b][color=#19f3ff]A new material from your words[/color][/b][/size]
-Describe it, "worn brown leather with fine creases", and an AI image service draws it: Google Gemini or OpenAI, with [b]your own key[/b] (a few cents a take). Or use a photo of your own, no key needed. Each take shows tiled 3 x 3 so you see seams first. EDGEmat makes it seamless, gives it bumps and shine, writes it into your project and puts it on part of a garment, which keeps its own folds and wrinkles. Nothing is sent anywhere until you press Generate.
+Describe it, "worn brown leather with fine creases", and an AI image service draws it: Google Gemini or OpenAI, with [b]your own key[/b] (a few cents a take). Or use a photo of your own, no key needed. Each take shows tiled 3 x 3 so you see seams first. EDGEmat makes it seamless, gives it bumps and shine, writes it into your project and puts it on part of a garment, which keeps its own folds and wrinkles, with the material's bumps over them. Nothing is sent anywhere until you press Generate.
 
 [size=4][b][color=#19f3ff]The garment in 3D, live[/color][/b][/size]
-One click opens the mesh in REDcode's 3D viewer, with its colors from EDGEmat: each layer where it belongs, and the decals and stitching as their own textures. While a setup is open in EDGEmat, the 3D view follows each edit, undo and redo before you save. Colors only for now; shine and bumps come with the full preview.
+One click opens the mesh in REDcode's 3D viewer, with its colors from EDGEmat: each layer where it belongs, and the decals and stitching as their own textures. Each layer shows its own surface and grain under its color, as light as the game shows it. While a setup is open in EDGEmat, the 3D view follows each edit, undo and redo before you save. Shine and bumps come with the full preview.
 
 [img]https://staticdelivery.nexusmods.com/mods/3333/images/35422/35422-1792555416-1046393162.png[/img]
 
@@ -117,7 +120,7 @@ Or from a terminal: [i]code --install-extension edgemat-x.y.z.vsix[/i]. The step
 
 [list]
 [*][b]Game Materials[/b], [b]Read[/b] and [b]Edit[/b]: the list of game materials, surface pages, the setup editor with editing and Save to Project, Find, the Desk, View in 3D with a live preview, New Material, the assistant's tools. Done: this version.[/*]
-[*][color=#19f3ff]Next:[/color] [b]Make[/b]: materials for brand-new clothes and objects, from a model's own textures, picked from the game, or generated; a mesh's looks.[/*]
+[*][color=#19f3ff]Next:[/color] [b]Make[/b]: materials for brand-new clothes and objects, from a model's own textures, picked from the game (a prop's parts: done in 0.3.3), or generated; a mesh's looks.[/*]
 [*][b]Preview[/b]: shine, bumps, metal and detail on the 3D model, not just colors.[/*]
 [*][b]Beyond layers[/b]: colors no surface offers, other kinds of material.[/*]
 [*][b]Ship[/b]: a place in EDGEkit, and the docs a non-coder needs to recolor an item alone.[/*]

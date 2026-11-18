@@ -14,7 +14,7 @@ EDGEmat is the EDGEmodders material editor for Cyberpunk 2077, a VS Code extensi
 
 ## Roadmap status
 
-As of 2026-10-24. The latest release is 0.3.1 (2026-10-21), on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat).
+As of 2026-11-18. The latest release is 0.3.3 (2026-11-18), on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=edgemodders.edgemat) and [Open VSX](https://open-vsx.org/extension/edgemodders/edgemat).
 
 | Phase | Status |
 |---|---|
@@ -22,10 +22,10 @@ As of 2026-10-24. The latest release is 0.3.1 (2026-10-21), on the [VS Code Mark
 | M1 Library | **Done 2026-10-16** (smoke test and hand test in VS Code pass). The extension (0.1.0) with its activity bar container and Library view, the MCP server skeleton (`mat_library`, `mat_templates`, `mat_microblends`), the bridge client, and the library built from the game: 386 surfaces and 131 microblends in about 22 s, matching the game's counts (`npm run smoke` passes) |
 | M2 Read | **Done 2026-10-19.** The surface page, the read-only setup editor, Find and View in 3D, with MCP `mat_colors`, `mat_describe` and `mat_find`; every hand test, the CLI install test and the phase test passed (the jacket's layers match WolvenKit's reading field for field). Released with M3 in the 0.3 preview |
 | M3 Edit | **Done 2026-10-20.** Editing, Save to Project and MCP `mat_edit`, and Generate's first slice from M4: New Material and MCP `mat_generate`, `mat_from_image`, `mat_apply`. Every hand test passed, and recolors and generated materials were seen in the game. Released as the first preview, 0.3.0; 0.3.1 carries the MCP server in the extension |
-| M4 Make (materials for new meshes, Generate) | Generate's first slice done in M3; the rest not started. Compose a material (a planner chooses or makes the layers) proposed 2026-10-29 |
+| M4 Make (materials for new meshes, Generate) | In progress. Generate's first slice done in M3; materials from a model (`mat_from_model`, for EDGEfab) built 2026-11-04; game materials on a prop's parts (#12) released in 0.3.3. Compose a material (a planner chooses or makes the layers) proposed 2026-10-29 |
 | W0 to W2 Wardrobe Designer | A REDnode app for players: restyle what V wears from the inventory screen. Proposed 2026-10-29. **W0 Checks done 2026-10-30:** the W0 build (`apps/wardrobe-designer`) passed in the game: its window over the inventory screen, what V wears, the item's layers through REDnode's REDbridge, and REDagent's recipe. **W1 Restyle by words passed 2026-10-30** (Restyle and Restore in the app, `mat_restyle` for assistants); its own release is ready (Nexus mod 36636, [guide](wardrobe-designer.html)), not yet released. W2 Patterns: first a generated material, then a pattern mask |
-| M5 Preview | Not started |
+| M5 Preview | Started: View in 3D shows each layer's own surface and grain (0.3.3). Next: shine (roughness and metal), then glass and glow; light and reflections asked of REDcode ([REDcode #31](https://github.com/Edgemodders/REDcode/issues/31)) |
 | M6 Beyond mlsetup | Not started |
-| M7 Ship | Parts done early: the Marketplace and Open VSX with 0.3.0, the MCP server on npm with 0.3.1. The Nexus page source is ready in `nexus/`, not posted |
+| M7 Ship | Parts done early: the Marketplace and Open VSX with 0.3.0, the Nexus page ([mod 35422](https://www.nexusmods.com/cyberpunk2077/mods/35422)) with 0.3.0, the MCP server on npm with 0.3.1, the core package on npm with 0.3.2 |
 
 Source code and issues: [github.com/Edgemodders/EDGEmat](https://github.com/Edgemodders/EDGEmat)
