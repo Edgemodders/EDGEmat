@@ -21,6 +21,7 @@ import {
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, materialsFromModel, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, envKey, imageAsPng, makeMaterial, materialSlug, texturePrompt, Services,
   bridgeOver, loadReshape, readPng, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, resize, Tripo, writePng,
+  backToModel, gameMaterials, partsOf, searchGameMaterials, useGameMaterial, useSurface,
   type ColorInfo, type LayerInfo, type Library, type MaterialResult, type PatternImage, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
@@ -706,17 +707,95 @@ server.registerTool(
   "mat_apply",
   {
     description:
-      "Puts an existing material (.mi, a game path, such as one mat_from_image wrote) on mesh materials: each mesh is copied into the project (or its copy there changed) and the named material entry takes the .mi as it is. " +
+      "Puts a material on mesh materials (each mesh copied into the project, or its copy there changed; the named material entry changes, in every appearance that uses it). One of: " +
+      "mi: an existing .mi as it is (a game path, or one mat_from_image wrote); a game .mi that does not suit any shape (a decal, a layered material with its mask painted for another mesh, textures painted for one mesh) is refused unless force. " +
+      "surface (with color, tile, roughness, metal, bumps, microblend in words, as mat_edit takes them): a game surface (mat_templates) as a one-layer setup and its .mi, written beside the mesh in a materials folder, one per material entry; tile defaults to one repeat a metre of the part. " +
+      "model: true puts the part back on the model's own texture (a prop EDGEfab made: the .mi EDGEfab keeps for it). For a prop's parts (one material entry per part), mat_parts lists them and mat_materials finds game materials that suit any shape. " +
       "Unlike mat_generate and mat_from_image it does not bake a repeat for a garment; to put a new material on a garment, make it with targets instead.",
-    inputSchema: { project: z.string(), mi: z.string(), targets: z.array(TargetSchema).min(1) },
+    inputSchema: {
+      project: z.string(),
+      targets: z.array(TargetSchema).min(1),
+      mi: z.string().optional(),
+      surface: z.string().optional().describe("A game surface: its path, name or words ('car paint metallic', 'concrete')"),
+      color: z.string().optional().describe("With surface: a color preset name or words ('dark red', #rrggbb); default the surface's own"),
+      tile: z.number().min(0.01).max(1000).optional().describe("With surface: repeats across the UV square"),
+      roughness: z.string().optional(),
+      metal: z.string().optional(),
+      bumps: z.string().optional(),
+      microblend: z.string().optional(),
+      model: z.boolean().optional().describe("Back to the model's own texture (an EDGEfab prop)"),
+      force: z.boolean().default(false).describe("With mi: use a game material even when it does not suit any shape"),
+    },
   },
-  async ({ project, mi, targets }) => {
+  async ({ project, targets, mi, surface, color, tile, roughness, metal, bumps, microblend, model, force }) => {
     try {
+      const chosen = [mi !== undefined, surface !== undefined, !!model].filter(Boolean).length;
+      if (chosen !== 1) throw new Error("Give one of mi, surface or model: true.");
       const p = projectFor(project);
       const b = await getBridge();
       const written: string[] = [];
-      for (const t of targets) for (const f of await applyMaterial(b, p.archive, t.mesh, t.material, mi)) if (!written.includes(f)) written.push(f);
-      return text({ saved: { project: p.dir, mi, targets, files: written }, next: "Pack the project and install it (REDcode: Pack and Try), then look in the game." });
+      const done: Record<string, unknown>[] = [];
+      const add = (fs: string[]) => {
+        for (const f of fs) if (!written.includes(f)) written.push(f);
+      };
+      for (const t of targets) {
+        if (surface !== undefined) {
+          const r = await useSurface(b, await library(), p.archive, t.mesh, t.material, { surface, color, tile, roughness, metal, bumps, microblend });
+          add(r.written);
+          done.push({ ...t, surface: r.surface?.path, color: r.color, tile: r.tile, setup: r.setup, mi: r.mi, notes: r.notes.length ? r.notes : undefined });
+        } else if (model) {
+          const r = await backToModel(b, p.archive, t.mesh, t.material);
+          add(r.written);
+          done.push({ ...t, mi: r.mi });
+        } else if (/\.mi$/i.test(mi!) && !(await isGameFile(b, mi!))) {
+          // A project's own .mi (one mat_from_image wrote): as it is.
+          add(await applyMaterial(b, p.archive, t.mesh, t.material, mi!));
+          done.push({ ...t, mi });
+        } else {
+          const r = await useGameMaterial(b, p.archive, t.mesh, t.material, mi!, { force });
+          add(r.written);
+          done.push({ ...t, mi, fits: r.fit.fits, why: r.fit.why });
+        }
+      }
+      return text({ saved: { project: p.dir, applied: done, files: written }, next: "Pack the project and install it (REDcode: Pack and Try), then look in the game. A surface's setup opens in EDGEmat's setup editor (mat_edit) for its color, tiling and the rest." });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+server.registerTool(
+  "mat_parts",
+  {
+    description:
+      "A prop's parts in a project (its material entries: an EDGEfab prop has one per part) and what each wears: the model's own texture, a game surface (and its color), a game material, or one made in the project. " +
+      "Change one with mat_apply (mi, surface, or model: true).",
+    inputSchema: { project: z.string(), mesh: z.string().describe("The mesh's game path in the project") },
+  },
+  async ({ project, mesh }) => {
+    try {
+      const p = projectFor(project);
+      const { parts, record } = await partsOf(await getBridge(), await library(), p.archive, mesh);
+      return text({ mesh, edgefab: record ? path.relative(p.dir, record.file) : undefined, parts: parts.map((x) => ({ material: x.name, wears: x.wears.kind, plain: x.wears.plain, mi: x.wears.mi, setup: x.wears.setup, model: x.model })) });
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+server.registerTool(
+  "mat_materials",
+  {
+    description:
+      "Finds the game's materials (.mi) that suit any shape, for a prop's part: plain, tiling ones (their textures from the game's surfaces or plain engine maps), glass and glowing ones; not decals or layered materials with masks painted for one mesh. " +
+      "The list is read from the game once (under a minute) and kept. query: words matching the name or path ('glass', 'glow blue', 'wood', 'metal'); empty lists the first ones. Put one on a part with mat_apply mi.",
+    inputSchema: { query: z.string().default(""), limit: z.number().int().min(1).max(500).default(40) },
+  },
+  async ({ query, limit }) => {
+    try {
+      const list = await gameMaterials(await getBridge(), cacheDir, (done, of) => done % 2000 === 0 && log(`game materials: ${done}/${of}`));
+      const found = searchGameMaterials(list, query, limit);
+      return text({ total: list.materials.length, found: found.length, materials: found.map((m) => ({ mi: m.path, name: m.name, glass: m.glass || undefined, glow: m.glow || undefined, base: m.base })) });
     } catch (e) {
       return failure(e);
     }

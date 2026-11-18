@@ -3,7 +3,14 @@
 // New members may be added within version 1; a change that breaks callers raises apiVersion.
 
 import type * as vscode from "vscode";
-import type { FromModelRequest, FromModelResult, RenderedMaterial, RenderRequest } from "./core";
+import type { FromModelRequest, FromModelResult, MaterialFit, Part, PartResult, RenderedMaterial, RenderRequest, SurfaceChoice } from "./core";
+
+/** A part of a prop in a project: the project folder (or its .cpmodproj), the mesh's game path, its material entry. */
+export interface PartRequest {
+  project: string;
+  mesh: string;
+  material: string;
+}
 
 /** materialsFromModel's request: as the core's, with the project as a folder (or its .cpmodproj). */
 export type ModelMaterialsRequest = Omit<FromModelRequest, "project" | "log"> & { project: string };
@@ -27,4 +34,17 @@ export interface EdgematApi {
    * name, glow included. Returns each material, the files written and what was approximated. Added in 0.4.
    */
   materialsFromModel(req: ModelMaterialsRequest): Promise<FromModelResult>;
+  /**
+   * Game materials on a prop's parts (EDGEmat #12, for EDGEfab's Desk). parts: each material entry of a
+   * mesh in a project and what it wears (the model's texture, a game surface, a game material, one made in
+   * the project). Each change lives only on the part's material entry, and fires onDidChangeMaterials.
+   * Added in 0.4.
+   */
+  parts(req: { project: string; mesh: string }): Promise<Part[]>;
+  /** A game surface as a one-layer setup and its .mi, in `<mesh folder>\materials`, on the part. */
+  usePartSurface(req: PartRequest & SurfaceChoice): Promise<PartResult>;
+  /** A game .mi on the part as it is; one that does not suit any shape is refused unless force. */
+  usePartMaterial(req: PartRequest & { mi: string; force?: boolean }): Promise<PartResult & { fit: MaterialFit }>;
+  /** The part back on the model's own texture (the .mi EDGEfab keeps for it). */
+  partBackToModel(req: PartRequest): Promise<PartResult>;
 }

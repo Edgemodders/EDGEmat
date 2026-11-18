@@ -6,7 +6,8 @@ import * as vscode from "vscode";
 import type { EdgematApi } from "./api";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import { addToInventory, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, deskProjectName, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, projectAt, materialsFromModel, renderMaterials, resolveBridge, resolveGame, suffixFor, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
+import { addToInventory, backToModel, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, deskProjectName, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, partsOf, projectAt, materialsFromModel, renderMaterials, resolveBridge, resolveGame, suffixFor, useGameMaterial, useSurface, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
+import { registerPartCommands } from "./partCommands";
 import { DeskView } from "./deskView";
 import { FindView, openFoundSetup, type Node } from "./findView";
 import { LibraryView } from "./libraryView";
@@ -559,6 +560,17 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       if (target && entry && bridge) target.mesh = await desk.meshFile(bridge, entry);
       await viewIn3D(target);
     }),
+    ...registerPartCommands({
+      bridge: bridgeNow,
+      library,
+      cacheDir: () => cacheDir,
+      log,
+      changed: (mesh, material) => {
+        find.refresh();
+        deskView.refresh();
+        materialsChanged.fire({ mesh, materials: [material] });
+      },
+    }),
     vscode.commands.registerCommand("edgemat.newMaterial", () => materialPage.open()),
     vscode.commands.registerCommand("edgemat.newMaterialHere", (node) => materialPage.open(FindView.targetsOf(node))),
     vscode.commands.registerCommand("edgemat.setImageKey", () => materialPage.setKey()),
@@ -739,7 +751,47 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       materialsChanged.fire({ mesh: req.mesh, materials: r.materials.filter((m) => m.applied).map((m) => m.name) });
       return r;
     },
+    async parts(req) {
+      const { bridge, p } = await forProject(req.project);
+      const { parts } = await partsOf(bridge, library(), p.archive, req.mesh);
+      return parts;
+    },
+    async usePartSurface(req) {
+      const { bridge, p } = await forProject(req.project);
+      if (!view.current && building) await building;
+      const lib = library();
+      if (!lib) throw new Error("Game Materials is not built yet.");
+      const r = await useSurface(bridge, lib, p.archive, req.mesh, req.material, req);
+      materialsChanged.fire({ mesh: req.mesh, materials: [req.material] });
+      find.refresh();
+      deskView.refresh();
+      return r;
+    },
+    async usePartMaterial(req) {
+      const { bridge, p } = await forProject(req.project);
+      const r = await useGameMaterial(bridge, p.archive, req.mesh, req.material, req.mi, { force: req.force });
+      materialsChanged.fire({ mesh: req.mesh, materials: [req.material] });
+      find.refresh();
+      deskView.refresh();
+      return r;
+    },
+    async partBackToModel(req) {
+      const { bridge, p } = await forProject(req.project);
+      const r = await backToModel(bridge, p.archive, req.mesh, req.material);
+      materialsChanged.fire({ mesh: req.mesh, materials: [req.material] });
+      find.refresh();
+      deskView.refresh();
+      return r;
+    },
   };
+
+  async function forProject(project: string): Promise<{ bridge: BridgeClient; p: Project }> {
+    const bridge = await bridgeNow();
+    if (!bridge) throw new Error("EDGEmat needs the game folder and REDbridge.");
+    const p = projectAt(project);
+    if (!p) throw new Error(`${project} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`);
+    return { bridge, p };
+  }
 }
 
 export function deactivate(): void {

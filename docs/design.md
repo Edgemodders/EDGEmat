@@ -288,8 +288,19 @@ EDGEfab's other route: pick a material from the game and put it on a new mesh.
 | Kind | On a new mesh |
 |---|---|
 | A textured game `.mi` that tiles (many world materials) | Used as the mesh's external material. Textures painted for one mesh's UVs, as most garments' are, do not fit another mesh |
-| A layered surface (leather, denim, chrome) | A one-layer setup: one surface, a color preset and tiling over a full white mask. Fits any UVs. Unverified in the game |
+| A layered surface (leather, denim, chrome) | A one-layer setup: one surface, a color preset and tiling. Layer 0 covers the whole part and reads no mask, so the `.mi` names any game mask. Fits any UVs. **Checked in the game 2026-11-17** (EDGEfab's F1 check: red car paint on a generated vending machine's body) |
 | Several surfaces on one garment | One submesh per part (body, collar, buttons), made in Blender, each with its own one-layer material. Several layers in one material need masks for the new UVs (M6) |
+
+**Built 2026-11-18 for a prop's parts (EDGEmat [#12](https://github.com/Edgemodders/EDGEmat/issues/12), from EDGEfab; EDGEfab 0.1.0 waits on it).** Core `parts.ts`, the UI in `partCommands.ts`, MCP `mat_apply` (`surface`, `mi`, `model`), `mat_parts`, `mat_materials`, API `parts`, `usePartSurface`, `usePartMaterial`, `partBackToModel`:
+
+| Part action | What EDGEmat does |
+|---|---|
+| Use a Game Surface... | Writes `<mesh folder>\materials\<part>.mlsetup` (one layer: the surface, its color, tiling) and `.mi` (on `multilayered.mt`, naming that setup and a game mask, nothing embedded), then points the part's entry at the `.mi`. One pair per part, rewritten on each change. Tiling by default: one repeat a metre of the part (its surface over its UV area, from WolvenKit's export; `SurfaceRepeat`, unverified). The setup editor then opens it like any setup |
+| Use a Game Material... | A game `.mi` as it is, on the part's entry. Offered from the game's materials that **suit any shape** (`materialFit`): not layered, not a decal, parallax, terrain or effect shader, and every texture along its chain from `base\surfaces`, `ep1\surfaces` or `engine\`. Read once per game version from all 10,660 of the game's `.mi` (9 s on 2026-11-18, the path filter skipping most; 331 suit any shape: 112 glass, a few glows, few tiling world materials) and kept in `game-materials.json`. Any other `.mi` by path, after a warning that says why it may not fit |
+| Back to the Model's Texture | The part's own `.mi` from EDGEfab's record (`source\raw\<mod>\props\<name>\<name>.edgefab.json`) |
+| New Material Here | As before (Generate) |
+
+**The swap lives only on the part's material entry** (agreed with EDGEfab on #12): EDGEfab reads the entry when it adds the prop again and keeps it. EDGEmat writes no other record. The parts show on the Desk (Open in EDGEmat on a project mesh), one row per material entry, the model's own ones marked.
 
 Game Materials, Find, `mat_templates` and `mat_colors` choose the material; `mat_apply` puts it on the mesh in a look.
 

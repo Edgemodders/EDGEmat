@@ -6,7 +6,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { deskLabel, deskProjectName, itemMaterials, itemsWearing, loadItems, meshMaterials, searchItems, type BridgeClient, type Desk, type DeskEntry, type ItemEntry, type ItemLook, type MaterialTarget, type MaterialUse, type MeshLook, type WornBy } from "./core";
+import { deskLabel, deskProjectName, itemMaterials, itemsWearing, loadItems, meshMaterials, propRecord, searchItems, type BridgeClient, type Desk, type DeskEntry, type ItemEntry, type ItemLook, type MaterialTarget, type MaterialUse, type MeshLook, type WornBy } from "./core";
 import { gameUri, optionsQuery, SetupEditor } from "./setupEditor";
 import { appendPaths } from "./tips";
 
@@ -22,7 +22,8 @@ export type Node =
   // `desk`: the id of the Desk entry a mesh or material is under; its setups open and save in that entry.
   // `worn`: how many of the game's items wear this look, once known (a mesh file's looks only).
   | { kind: "mesh"; mesh: MeshLook; via: string; label: "file" | "appearance"; looks?: ItemLook[]; open?: number; root?: string; desk?: string; worn?: number }
-  | { kind: "material"; use: MaterialUse; via: string; mesh: string; look: string; targets: MaterialTarget[]; root?: string; desk?: string }
+  // `model`: EDGEfab's own .mi for this part, when EDGEfab made the prop (Back to the Model's Texture).
+  | { kind: "material"; use: MaterialUse; via: string; mesh: string; look: string; targets: MaterialTarget[]; root?: string; desk?: string; model?: string }
   | { kind: "message"; text: string };
 
 const file = (p: string) => p.split("\\").pop() ?? p;
@@ -131,14 +132,18 @@ export class FindView implements vscode.TreeDataProvider<Node> {
           return [{ kind: "message", text: e instanceof Error ? e.message : String(e) }];
         }
       }
-      case "mesh":
+      case "mesh": {
+        // A prop EDGEfab made: its record names each part's own material, for Back to the Model's Texture.
+        const record = node.root ? propRecord(node.root, node.mesh.mesh) : undefined;
         return node.mesh.materials.map((use): Node => {
           // The same material on every body's mesh of the item, so a new material goes on all of them.
           const targets: MaterialTarget[] = [];
           for (const look of node.looks ?? []) for (const m of look.meshes) if (m.materials.some((x) => x.name === use.name) && !targets.some((t) => t.mesh === m.mesh)) targets.push({ mesh: m.mesh, material: use.name });
           if (!targets.some((t) => t.mesh === node.mesh.mesh)) targets.unshift({ mesh: node.mesh.mesh, material: use.name });
-          return { kind: "material", use, via: node.via, mesh: node.mesh.mesh, look: node.mesh.appearance, targets, root: node.root, desk: node.desk };
+          const model = record?.materials.find((m) => m.name.toLowerCase() === use.name.toLowerCase())?.mi;
+          return { kind: "material", use, via: node.via, mesh: node.mesh.mesh, look: node.mesh.appearance, targets, root: node.root, desk: node.desk, model };
         });
+      }
       default:
         return [];
     }
@@ -237,6 +242,9 @@ export class FindView implements vscode.TreeDataProvider<Node> {
       case "material": {
         const u = node.use;
         const t = new vscode.TreeItem(u.name, None);
+        // A material of a mesh in a project can take a game surface or material (a prop's part, EDGEmat #12).
+        const part = node.root ? ` edgemat.part${node.model ? " edgemat.modelPart" : ""}` : "";
+        const onModel = !!node.model && u.instances[0]?.toLowerCase() === node.model.toLowerCase();
         const md = new vscode.MarkdownString();
         md.appendMarkdown(`**${u.name}**${u.chunks > 1 ? ` (${u.chunks} chunks across LODs)` : ""}\n\n`);
         if (u.multilayered) {
@@ -246,14 +254,15 @@ export class FindView implements vscode.TreeDataProvider<Node> {
           md.appendMarkdown(`Multilayered. Click to open its setup with the mask set this material names.${node.desk ? " Ctrl+S in the setup editor saves it on the Desk." : ""}\n\n`);
           appendPaths(md, [["setup", u.setup ?? "(none)"], ["mask", u.mask ?? "(none)"], ...(u.globalNormal ? [["normal", u.globalNormal] as [string, string]] : [])]);
           if (u.setup) t.command = { command: "edgemat.openFoundSetup", title: "Open Setup", arguments: [u.setup, u.mask, node.via, node.root, node.desk, node.mesh, node.look] };
-          t.contextValue = "edgemat.gamePath edgemat.material";
+          t.contextValue = `edgemat.gamePath${part} edgemat.material`;
         } else {
-          t.description = file(u.base || "unknown material");
-          t.iconPath = new vscode.ThemeIcon("circle-outline");
-          md.appendMarkdown(`Not multilayered: EDGEmat edits these later (M6).${u.baseColor ? " Its color texture shows in View in 3D." : ""}\n\n`);
+          t.description = onModel ? `the model's own texture · ${file(node.model!)}` : file(u.instances[0] ?? (u.base || "unknown material"));
+          t.iconPath = new vscode.ThemeIcon(onModel ? "file-media" : "circle-outline");
+          md.appendMarkdown(onModel ? "The model's own texture (EDGEfab made this prop).\n\n" : `Not multilayered: EDGEmat edits these later (M6).${u.baseColor ? " Its color texture shows in View in 3D." : ""}\n\n`);
           if (u.baseColor) appendPaths(md, [["color", u.baseColor]]);
-          t.contextValue = "edgemat.material";
+          t.contextValue = `${part ? `${part.trim()} ` : ""}edgemat.material`;
         }
+        if (part) md.appendMarkdown(`Right-click to put a game surface or a game material on it${node.model ? ", or back the model's own texture" : ""}.\n\n`);
         if (u.base) appendPaths(md, [["base", u.base], ...u.instances.map((i): [string, string] => ["via", i])]);
         t.tooltip = md;
         return t;
@@ -277,6 +286,18 @@ export class FindView implements vscode.TreeDataProvider<Node> {
     const n = node as Node | undefined;
     if (n?.kind !== "material") return undefined;
     return { targets: n.targets, label: `${n.use.name} · ${n.via}` };
+  }
+
+  /** A material of a mesh in a project, for the part commands (Use a Game Surface, and the rest). */
+  static partOf(node: unknown): { archive: string; mesh: string; material: string; look: string; via: string; model?: string; desk?: string } | undefined {
+    const n = node as Node | undefined;
+    if (n?.kind !== "material" || !n.root) return undefined;
+    return { archive: n.root, mesh: n.mesh, material: n.use.name, look: n.look, via: n.via, model: n.model, desk: n.desk };
+  }
+
+  /** Reads the tree again: after a part's material changed. */
+  refresh(): void {
+    this.changed.fire();
   }
 
   /** The mesh behind a node, for View in 3D, with the look (mesh appearance) the node shows; the project's copy when Find read that. */

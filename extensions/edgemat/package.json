@@ -234,6 +234,24 @@
         "icon": "$(sparkle)"
       },
       {
+        "command": "edgemat.useGameSurface",
+        "title": "Use a Game Surface...",
+        "category": "EDGEmat",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "edgemat.useGameMaterial",
+        "title": "Use a Game Material...",
+        "category": "EDGEmat",
+        "icon": "$(library)"
+      },
+      {
+        "command": "edgemat.backToModel",
+        "title": "Back to the Model's Texture",
+        "category": "EDGEmat",
+        "icon": "$(discard)"
+      },
+      {
         "command": "edgemat.setImageKey",
         "title": "Set Image Service Key...",
         "category": "EDGEmat"
@@ -416,6 +434,26 @@
           "group": "make@1"
         },
         {
+          "command": "edgemat.useGameSurface",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.part /",
+          "group": "inline"
+        },
+        {
+          "command": "edgemat.useGameSurface",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.part /",
+          "group": "make@2"
+        },
+        {
+          "command": "edgemat.useGameMaterial",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.part /",
+          "group": "make@3"
+        },
+        {
+          "command": "edgemat.backToModel",
+          "when": "view =~ /^edgemat\\.(find|desk)$/ && viewItem =~ /edgemat\\.modelPart /",
+          "group": "make@4"
+        },
+        {
           "command": "edgemat.deskEntryToProject",
           "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
           "group": "inline@8"
@@ -488,6 +526,18 @@
         },
         {
           "command": "edgemat.newMaterialHere",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.useGameSurface",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.useGameMaterial",
+          "when": "false"
+        },
+        {
+          "command": "edgemat.backToModel",
           "when": "false"
         },
         {
