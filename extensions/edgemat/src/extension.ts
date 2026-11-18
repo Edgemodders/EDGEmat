@@ -16,7 +16,7 @@ import { connectAssistant, installServer, registerWithEditor } from "./mcp";
 import { GameFiles, gamePathOfUri, GameScheme, gameUri, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
 import { SurfacePages } from "./surfacePage";
 
-/** The parts of REDcode's API (version 1, docs/api.md) EDGEmat uses. project and packAndTry came after 0.9.0. */
+/** The parts of REDcode's API (version 1, docs/api.md) EDGEmat uses. project and packAndTry came after 0.9.0, packAndPlay (its new name) in 0.10.5. */
 interface REDcodeApi {
   readonly apiVersion: 1;
   bridge(): BridgeClient | undefined;
@@ -24,6 +24,8 @@ interface REDcodeApi {
   /** The open WolvenKit project. */
   project?(): { name: string; dir: string; archive: string } | undefined;
   /** Packs the open project and gets it into the game: hot when Red Hot Tools runs, else installed. */
+  packAndPlay?(): Promise<"hot" | "installed" | undefined>;
+  /** packAndPlay's name in REDcode 0.10.4 and older; still there after. */
   packAndTry?(): Promise<"hot" | "installed" | undefined>;
 }
 
@@ -226,14 +228,15 @@ async function chooseProject(context: vscode.ExtensionContext, title = "Save to 
   return project;
 }
 
-/** REDcode's Pack and Try, when REDcode has this project open. */
-function packAndTryFor(project: Project): (() => Promise<unknown>) | undefined {
+/** REDcode's Pack and Play, when REDcode has this project open. */
+function packAndPlayFor(project: Project): (() => Promise<unknown>) | undefined {
   const rc = redcode();
   const open = rc?.project?.();
-  if (!rc?.packAndTry || !open || path.resolve(open.dir).toLowerCase() !== path.resolve(project.dir).toLowerCase()) return undefined;
+  const go = rc?.packAndPlay ?? rc?.packAndTry;
+  if (!rc || !go || !open || path.resolve(open.dir).toLowerCase() !== path.resolve(project.dir).toLowerCase()) return undefined;
   return async () => {
-    const r = await rc.packAndTry!();
-    log(`REDcode Pack and Try: ${r ?? "cancelled or failed"}`);
+    const r = await go.call(rc);
+    log(`REDcode Pack and Play: ${r ?? "cancelled or failed"}`);
   };
 }
 
@@ -290,9 +293,9 @@ async function finishProjectOpen(context: vscode.ExtensionContext): Promise<void
     shown = await vscode.commands.executeCommand("revealInExplorer", vscode.Uri.file(p.file)).then(() => true, () => false);
   }
   const where = p.file && !shown ? ` It is in the Project view under ${path.relative(p.dir, path.dirname(p.file))}.` : "";
-  const pack = project && packAndTryFor(project);
-  const choice = await vscode.window.showInformationMessage(`${p.message}${where}`, ...(pack ? ["Pack and Try"] : []));
-  if (choice === "Pack and Try" && pack) await pack();
+  const pack = project && packAndPlayFor(project);
+  const choice = await vscode.window.showInformationMessage(`${p.message}${where}`, ...(pack ? ["Pack and Play"] : []));
+  if (choice === "Pack and Play" && pack) await pack();
 }
 
 /**
@@ -411,13 +414,13 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       void pages.show({ kind: "microblend", microblend: found ?? { path: p, name: (p.split("\\").pop() ?? p).replace(/\.xbm$/i, "") } });
     },
     project: () => chooseProject(context),
-    packAndTry: packAndTryFor,
+    packAndPlay: packAndPlayFor,
     materialsChanged: () => materialsChanged.fire({ materials: [] }),
     desk,
     deskChanged: () => deskView.refresh(),
   };
   const setupEditor = new SetupEditor(host);
-  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndTry: packAndTryFor, materialsChanged: () => materialsChanged.fire({ materials: [] }), log });
+  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndPlay: packAndPlayFor, materialsChanged: () => materialsChanged.fire({ materials: [] }), log });
 
   context.subscriptions.push(
     output,
@@ -701,7 +704,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       for (const n of r.notes) log(`  ${n}`);
       if (go === clearWord && !deskView.remove(desk.entries().filter((e) => r.added.includes(e.id) && !r.kept.includes(e.id)))) heldNote();
       materialsChanged.fire({ materials: [] });
-      const pack = packAndTryFor(project);
+      const pack = packAndPlayFor(project);
       const kept = r.kept.length ? ` ${plural(r.kept.length, "mesh")} stayed on the Desk with ${r.kept.length === 1 ? "its" : "their"} edits, since the project keeps its own.` : "";
       const done = r.written.length ? `${plural(r.written.length, "file")} written` : "nothing new to write: the project has it all already";
       const message = `Added ${what} to ${project.name}: ${done}.${kept}${r.notes.length ? ` Details in the EDGEmat log.` : ""}`;
@@ -712,10 +715,10 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       }
       const choice = await vscode.window.showInformationMessage(
         message,
-        ...(pack && r.written.length ? ["Pack and Try"] : []),
+        ...(pack && r.written.length ? ["Pack and Play"] : []),
         ...(r.notes.length ? ["Show Log"] : []),
       );
-      if (choice === "Pack and Try" && pack) await pack();
+      if (choice === "Pack and Play" && pack) await pack();
       else if (choice === "Show Log") output.show();
     } catch (e) {
       void vscode.window.showErrorMessage(`Adding ${what} to ${project.name} failed: ${e instanceof Error ? e.message : String(e)}`);

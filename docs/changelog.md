@@ -22,6 +22,8 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 - View in 3D shows a layered material much closer to the game: each layer's own surface (felt, leather, plastic) with its grain, under its color, and as light as the game shows it. Before, each layer was one flat color and many came out far too dark (a light grey felt hat looked mid-grey). Still approximate: no shine or bumps yet. This is the first part of the material preview planned for later (M5).
 
+- REDcode's **Pack and Try** is now **Pack and Play** (REDcode 0.10.5), and EDGEmat's buttons and messages say so. EDGEmat calls it by its new name and still works with older REDcode.
+
 **Fixed**
 
 - Bumps on the materials EDGEmat makes from your words or a photo (New Material, `mat_generate`, `mat_from_image`, and patterns) came out backwards: raised details looked like dents under light from above. The game reads a normal map's green the other way (found in the game with rows of test dots). New materials are right; make an older one again to fix its bumps.

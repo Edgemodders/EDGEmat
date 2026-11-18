@@ -273,7 +273,7 @@ add.onclick = () => {
     done.replaceChildren(el("div", { class: "done" },
       el("p", {}, `Saved into ${r.project}: ${r.written} files in `, el("code", {}, r.folder), "."),
       ...r.applied.map((a) => el("p", { class: "help" }, `${a.mesh.split("\\").pop()} › ${a.material}: ${a.how === "LayerTile" ? "repeats through the material" : "repeat in the texture, garment folds kept"}`)),
-      el("p", { class: "help" }, "Next: REDcode's Pack and Try (or Pack and Install with the game closed), then look at it in the game."),
+      el("p", { class: "help" }, "Next: REDcode's Pack and Play (or Pack and Install with the game closed), then look at it in the game."),
     ));
     say("Added.");
   });

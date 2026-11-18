@@ -289,7 +289,7 @@ server.registerTool(
     description:
       "Edits a multilayered setup (.mlsetup) and saves it into a WolvenKit project, as EDGEmat's setup editor does. A recolor: change layers' surfaces, colors (words such as 'dark red' pick the surface's closest preset), finish, tiling, opacity and microblend. " +
       "Use mat_find to find a garment's setup and mat_describe to see its layers first. Edits are checked: a layer can only use its surface's own presets. " +
-      "save 'new' (the default) writes the setup beside the original under a new name and copies every mesh that uses it into the project, pointed at the new setup: it shows in the game with no other mod, once the project is packed and installed (REDcode: Pack and Try). " +
+      "save 'new' (the default) writes the setup beside the original under a new name and copies every mesh that uses it into the project, pointed at the new setup: it shows in the game with no other mod, once the project is packed and installed (REDcode: Pack and Play). " +
       "save 'inPlace' writes it at its own game path, which replaces the game's setup and shows in the game only with the Material Texture Override mod. " +
       "save 'desk' saves it on EDGEmat's Desk (see mat_desk) instead of a project: in the Desk entry desk_id (a mesh on the Desk whose material uses this setup, or a setup entry), else in a setup entry of its own; a setup edited on an entry is read from there next time. " +
       "preview true describes the result without writing anything. project: the project folder, its .cpmodproj, or its source\\archive folder.",
@@ -362,7 +362,7 @@ server.registerTool(
       notes.push(...saved.notes);
       return text({
         saved: { project: p.dir, setup: saved.written[0], meshes: saved.meshes, written: saved.written },
-        next: "Pack the project and install it (REDcode: Pack and Try), then look at the garment in the game.",
+        next: "Pack the project and install it (REDcode: Pack and Play), then look at the garment in the game.",
         ...result,
         notes: notes.length ? notes : undefined,
       });
@@ -377,7 +377,7 @@ server.registerTool(
   {
     description:
       "Restyles a clothing item, as EDGEmat's Wardrobe Designer does in the game: one call from the item to a project. Without materials, returns the item's look (its meshes and each layered material's shown layers in plain words), which is what to plan on. " +
-      "With materials (a recipe: for each setup, the layer changes in words, as mat_edit takes them), applies it with mat_edit's checks: each changed setup is saved beside the game's under a new name, and the look's meshes are copied into the project and pointed at it, so it shows in the game with no other mod once packed and installed (REDcode: Pack and Try). " +
+      "With materials (a recipe: for each setup, the layer changes in words, as mat_edit takes them), applies it with mat_edit's checks: each changed setup is saved beside the game's under a new name, and the look's meshes are copied into the project and pointed at it, so it shows in the game with no other mod once packed and installed (REDcode: Pack and Play). " +
       "A layer change that cannot be made is skipped and said in notes; the rest go in. Run it again on the same project and it starts from the restyled copy. body: the look for one body; default every body's look. " +
       "patterns (prints such as polka dots, stripes or camo): each makes a texture from its words through the user's AI image service and puts it over that whole material, as mat_generate does; it spends their credits with their own key (GEMINI_API_KEY or OPENAI_API_KEY in this server's environment). How to plan:\n" +
       RestyleBrief,
@@ -423,7 +423,7 @@ server.registerTool(
       return text({
         item: look.item,
         saved: changed ? { project: p.dir, changed: r.changed.length ? r.changed : undefined, patterns: made?.applied.length ? made.applied : undefined, written: [...new Set([...r.written, ...(made?.written ?? [])])] } : undefined,
-        next: changed ? "Pack the project and install it (REDcode: Pack and Try), then look at the item in the game." : "Nothing changed: see notes.",
+        next: changed ? "Pack the project and install it (REDcode: Pack and Play), then look at the item in the game." : "Nothing changed: see notes.",
         notes: notes.length ? notes : undefined,
       });
     } catch (e) {
@@ -449,7 +449,7 @@ server.registerTool(
       "(garments that move with one bone, such as hats, helmets and glasses, for now). step change: an AI image service changes that picture by words ('make the brim twice as wide'); OpenAI's GPT Image by default, with OPENAI_API_KEY or GEMINI_API_KEY from this server's environment, spending the user's credits " +
       "(a few tens of US cents); each change builds on the last unless from is 'game'. Look at the picture it returns before going on: Tripo and the fit follow it faithfully, mistakes included (an old part kept beside the new one). step back: takes the last change away. " +
       "step make: Tripo makes a 3D model from the last change's four views and brings it to a game's face count (about 60 Tripo credits and 4 minutes, the user's Tripo key, TRIPO_API_KEY in this server's environment), then fits it onto the garment and imports it over the look's mesh in the project. By default (wears 'game') the made piece keeps the game's own materials: the game mesh's UVs are carried onto the new shape, so every look of the item keeps its colors and Restyle still works on it; small parts lying over the garment (a hat's band, its buckle) stay the game's own, bent onto the new shape. wears 'tripo' puts Tripo's painted texture on it instead (one look only, colors taken from the pictures). " +
-      "Pack and install the project afterwards (REDcode: Pack and Try), or let Wardrobe Designer swap it in. Only the chosen body's mesh and its look's material are changed.",
+      "Pack and install the project afterwards (REDcode: Pack and Play), or let Wardrobe Designer swap it in. Only the chosen body's mesh and its look's material are changed.",
     inputSchema: {
       item: z.string().describe("A clothing record id (Items.Hat_02_basic_01), or words matching one item"),
       body: z.enum(["masculine", "feminine"]).default("feminine"),
@@ -511,7 +511,7 @@ server.registerTool(
       const r = await reshapeFit(b, v, change, made, proj, { folder: `edgemat\\reshape\\${materialSlug(change.words)}`, wears, lib: loadLibrary(cacheDir), cacheDir, log });
       return {
         content: [
-          text({ saved: { project: p.dir, mesh: r.mesh, wears: r.wears, material: r.material, written: r.written }, tripo: { task: made.task, credits: made.credits }, notes: r.notes.length ? r.notes : undefined, next: "Pack the project and install it (REDcode: Pack and Try), then wear the item in the game." }).content[0],
+          text({ saved: { project: p.dir, mesh: r.mesh, wears: r.wears, material: r.material, written: r.written }, tripo: { task: made.task, credits: made.credits }, notes: r.notes.length ? r.notes : undefined, next: "Pack the project and install it (REDcode: Pack and Play), then wear the item in the game." }).content[0],
           picture(r.sheet),
         ],
       };
@@ -606,7 +606,7 @@ function projectFor(project: string | undefined) {
 const materialOutResult = (r: MaterialResult, project: string) => ({
   saved: { project, material: r.mi, folder: r.folder, applied: r.applied, files: r.written, image: r.raw[0], record: r.raw[1] },
   next: r.applied.length
-    ? "Pack the project and install it (REDcode: Pack and Try, or Pack and Install with the game closed), then look at the garment in the game."
+    ? "Pack the project and install it (REDcode: Pack and Play, or Pack and Install with the game closed), then look at the garment in the game."
     : "Not put on any mesh: pass targets (mat_find lists meshes and material names), or mat_apply the .mi later.",
 });
 
@@ -757,7 +757,7 @@ server.registerTool(
           done.push({ ...t, mi, fits: r.fit.fits, why: r.fit.why });
         }
       }
-      return text({ saved: { project: p.dir, applied: done, files: written }, next: "Pack the project and install it (REDcode: Pack and Try), then look in the game. A surface's setup opens in EDGEmat's setup editor (mat_edit) for its color, tiling and the rest." });
+      return text({ saved: { project: p.dir, applied: done, files: written }, next: "Pack the project and install it (REDcode: Pack and Play), then look in the game. A surface's setup opens in EDGEmat's setup editor (mat_edit) for its color, tiling and the rest." });
     } catch (e) {
       return failure(e);
     }
@@ -858,7 +858,7 @@ server.registerTool(
         saved: { project: p.dir, materials: r.materials, files: r.files, record: r.record },
         notes: r.notes,
         next: r.materials.some((m) => m.applied)
-          ? "Pack the project and install it (REDcode: Pack and Try), then look at the model in the game."
+          ? "Pack the project and install it (REDcode: Pack and Play), then look at the model in the game."
           : "Nothing was put on a mesh: pass mesh (its material entries named as the model's materials), or mat_apply each .mi.",
       });
     } catch (e) {
@@ -945,7 +945,7 @@ server.registerTool(
         saved: { project: pr.dir, written: r.written, setups: r.setups },
         kept: r.kept.length ? r.kept : undefined,
         notes: r.notes.length ? r.notes : undefined,
-        next: `Pack the project and install it (REDcode: Pack and Try), then look in the game. ${clear ? "What went in is off the Desk." : "The Desk is left as it was: to_project with clear true, or 'remove', takes entries off."}`,
+        next: `Pack the project and install it (REDcode: Pack and Play), then look in the game. ${clear ? "What went in is off the Desk." : "The Desk is left as it was: to_project with clear true, or 'remove', takes entries off."}`,
       });
     } catch (e) {
       return failure(e);

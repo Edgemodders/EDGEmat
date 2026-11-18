@@ -126,8 +126,8 @@ export interface SetupEditorHost {
   openMicroblend(gamePath: string): void;
   /** The project to save into: REDcode's open project, else one the modder picks. Undefined when they cancel. */
   project(): Promise<Project | undefined>;
-  /** REDcode's Pack and Try for that project, when REDcode has it open; undefined otherwise. */
-  packAndTry(project: Project): (() => Promise<unknown>) | undefined;
+  /** REDcode's Pack and Play for that project, when REDcode has it open; undefined otherwise. */
+  packAndPlay(project: Project): (() => Promise<unknown>) | undefined;
   /** Tells 3D views (REDcode's, through EDGEmat's API) that materials changed, so they draw them again. */
   materialsChanged(): void;
   /** The Desk, where a setup opened from it is saved. */
@@ -569,10 +569,10 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   }
 
   private async afterSave(project: Project, file: string, message: string): Promise<void> {
-    const pack = this.host.packAndTry(project);
-    const buttons = [...(pack ? ["Pack and Try"] : []), "Open the Saved Setup"];
+    const pack = this.host.packAndPlay(project);
+    const buttons = [...(pack ? ["Pack and Play"] : []), "Open the Saved Setup"];
     const choice = await vscode.window.showInformationMessage(message, ...buttons);
-    if (choice === "Pack and Try" && pack) await pack();
+    if (choice === "Pack and Play" && pack) await pack();
     else if (choice === "Open the Saved Setup") await vscode.commands.executeCommand("vscode.openWith", vscode.Uri.file(file), SetupEditor.viewType);
   }
 

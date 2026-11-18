@@ -18,7 +18,7 @@ export interface MaterialPageHost {
   extensionUri: vscode.Uri;
   bridge(): Promise<BridgeClient | undefined>;
   project(): Promise<Project | undefined>;
-  packAndTry(project: Project): (() => Promise<unknown>) | undefined;
+  packAndPlay(project: Project): (() => Promise<unknown>) | undefined;
   /** Tells 3D views (REDcode's, through EDGEmat's API) that materials changed, so they draw them again. */
   materialsChanged(): void;
   log(line: string): void;
@@ -235,10 +235,10 @@ export class MaterialPage {
     for (const a of result.applied) this.host.log(`  ${a.mesh} › ${a.material}: ${a.mi} (${a.how})`);
     const where = result.applied.length ? ` and put on ${result.applied.length} mesh material${result.applied.length === 1 ? "" : "s"}` : "";
     if (result.applied.length) this.host.materialsChanged();
-    const pack = this.host.packAndTry(project);
-    const actions = [...(pack ? ["Pack and Try"] : []), "Show Files"];
+    const pack = this.host.packAndPlay(project);
+    const actions = [...(pack ? ["Pack and Play"] : []), "Show Files"];
     void vscode.window.showInformationMessage(`Saved ${materialSlug(req.name)} into ${project.name}${where}.`, ...actions).then(async (pick) => {
-      if (pick === "Pack and Try") await pack?.();
+      if (pick === "Pack and Play") await pack?.();
       else if (pick === "Show Files") await vscode.commands.executeCommand("revealFileInOS", vscode.Uri.file(path.join(project.archive, result.mi)));
     });
     return { folder: result.folder, mi: result.mi, applied: result.applied, written: result.written.length, project: project.name };
