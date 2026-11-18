@@ -1,8 +1,9 @@
 // A material from an image (design, "Generate a material"): made seamless, its bumps and shine derived,
 // written into a project as textures and a textured .mi on metal_base.remt, and put on mesh materials.
 // On a garment (a material with its own normal map, which draws its folds) the repeat is baked into
-// the texture and LayerTile stays 1, so the folds keep their scale; elsewhere LayerTile is the repeat
-// (design, "On a garment"; the tiling check in docs/testing.md).
+// the textures and LayerTile stays 1, so the folds keep their scale, with the bumps laid over them in
+// one normal map; elsewhere LayerTile is the repeat (design, "On a garment"; the tiling check in
+// docs/testing.md).
 
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -10,7 +11,7 @@ import * as path from "node:path";
 import type { BridgeClient } from "./bridgeClient";
 import { applyMaterial, writeTexture, writeTexturedMaterial } from "./apply";
 import { namedMaterials } from "./find";
-import { makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, squareCrop, tiling, writePng } from "./maps";
+import { blendNormals, makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, squareCrop, tiling, writePng, type Image } from "./maps";
 
 export type Shine = "matte" | "satin" | "glossy";
 
@@ -90,6 +91,36 @@ export async function imageAsPng(bridge: BridgeClient, bytes: Buffer, ext = ".jp
 }
 
 const stem = (p: string) => path.win32.basename(p).replace(/\.[^.]+$/, "");
+const ownMap = (p: string) => /^edgemat\\materials\\/i.test(p);
+
+/**
+ * The garment's own normal map (its folds), a game path, or undefined when the material has none. A map
+ * EDGEmat made (a material applied before: plain bumps, or folds with bumps over them) is not the folds:
+ * then the folds are read from the game's own copy of the mesh, when it has one.
+ */
+async function garmentFolds(bridge: BridgeClient, t: MaterialTarget, own: string | undefined): Promise<string | undefined> {
+  if (!own) return undefined;
+  if (!ownMap(own)) return own;
+  try {
+    const game = (await namedMaterials(bridge, t.mesh, [t.material]))[0];
+    const folds = game && (game.multilayered ? game.globalNormal : game.normal);
+    return folds && !ownMap(folds) ? folds : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** A texture from the game, read as an image. */
+async function gameTexture(bridge: BridgeClient, gamePath: string): Promise<Image> {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "edgemat-texture-"));
+  try {
+    const png = path.join(dir, "texture.png");
+    await bridge.toPng(gamePath, png);
+    return readPng(fs.readFileSync(png));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
 
 /**
  * Writes a material from an image into a project's source\archive, and puts it on each target. The
@@ -114,19 +145,20 @@ export async function makeMaterial(bridge: BridgeClient, archive: string, m: New
 
   // The plain material, for objects and new meshes: LayerTile repeats all three maps.
   const tex = (suffix: string) => `${folder}\\${slug}${suffix}.xbm`;
+  const bumps = normalMap(base, m.bumps ?? 1);
   result.written.push(...(await writeTexture(bridge, archive, tex("_d01"), writePng(base), "color")));
-  result.written.push(...(await writeTexture(bridge, archive, tex("_n01"), writePng(normalMap(base, m.bumps ?? 1)), "normal")));
+  result.written.push(...(await writeTexture(bridge, archive, tex("_n01"), writePng(bumps), "normal")));
   result.written.push(...(await writeTexture(bridge, archive, tex("_r01"), writePng(rough), "rough")));
   result.written.push(...(await writeTexturedMaterial(bridge, archive, result.mi, { baseColor: tex("_d01"), normal: tex("_n01"), roughness: tex("_r01"), layerTile: n, ...common })));
 
-  // On a garment: the repeat baked into one 2048 px texture (and the roughness at 1024), the garment's own normal map kept.
+  // On a garment: the repeat baked into one 2048 px texture (and the roughness at 1024). The garment's
+  // own normal map is kept for its folds, with the material's bumps, repeated the same way, laid over it
+  // (Bumps Flat keeps the folds alone).
   let baked = false;
   for (const t of targets) {
     const use = (await namedMaterials(bridge, t.mesh, [t.material], archive))[0];
     if (!use) throw new Error(`${t.mesh} has no material named ${t.material}.`);
-    // A normal map EDGEmat made itself (a material applied before) is not the garment's folds.
-    const own = use.multilayered ? use.globalNormal : use.normal;
-    const folds = own && !/^edgemat\\materials\\/i.test(own) ? own : undefined;
+    const folds = await garmentFolds(bridge, t, use.multilayered ? use.globalNormal : use.normal);
     let mi = result.mi;
     let how: "repeat in the texture" | "LayerTile" = "LayerTile";
     if (folds) {
@@ -137,7 +169,15 @@ export async function makeMaterial(bridge: BridgeClient, archive: string, m: New
         baked = true;
       }
       mi = `${folder}\\${slug}_x${n}_${stem(folds)}.mi`;
-      if (!result.written.includes(mi)) result.written.push(...(await writeTexturedMaterial(bridge, archive, mi, { baseColor: color, normal: folds, roughness: roughX, layerTile: 1, ...common })));
+      let normal = folds;
+      if ((m.bumps ?? 1) > 0) {
+        normal = `${folder}\\${slug}_x${n}_${stem(folds)}.xbm`;
+        if (!result.written.includes(normal)) {
+          const foldsMap = resize(await gameTexture(bridge, folds), 2048, 2048, false);
+          result.written.push(...(await writeTexture(bridge, archive, normal, writePng(blendNormals(foldsMap, repeat(bumps, n, 2048))), "normal")));
+        }
+      }
+      if (!result.written.includes(mi)) result.written.push(...(await writeTexturedMaterial(bridge, archive, mi, { baseColor: color, normal, roughness: roughX, layerTile: 1, ...common })));
       how = "repeat in the texture";
     }
     result.written.push(...(await applyMaterial(bridge, archive, t.mesh, t.material, mi)).filter((f) => !result.written.includes(f)));

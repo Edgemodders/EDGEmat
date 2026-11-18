@@ -357,9 +357,17 @@ try {
   const plainTile = (await readRoot(newMat.mi)).values.find((v) => v.LayerTile !== undefined)?.LayerTile;
   const bakedTile = (await readRoot(newMat.applied[0].mi)).values.find((v) => v.LayerTile !== undefined)?.LayerTile;
   const baked = await readRoot(`${newMat.folder}\\smoke_test_ramp_x3_d01.xbm`), nrm = await readRoot(`${newMat.folder}\\smoke_test_ramp_n01.xbm`), rgh = await readRoot(`${newMat.folder}\\smoke_test_ramp_r01.xbm`);
-  check(newMat.applied[0]?.how === "repeat in the texture" && /_n01\.xbm$/.test(flames?.normal ?? "") && !flames.normal.startsWith("edgemat") && flames.baseColor.endsWith("_x3_d01.xbm")
+  // On a garment the bumps lie over its folds: one normal map of EDGEmat's, named after the folds' map.
+  const folded = flames?.normal?.startsWith(`${newMat.folder}\\smoke_test_ramp_x3_`) ? await readRoot(flames.normal) : undefined;
+  check(newMat.applied[0]?.how === "repeat in the texture" && /_n01\.xbm$/.test(flames?.normal ?? "") && folded?.setup.group === "TEXG_Generic_Normal" && folded.width === 2048 && flames.baseColor.endsWith("_x3_d01.xbm")
     && plainTile === 3 && bakedTile === 1 && baked.width === 2048 && nrm.setup.group === "TEXG_Generic_Normal" && rgh.setup.group === "TEXG_Generic_Grayscale" && newMat.raw.every((f) => fs.existsSync(f)),
-    `a material from an image in ${Date.now() - t3} ms: on the slim-fits (a garment) the repeat is baked into a ${baked.width} px texture at LayerTile ${bakedTile}, keeping ${flames?.normal?.split("\\").pop()}; the plain material repeats at LayerTile ${plainTile} with its own normal and roughness maps; the image and its record are in source\\raw`);
+    `a material from an image in ${Date.now() - t3} ms: on the slim-fits (a garment) the repeat is baked into a ${baked.width} px texture at LayerTile ${bakedTile}, its bumps laid over the garment's folds in ${flames?.normal?.split("\\").pop()}; the plain material repeats at LayerTile ${plainTile} with its own normal and roughness maps; the image and its record are in source\\raw`);
+  // Bumps Flat over it: the garment's own folds alone, found in the game's mesh though the project's wears EDGEmat's map.
+  t3 = Date.now();
+  await core.makeMaterial(bridge, project.archive, { name: "Smoke Test Flat", image: core.writePng(ramp), repeat: 3, bumps: 0 }, [{ mesh: slim, material: "flames_blue_pink" }]);
+  const flatOn = (await core.meshMaterials(bridge, slim, "flames_blue_pink", project.archive))[0]?.materials[0];
+  check(/_n01\.xbm$/.test(flatOn?.normal ?? "") && !flatOn.normal.startsWith("edgemat") && flatOn.baseColor.startsWith("edgemat\\materials\\smoke_test_flat\\"),
+    `a material with Bumps Flat in ${Date.now() - t3} ms, over one with bumps: the garment keeps ${flatOn?.normal?.split("\\").pop()}, its own folds, from the game's mesh`);
 
   // A part's game surface and game material (EDGEmat #12): a one-layer setup, nothing embedded; what suits any shape.
   t3 = Date.now();

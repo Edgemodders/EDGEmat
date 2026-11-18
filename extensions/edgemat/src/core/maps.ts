@@ -176,6 +176,33 @@ export function normalMap(img: Image, strength = 1, greenUp = false): Image {
 }
 
 /**
+ * Two normal maps of the same size in one: `detail` (a material's bumps) laid over `base` (a garment's
+ * folds), by the whiteout blend (x and y added, z multiplied). Blue is rebuilt from red and green in
+ * both, since the game's normal maps keep only two channels (blue comes back 0). Both must point green
+ * the same way; the game's and EDGEmat's do (checked on the slim-fits' map, 2026-11-18).
+ */
+export function blendNormals(base: Image, detail: Image): Image {
+  const { width: w, height: h } = base;
+  if (detail.width !== w || detail.height !== h) throw new Error("blendNormals: the two maps differ in size");
+  const out = blank(w, h);
+  const read = (d: Uint8Array, i: number): [number, number, number] => {
+    const x = d[i] / 127.5 - 1, y = d[i + 1] / 127.5 - 1;
+    return [x, y, Math.sqrt(Math.max(0, 1 - x * x - y * y))];
+  };
+  for (let i = 0; i < w * h * 4; i += 4) {
+    const [bx, by, bz] = read(base.data, i), [dx, dy, dz] = read(detail.data, i);
+    let x = bx + dx, y = by + dy, z = bz * dz;
+    const l = Math.hypot(x, y, z) || 1;
+    x /= l; y /= l; z /= l;
+    out.data[i] = clamp8((x * 0.5 + 0.5) * 255);
+    out.data[i + 1] = clamp8((y * 0.5 + 0.5) * 255);
+    out.data[i + 2] = clamp8((z * 0.5 + 0.5) * 255);
+    out.data[i + 3] = 255;
+  }
+  return out;
+}
+
+/**
  * A roughness map from the image: darker than its surroundings reads rougher (worn, in the grain),
  * brighter reads smoother. Grey, centred on mid-grey; the material's scale and bias set the overall
  * shine.

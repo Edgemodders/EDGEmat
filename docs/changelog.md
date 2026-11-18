@@ -28,6 +28,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **Fixed**
 
+- New Material's **Bumps** did nothing on a garment: EDGEmat kept the garment's own normal map, for its folds and seams, and left the material's bumps out. The bumps are now laid over the folds in one normal map, repeated as the color is; **Bumps** Flat keeps the folds alone. Wardrobe Designer's patterns stay flat, as a print is.
 - Bumps on the materials EDGEmat makes from your words or a photo (New Material, `mat_generate`, `mat_from_image`, and patterns) came out backwards: raised details looked like dents under light from above. The game reads a normal map's green the other way (found in the game with rows of test dots). New materials are right; make an older one again to fix its bumps.
 - View in 3D on a project's mesh opened on the Desk showed only flat colors and "...is not in the loaded archives" when a material was one of the project's own (a part's game surface, a material made with New Material): it read the Desk's copy of the mesh but looked for those files in the game only. It now reads them from the project.
 - `mat_from_model` (and `materialsFromModel` for EDGEfab) now flips a model's normal maps to the game's way by default, since a model's (glTF's) are the other way round; `flip_normal_green: false` keeps a map that is right already.

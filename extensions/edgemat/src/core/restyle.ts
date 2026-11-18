@@ -311,7 +311,8 @@ export async function applyPatterns(bridge: BridgeClient, look: Look, patterns: 
       const { png, made } = kept ?? (await image(words));
       // The item in the name, so two items with the same words keep their own images.
       const name = `${materialSlug(look.item.id.replace(/^Items\./i, ""))} ${words}`;
-      const r = await makeMaterial(bridge, archive, { name, image: png, repeat, shine, made }, material.uses);
+      // A printed pattern lies flat on the cloth: the garment's folds alone, no bumps from the picture.
+      const r = await makeMaterial(bridge, archive, { name, image: png, repeat, bumps: 0, shine, made }, material.uses);
       // The same folder as the pattern it wore: the old repeat's files go, so they are not packed.
       if (material.pattern && same(path.win32.dirname(material.pattern), r.folder)) {
         const dir = path.join(archive, r.folder);
