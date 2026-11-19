@@ -12,6 +12,10 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+**Fixed**
+
+- View in 3D now follows a prop's part as you change it (**Use a Game Surface...**, **Use a Game Material...**, **Back to the Model's Texture**), instead of needing to be closed and opened again.
+
 ## 0.3.3 (2026-11-18)
 
 <!-- nexus

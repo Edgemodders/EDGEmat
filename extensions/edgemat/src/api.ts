@@ -24,8 +24,8 @@ export interface EdgematApi {
   renderMaterials(req: RenderRequest): Promise<Record<string, RenderedMaterial>>;
   /**
    * Fires when a material a viewer shows may have changed: after a setup is saved (in place or with Save to
-   * Project) and after a new material is put on mesh materials. `mesh` is unset and `materials` empty for
-   * now: every viewer draws its materials again.
+   * Project), after a new material is put on mesh materials, and after a part's material changes. `mesh` is
+   * unset and `materials` empty for now: every viewer draws its materials again.
    */
   readonly onDidChangeMaterials: vscode.Event<{ mesh?: string; materials: string[] }>;
   /**

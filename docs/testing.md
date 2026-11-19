@@ -46,6 +46,7 @@ Last updated 2026-10-26.
 | [The bake: color](#the-bake-color) | By hand, F5, with REDcode; then in the game | M5's first part, before Wardrobe Designer 0.1.0 | 2026-11-18 | **Passed**, all 4 steps (owner). Built 2026-11-16; smoke passes (the slim-fits' leather: median 50 against the flat map's 8, with grain). Claude drew the Cowboy hat's Reshape views with it: median 158 (was 81), light grey felt; black specks and peach patches remain |
 | [Zoom on the setup map](#zoom-on-the-setup-map) | By hand, F5 | The setup editor | 2026-11-18 | **Passed** (owner) |
 | [Bumps the right way round](#bumps-the-right-way-round) | By hand, F5, with REDcode; then in the game | The bump fix (#11), and bumps on a garment, before 0.3.3 | 2026-11-18 | **Passed** (owner, rerun). The first run failed (white dots, no bumps: on a garment New Material kept the garment's own normal map and dropped Bumps); fixed the same day, the bumps laid over the folds. In the rerun, with photo mode's depth of field off, each stud is raised (a shadow along the edge away from the sun) and the seams still show |
+| [View in 3D follows a part's change](#view-in-3d-follows-a-parts-change) | By hand, F5 or Ctrl+F5, with REDcode | The fix after 0.3.3 | | Not run yet. Built 2026-11-19 |
 | [Normal check](#normal-check) | From `npm run normal-check`, then in the game | #11, before Wardrobe Designer 0.1.0 | 2026-11-15 | **Done: the game reads green down (DirectX).** The owner, laptop, midday sun from above: the **blue** rows (green down) look raised and the red rows (green up, EDGEmat until then) dented, clearest where the light falls fullest (the hip); some dots on the curving sides read either way. Claude's enlargement of the knee agrees: blue dots bright on top, red dots bright at the bottom. It matches EDGEfab's evidence. Fixed the same day: `normalMap()` green down by default, `materialsFromModel` flips glTF's by default; smoke checks the direction |
 | [Wardrobe Designer install](#wardrobe-designer-install) | By hand, in the game, from the release zip | Each Wardrobe Designer release | | Not run yet. Added 2026-10-30 with the release scaffolding; the draft zip builds (65 KB, the game-folder layout) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | 2026-11-13 | **Pass** (owner, laptop, 2026-11-13: steps 1 to 6, on this release's code: Connect Claude Code's `edgemat` server lists 14 tools). Found: the EDGE plugin's own EDGEmat server (npm 0.3.1, 10 tools) runs beside it, so Claude Code has two. Earlier: Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
@@ -749,6 +750,24 @@ Added 2026-11-18 (EDGEmat #12; EDGEfab 0.1.0 waits on it). On a material of a me
 | Run | Result |
 |---|---|
 | 2026-11-18, owner, dev PC | **Passed**, all 11 steps as written. In the game the front is glossy metallic car paint with fine flakes, the right size (so the default tiling, one repeat a metre, holds here), the bottom row of drinks clear glass, the keypad glowing blue. The upper two rows of drinks and their shelves are car paint too: they are part of `..._wit_front` (submesh 0; the outer shell is `..._wit_body`), as the model's parts were split, not a fault. Found on the way: step 5's View in 3D showed every part flat with "...is not in the loaded archives" (it read the Desk's copy of the mesh and looked for the part's new `.mi` only beside it and in the game; fixed, `0966f83`); and the 3D view shows color only, so car paint looked flat there and glass showed REDcode's swatch (shine next, owner) |
+
+### View in 3D follows a part's change
+
+Added 2026-11-19. The owner found that after **Use a Game Surface...** on a prop's part, REDcode's 3D view kept the old look until its tab was closed and opened again. Two causes, both fixed: EDGEmat named the changed mesh by its game path, while the 3D view had the project's mesh open by its file on disk, so REDcode ignored the change; and the 3D view opened from the Desk reads the Desk's copy of the project's mesh, made when View in 3D was pressed, which a part change did not touch. Now every change tells every 3D view to draw again (as a saved setup already did), and a part change copies the project's mesh over the Desk's copy first. The API calls EDGEfab uses (`usePartSurface`, `usePartMaterial`, `partBackToModel`, `materialsFromModel`) do the same. Uses the test project `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_PropParts` from "Game materials on a prop's parts" (after it: the front red car paint, the details blue glow, the body red paint, the back on the model's texture).
+
+1. `npm run build` in `extensions\edgemat`, then **Ctrl+F5** (Run Without Debugging; F5 works too but its host can crash, `docs/dev-setup.md`). In the development host: **File › Open Folder...** › `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_PropParts`.
+2. In REDcode's **Project** view, open `source\archive\edgefab_partmaterials\props\vending_parts`, right-click `vending_parts.mesh` › **Open in EDGEmat**. THE DESK shows `vending_parts.mesh` (from EDGEmat_PropParts) with its look and parts.
+
+| # | Do | Expect |
+|---|---|---|
+| 1 | On the Desk, the look row (above the parts), click the eye (**View in 3D**) | REDcode's 3D view opens in the editor area: the front red. Keep it open; the Desk stays in the side bar beside it |
+| 2 | Hover `a_battered_cyberpunk_vending_machine_wit_front`, click the colors icon (**Use a Game Surface...**), type `car paint`, choose **car paint metallic 01**, then type `blue` and choose a blue | A few seconds after the notification "...wit_front now wears car paint metallic 01, ..." the front turns blue in the 3D view, without closing it |
+| 3 | Right-click `..._wit_body` › **Back to the Model's Texture** | The body changes from red paint to the model's own texture in the 3D view |
+| 4 | Right-click `..._wit_back` › **Use a Game Material...**, type `glow blue`, choose **z emissive blue** | The back changes in the 3D view (color only for now: shine and glow come with the full preview) |
+| 5 | Optional, to leave the project as the earlier test had it: the front back to red car paint (step 2 with `red`), the body to `body_red_paint.mi` and the back to the model's texture | |
+
+| Run | Result |
+|---|---|
 
 ### Reshape with the game's materials
 

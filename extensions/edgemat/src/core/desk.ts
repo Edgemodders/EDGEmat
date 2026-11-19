@@ -276,6 +276,17 @@ export class Desk {
     return f;
   }
 
+  /**
+   * After a project's mesh changed (a part's material), copies it again over the Desk's copies of it that
+   * View in 3D made, so the 3D view's redraw reads the change.
+   */
+  recopy(archive: string, mesh: string): void {
+    for (const e of this.entries().filter((x) => x.kind === "mesh" && x.root && sameDir(x.root, archive) && same(x.path, mesh))) {
+      const f = path.join(this.archiveOf(e), e.path);
+      if (fs.existsSync(f)) fs.copyFileSync(path.join(e.root!, e.path), f);
+    }
+  }
+
   /** For an entry's folder, the project it came from: its files are read after the entry's own. */
   sourceOf(archive: string | undefined): string | undefined {
     if (!archive) return undefined;

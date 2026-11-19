@@ -14,7 +14,7 @@ export interface PartHost {
   cacheDir(): string;
   log(line: string): void;
   /** After a part changed: the trees and REDcode's 3D view draw it again. */
-  changed(mesh: string, material: string): void;
+  changed(archive: string, mesh: string, material: string): void;
 }
 
 type Part = NonNullable<ReturnType<typeof FindView.partOf>>;
@@ -42,7 +42,7 @@ export function registerPartCommands(host: PartHost): vscode.Disposable[] {
   const done = async (part: Part, what: string, r: PartResult) => {
     for (const n of r.notes) host.log(`  ${n}`);
     host.log(`${part.material} on ${file(part.mesh)}: ${what}; wrote ${r.written.join(", ")}`);
-    host.changed(part.mesh, part.material);
+    host.changed(part.archive, part.mesh, part.material);
     const tile = r.tile !== undefined ? ` Tiling ${r.tile}.` : "";
     const pick = await vscode.window.showInformationMessage(`EDGEmat: ${part.material} now wears ${what}.${tile} Pack the project to see it in the game.`, ...(r.setup ? ["Open Setup"] : []));
     if (pick === "Open Setup" && r.setup) await vscode.commands.executeCommand("edgemat.openFoundSetup", r.setup, AnyMask, part.via, part.archive, undefined, part.mesh, part.look);

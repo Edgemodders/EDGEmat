@@ -397,6 +397,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
   // The MCP server's mat_desk changes desk.json too.
   const deskWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(desk.dir), "desk.json"));
   for (const on of [deskWatcher.onDidChange, deskWatcher.onDidCreate, deskWatcher.onDidDelete]) on(() => deskView.load());
+  // Always fired without a mesh: REDcode's 3D view keeps only events whose mesh matches the name it opened the
+  // mesh by, its game path or, for a project's mesh, the file on disk, so a game path drops a project's change.
   const materialsChanged = new vscode.EventEmitter<{ mesh?: string; materials: string[] }>();
   const host: SetupEditorHost = {
     extensionUri: context.extensionUri,
@@ -568,10 +570,11 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       library,
       cacheDir: () => cacheDir,
       log,
-      changed: (mesh, material) => {
+      changed: (archive, mesh) => {
+        desk.recopy(archive, mesh);
         find.refresh();
         deskView.refresh();
-        materialsChanged.fire({ mesh, materials: [material] });
+        materialsChanged.fire({ materials: [] });
       },
     }),
     vscode.commands.registerCommand("edgemat.newMaterial", () => materialPage.open()),
@@ -751,7 +754,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       log(`Materials from ${req.model ?? "texture files"} into ${p.dir}`);
       const r = await materialsFromModel(bridge, { ...req, project: { archive: p.archive, raw: path.join(p.dir, "source", "raw") }, log });
       for (const n of r.notes) log(`  ${n}`);
-      materialsChanged.fire({ mesh: req.mesh, materials: r.materials.filter((m) => m.applied).map((m) => m.name) });
+      if (req.mesh) desk.recopy(p.archive, req.mesh);
+      materialsChanged.fire({ materials: [] });
       return r;
     },
     async parts(req) {
@@ -765,7 +769,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       const lib = library();
       if (!lib) throw new Error("Game Materials is not built yet.");
       const r = await useSurface(bridge, lib, p.archive, req.mesh, req.material, req);
-      materialsChanged.fire({ mesh: req.mesh, materials: [req.material] });
+      desk.recopy(p.archive, req.mesh);
+      materialsChanged.fire({ materials: [] });
       find.refresh();
       deskView.refresh();
       return r;
@@ -773,7 +778,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     async usePartMaterial(req) {
       const { bridge, p } = await forProject(req.project);
       const r = await useGameMaterial(bridge, p.archive, req.mesh, req.material, req.mi, { force: req.force });
-      materialsChanged.fire({ mesh: req.mesh, materials: [req.material] });
+      desk.recopy(p.archive, req.mesh);
+      materialsChanged.fire({ materials: [] });
       find.refresh();
       deskView.refresh();
       return r;
@@ -781,7 +787,8 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     async partBackToModel(req) {
       const { bridge, p } = await forProject(req.project);
       const r = await backToModel(bridge, p.archive, req.mesh, req.material);
-      materialsChanged.fire({ mesh: req.mesh, materials: [req.material] });
+      desk.recopy(p.archive, req.mesh);
+      materialsChanged.fire({ materials: [] });
       find.refresh();
       deskView.refresh();
       return r;
