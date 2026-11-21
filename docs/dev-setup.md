@@ -112,7 +112,15 @@ From 0.3.0, the first preview (0.2.0 was never released). `.github/workflows/rel
 3. Raise the version: `node tools/version.mjs <version>` sets it in the extension, the MCP server, the core package and the lock file (`node tools/version.mjs` alone shows where each stands).
 4. Update `nexus/description.bbcode` for what changed (`npm run nexus:status` first: if the live description changed on Nexus, `npm run nexus:pull` and merge). Commit and push to `main`.
 5. On GitHub: **Actions** › **Release** (left) › **Run workflow** (right) › branch `main`, tick **Make a release** and **Update Nexus Mods**, press the green **Run workflow** (or `gh workflow run release.yml --ref main -f release=true -f nexus=true` from a terminal; `npm run release` leaves Nexus out). Watch the run. Without the ticks, the same button gives a test build: the run's page has the files under **Artifacts**. Then install the release in a normal VS Code (not the development host): from the Extensions view, which takes it from the Marketplace, or the release's VSIX with `code --install-extension`. Check that its version is the new one, and that the Nexus page shows it.
-6. Update the user manual in EDGEweb (`docs/wiki/edgemat/`) for what changed.
+6. **Bring EDGEweb up to the release** (every Edgemodders repo's rule, [EDGEmat #16](https://github.com/Edgemodders/EDGEmat/issues/16)): right after the release, in the same piece of work, EDGEmat's session brings every EDGEweb page about EDGEmat up to the released version. It follows releases, not `main`: never before the release. It is prose a session writes, so no workflow does it. In the sibling checkout `../EDGEweb` (`git pull` first), with the version's section of `docs/changelog.md` as the list of what changed:
+
+   | Pages | What |
+   |---|---|
+   | `docs/wiki/edgemat/` | Each page a change touches: its text, screenshots, and its `reviewed` date |
+   | Shared wiki pages (`docs/wiki/library.md`, `glossary.md`, `first-hour.md`, `faq.md`, and others: `grep -rln EDGEmat docs/wiki`) | EDGEmat's rows and lines |
+   | `docs/index.html` (EDGEmat's card) and `docs/platform.html` (its section, `#edgemat`) | The version, the status line, what is new and what is next |
+
+   Follow EDGEweb's `CLAUDE.md`, Wiki, for front matter, terms and screenshots. Commit and push to EDGEweb's `main` as `CyberbuildsAI`, with the dashboard entry.
 
 **When a release run stops partway** (0.3.2, 2026-11-13: the VS Code Marketplace step failed on an expired `VSCE_PAT`, so npm never ran): do not run Release again, which stops at "already released". Fix the cause (renew the token in the organisation's secrets), then **Actions** › **Finish a release** › **Run workflow** with the version and what is missing (`gh workflow run finish-release.yml --ref main -f version=<version> -f marketplace=true -f npm=true`). It works from the tag: the Marketplace gets the GitHub release's VSIX, and npm the MCP server and the core built from the tag, skipping a package already at that version. `VSCE_PAT` is an Azure DevOps personal access token with the **Marketplace › Manage** scope for **All accessible organizations**; they expire, at most a year after they are made.
 
@@ -134,6 +142,7 @@ Wardrobe Designer (`apps/wardrobe-designer`, a REDnode app) has its own release,
 3. Update `apps/wardrobe-designer/nexus/description.bbcode` for what changed (`npm run wardrobe:nexus:status` first: if the live description changed on Nexus, `npm run wardrobe:nexus:pull` and merge). Check it with `node tools/check-bbcode.mjs apps/wardrobe-designer/nexus/description.bbcode`. Commit and push to `main`.
 4. **Actions** › **Release Wardrobe Designer** › **Run workflow** › branch `main`, tick **Make a release** and **Update Nexus Mods** (or `npm run wardrobe:release -- -f nexus=true`). Without the ticks, it builds the draft zip as the run's artifact `Wardrobe-Designer-build`.
 5. Install the release's zip in the game (Vortex, or extracted into the game folder) and check the app starts, as the test "Wardrobe Designer install" says.
+6. Bring EDGEweb up to the release, as EDGEmat's step 6 says, for the pages that mention Wardrobe Designer (`grep -rln -i "wardrobe" docs` in `../EDGEweb`), with its changelog's section as the list.
 
 ```powershell
 npm run wardrobe:zip            # builds the app and dist/Wardrobe-Designer-<version>-draft.zip
