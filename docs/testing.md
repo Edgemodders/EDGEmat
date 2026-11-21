@@ -765,6 +765,7 @@ Added 2026-11-19. The owner found that after **Use a Game Surface...** on a prop
 | 3 | Right-click `..._wit_body` › **Back to the Model's Texture** | The body changes from red paint to the model's own texture in the 3D view |
 | 4 | Right-click `..._wit_back` › **Use a Game Material...**, type `glow blue`, choose **z emissive blue** | The back changes in the 3D view (color only for now: shine and glow come with the full preview) |
 | 5 | Optional, to leave the project as the earlier test had it: the front back to red car paint (step 2 with `red`), the body to `body_red_paint.mi` and the back to the model's texture | |
+| 6 | The button renamed 2026-11-21: right-click `..._wit_details` › **New Material Here...**, on the page that opens, the tab **From an image file** › **Choose an image...** › any `.png` or `.jpg` (no key needed), then **Add to Project** | The message after it has **Reveal in File Explorer** (no more **Show Files**); pressing it opens File Explorer on the new `.mi`. The 3D view follows this change too |
 
 | Run | Result |
 |---|---|
