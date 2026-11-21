@@ -134,6 +134,27 @@ try {
   const jacketMaps = await core.renderMaterials(bridge, lib, cache, { mesh: jacketPath, appearance: "default" });
   check(Object.keys(jacketMaps).length === 5 && isPng(jacketMaps.bags?.baseColor) && isPng(jacketMaps.decals?.baseColor),
     `jacket in ${Date.now() - t2} ms: ${Object.keys(jacketMaps).length} materials, the two layered ones and three textured decals`);
+  // EDGEmat #17: edgemat-core on its own (REDcode's sector view) has no library and an empty cache; a world
+  // mesh's layered material must still come out as the library draws it, not a flat grey.
+  {
+    t2 = Date.now();
+    const sidewalk = "base\\environment\\street\\common\\street_a_sidewalk_blank_a_w600_l900.mesh";
+    const bare = fs.mkdtempSync(path.join(cache, "tmp-nolib-"));
+    try {
+      const withLib = Object.values(await core.renderMaterials(bridge, lib, cache, { mesh: sidewalk }))[0]?.baseColor;
+      const without = Object.values(await core.renderMaterials(bridge, undefined, bare, { mesh: sidewalk }))[0]?.baseColor;
+      const colours = (u) => {
+        const p = PNG.sync.read(Buffer.from(u));
+        const seen = new Set();
+        for (let i = 0; i < p.data.length; i += 4 * 97) seen.add(`${p.data[i]},${p.data[i + 1]},${p.data[i + 2]}`);
+        return seen.size;
+      };
+      check(isPng(withLib) && isPng(without) && Buffer.from(withLib).equals(Buffer.from(without)) && colours(without) > 100,
+        `a world sidewalk without the library, on an empty cache, in ${Date.now() - t2} ms: the same color map as with it (${without ? colours(without) : 0} colours sampled)`);
+    } finally {
+      fs.rmSync(bare, { recursive: true, force: true });
+    }
+  }
 
   // M3: editing a setup and saving it into a project (design, "Phases"; behavior spec, sections 6, 9 and 10).
   console.log("\nedit and save");

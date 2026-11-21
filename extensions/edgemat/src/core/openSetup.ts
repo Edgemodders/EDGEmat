@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { loadSurfaceTextures } from "./bake";
 import type { BridgeClient } from "./bridgeClient";
-import type { Library } from "./library";
+import { templatesFrom, type Library } from "./library";
 import { compositeSetup, loadMaskSet, maskSetsBeside, rankMaskSets, type MaskSet, type MaskSource } from "./masks";
 import { loadMicroblends, readMicroblend } from "./microblend";
 import { meshesUsing, projectArchive } from "./project";
@@ -28,6 +28,8 @@ export interface OpenedSetup {
   maskError?: string;
   /** The flat color map in texture space, and which layer shows where. */
   composite?: { file: string; pick: number[] };
+  /** Opened without the library: the templates its layers use, read from the game (bakeColor takes them). */
+  templates?: Library;
 }
 
 /** The game path a file in a WolvenKit project stands for: the part after source\archive\. */
@@ -85,6 +87,9 @@ const asMaskSource = (choice: string): MaskSource => (/^[a-z]:\\|^\\\\|^\//i.tes
  */
 export async function openSetup(bridge: BridgeClient | undefined, lib: Library | undefined, dir: string, source: SetupSource, mask?: string): Promise<OpenedSetup> {
   const setup = await readSetup(bridge, source);
+  // Without the library (edgemat-core on its own): the templates this setup's layers use, read from the game.
+  const templates = !lib && bridge ? await templatesFrom(bridge, setup.layers.map((l) => l.material)) : undefined;
+  lib ??= templates;
   const { choices: maskChoices, named } = await maskChoicesFor(bridge, source).catch(() => ({ choices: [] as string[], named: 0 }));
   const chosen = mask ?? maskChoices[0];
   let masks: MaskSet | undefined;
@@ -104,7 +109,7 @@ export async function openSetup(bridge: BridgeClient | undefined, lib: Library |
     await loadSurfaceTextures(bridge, lib, dir, setup.layers.filter((l) => l.opacity > 0).map((l) => l.material));
   }
   const maskFrom = masks ? (mask ? "given" : named ? "material" : "beside") : undefined;
-  return withSetup({ source, setup, info: describeSetup(setup, lib), masks, maskFrom, maskChoices, maskError }, setup, lib, dir);
+  return withSetup({ source, setup, info: describeSetup(setup, lib), masks, maskFrom, maskChoices, maskError, templates }, setup, lib, dir);
 }
 
 /**

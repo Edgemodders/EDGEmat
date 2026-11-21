@@ -397,9 +397,21 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
   // The MCP server's mat_desk changes desk.json too.
   const deskWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(desk.dir), "desk.json"));
   for (const on of [deskWatcher.onDidChange, deskWatcher.onDidCreate, deskWatcher.onDidDelete]) on(() => deskView.load());
-  // Always fired without a mesh: REDcode's 3D view keeps only events whose mesh matches the name it opened the
-  // mesh by, its game path or, for a project's mesh, the file on disk, so a game path drops a project's change.
+  // Fired without a mesh (every view redraws), except for a change to one Desk entry: then `mesh` is that
+  // entry's copy of its mesh (deskChanged below). Never a game path for a project's change: REDcode's 3D view
+  // keeps only events whose mesh is the name it opened the mesh by, a project's mesh being its file on disk.
   const materialsChanged = new vscode.EventEmitter<{ mesh?: string; materials: string[] }>();
+  /**
+   * A change to one Desk entry (EDGEmat #17): the event names the entry's copy of its mesh, which
+   * renderMaterials draws with the entry's edits. REDcode's 3D view opened from the Desk shows that copy, and
+   * its sector view matches it by the game path it ends in. A setup alone on the Desk tells every view.
+   */
+  const deskMaterialsChanged = async (deskId?: string) => {
+    const e = deskId ? desk.get(deskId) : undefined;
+    const bridge = e?.kind === "mesh" && !isFilePath(e.path) ? await bridgeNow() : undefined;
+    const mesh = e && bridge ? await desk.meshFile(bridge, e).catch(() => undefined) : undefined;
+    materialsChanged.fire(mesh ? { mesh, materials: [] } : { materials: [] });
+  };
   const host: SetupEditorHost = {
     extensionUri: context.extensionUri,
     cacheDir: () => cacheDir,
@@ -417,7 +429,7 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     },
     project: () => chooseProject(context),
     packAndPlay: packAndPlayFor,
-    materialsChanged: () => materialsChanged.fire({ materials: [] }),
+    materialsChanged: (deskId) => void deskMaterialsChanged(deskId),
     desk,
     deskChanged: () => deskView.refresh(),
   };
@@ -479,6 +491,11 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
       if (created && there) vscode.window.setStatusBarMessage(`$(layers) EDGEmat: the Desk had this one edited already; this is a fresh copy, ${deskLabel(entry)}`, 10000);
       if (node?.kind === "setupFile") await openFoundSetup(entry.path, undefined, "the Desk", entry.root, entry.id);
       else if (node?.kind === "meshFile") await openLookSetup(node);
+      // For the caller (REDcode's sector view, EDGEmat #17): the entry, and for a mesh its copy, which
+      // renderMaterials draws with the entry's edits and which onDidChangeMaterials names when they change.
+      if (kind !== "mesh" || isFilePath(entry.path)) return { desk: entry.id };
+      const bridge = await bridgeNow();
+      return { desk: entry.id, mesh: bridge ? await desk.meshFile(bridge, entry).catch(() => undefined) : undefined };
     }),
     // A mesh found in Find onto the Desk, with the look it was found in open: as Open in EDGEmat from REDcode.
     vscode.commands.registerCommand("edgemat.addToDesk", (node) => {

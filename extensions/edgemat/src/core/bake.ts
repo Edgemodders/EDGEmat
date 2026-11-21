@@ -115,6 +115,7 @@ function weightAt(w: Float32Array, u: number, v: number): number {
 export function bakeColor(o: OpenedSetup, lib: Library | undefined, dir: string): string | undefined {
   const { masks, setup, info } = o;
   if (!masks) return undefined;
+  lib ??= o.templates;
   const byPath = new Map((lib?.templates ?? []).map((t) => [t.path.toLowerCase(), t]));
   const layers = info.layers.map((l, i) => {
     const r = setup.layers[i];

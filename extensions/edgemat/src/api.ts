@@ -19,13 +19,20 @@ export interface EdgematApi {
   readonly apiVersion: 1;
   /**
    * Renderable materials for a mesh as one appearance shows it, keyed by material name. A first
-   * version: color only, always "approximate". A material with nothing to show is left out.
+   * version: color only, always "approximate". A material with nothing to show is left out. `mesh`: a game
+   * path (the game's look), a project's `.mesh` file, or a Desk entry's copy (its edits, see below).
    */
   renderMaterials(req: RenderRequest): Promise<Record<string, RenderedMaterial>>;
   /**
-   * Fires when a material a viewer shows may have changed: after a setup is saved (in place or with Save to
-   * Project), after a new material is put on mesh materials, and after a part's material changes. `mesh` is
-   * unset and `materials` empty for now: every viewer draws its materials again.
+   * Fires when a material a viewer shows may have changed: while a setup is edited, after it is saved (in
+   * place or with Save to Project), after a new material is put on mesh materials, and after a part's
+   * material changes. `materials` is empty for now.
+   *
+   * `mesh` unset: every viewer draws its materials again. `mesh` set (EDGEmat #17, from 0.3.4): the change is
+   * to one Desk entry alone, and `mesh` is that entry's copy of its mesh, a `.mesh` file whose path ends in
+   * the mesh's game path (`...\EDGEmat\desk\items\<id>\source\archive\<game path>`). Pass it as
+   * renderMaterials' `mesh` to draw the Desk's version; the game path keeps the game's look. The command
+   * `edgemat.openMesh` ({ mesh, appearance }) answers { desk, mesh } with the same file for a game mesh.
    */
   readonly onDidChangeMaterials: vscode.Event<{ mesh?: string; materials: string[] }>;
   /**

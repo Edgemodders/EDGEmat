@@ -20,6 +20,10 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 - View in 3D now follows a prop's part as you change it (**Use a Game Surface...**, **Use a Game Material...**, **Back to the Model's Texture**), instead of needing to be closed and opened again.
 
+**Other**
+
+- For other tools (EDGEmat #17, REDcode's sector view): `@edgemodders/edgemat-core`'s `renderMaterials` without EDGEmat's library now draws a layered material's colors and surfaces, reading the surfaces it needs from the game, instead of a flat grey. A change to one Desk entry now names that entry's copy of its mesh in `onDidChangeMaterials`, and **Open in EDGEmat** (`edgemat.openMesh`) answers with it, so a viewer can draw the Desk's version.
+
 ## 0.3.3 (2026-11-18)
 
 <!-- nexus

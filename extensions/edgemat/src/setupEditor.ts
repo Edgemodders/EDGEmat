@@ -128,8 +128,11 @@ export interface SetupEditorHost {
   project(): Promise<Project | undefined>;
   /** REDcode's Pack and Play for that project, when REDcode has it open; undefined otherwise. */
   packAndPlay(project: Project): (() => Promise<unknown>) | undefined;
-  /** Tells 3D views (REDcode's, through EDGEmat's API) that materials changed, so they draw them again. */
-  materialsChanged(): void;
+  /**
+   * Tells 3D views (REDcode's, through EDGEmat's API) that materials changed, so they draw them again.
+   * `deskId`: the change is to that Desk entry's copy alone (EDGEmat #17), so only views of it redraw.
+   */
+  materialsChanged(deskId?: string): void;
   /** The Desk, where a setup opened from it is saved. */
   desk: Desk;
   /** Tells the Desk view a setup was saved on the Desk. */
@@ -155,6 +158,8 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   /** Every document with a tab open, for liveColorMap. */
   private readonly open = new Set<SetupDocument>();
   private liveTimer?: ReturnType<typeof setTimeout>;
+  /** The Desk entries the pending live change is for; `undefined` in it: a change outside the Desk. */
+  private livePending = new Set<string | undefined>();
 
   constructor(private readonly host: SetupEditorHost) {}
 
@@ -190,11 +195,14 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   }
 
   /** Tells 3D views to draw again once edits pause, so dragging a color does not ask for a render per step. */
-  private changedLive(): void {
+  private changedLive(doc: SetupDocument): void {
+    this.livePending.add(doc.deskId && this.host.desk.get(doc.deskId) ? doc.deskId : undefined);
     if (this.liveTimer) clearTimeout(this.liveTimer);
     this.liveTimer = setTimeout(() => {
       this.liveTimer = undefined;
-      this.host.materialsChanged();
+      const pending = [...this.livePending];
+      this.livePending.clear();
+      for (const id of pending) this.host.materialsChanged(id);
     }, 300);
   }
 
@@ -258,7 +266,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
       doc.panels.delete(panel);
       if (this.active === doc && !doc.panels.size) this.active = undefined;
       // Closed: 3D views go back to the setup on disk.
-      if (!doc.panels.size && this.open.delete(doc)) this.changedLive();
+      if (!doc.panels.size && this.open.delete(doc)) this.changedLive(doc);
     });
 
     w.onDidReceiveMessage(async (m: { type: string; text?: string; path?: string; index?: number; patch?: LayerPatch }) => {
@@ -361,16 +369,16 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
         doc.setup = before;
         doc.notice = undefined;
         this.refresh(doc);
-        this.changedLive();
+        this.changedLive(doc);
       },
       redo: () => {
         doc.setup = after;
         this.refresh(doc);
-        this.changedLive();
+        this.changedLive(doc);
       },
     });
     this.refresh(doc);
-    this.changedLive();
+    this.changedLive(doc);
     if (patch.microblend) void this.loadMicroblend(doc, patch.microblend);
   }
 
@@ -383,7 +391,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     await loadMicroblends(bridge, dir, [gamePath]);
     if (!readMicroblend(dir, gamePath)) return;
     this.refresh(doc);
-    this.changedLive();
+    this.changedLive(doc);
   }
 
   private refresh(doc: SetupDocument): void {
@@ -419,7 +427,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     }
     doc.saved = doc.setup;
     this.host.log(`Saved ${inPlace.file}`);
-    this.host.materialsChanged();
+    this.host.materialsChanged(inPlace.desk ? doc.deskId : undefined);
     if (inPlace.desk) {
       this.host.deskChanged();
       this.refresh(doc);
@@ -451,7 +459,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     doc.setup = doc.saved;
     doc.notice = undefined;
     this.refresh(doc);
-    this.changedLive();
+    this.changedLive(doc);
   }
 
   async backupCustomDocument(doc: SetupDocument, context: vscode.CustomDocumentBackupContext): Promise<vscode.CustomDocumentBackup> {

@@ -146,6 +146,41 @@ export function parseTemplate(gamePath: string, json: Json): Template {
   };
 }
 
+const templatesRead = new Map<string, Promise<Template | undefined>>();
+
+/**
+ * A library holding only these templates (game paths), read from the game, for a caller without the whole
+ * library: edgemat-core used on its own, such as REDcode's sector view (EDGEmat #17). Without it a setup's
+ * layers have no colors and render a flat grey. Each template is read once per process; one that cannot be
+ * read is left out. No thumbnails, microblends or counts.
+ */
+export async function templatesFrom(bridge: BridgeClient, paths: string[]): Promise<Library> {
+  const templates: Template[] = [];
+  const wanted = new Map(paths.filter(Boolean).map((x) => [x.toLowerCase(), x]));
+  for (const [k, p] of wanted) {
+    let read = templatesRead.get(k);
+    if (!read) {
+      read = bridge.toJson(p).then((r) => (r.json ? parseTemplate(p, JSON.parse(r.json)) : undefined), () => undefined);
+      templatesRead.set(k, read);
+    }
+    const t = await read;
+    if (t) templates.push(t);
+  }
+  return {
+    version: LibraryVersion,
+    builtAt: new Date().toISOString(),
+    key: "",
+    bridge: { version: "", wolvenKit: "" },
+    game: { dir: null, archives: 0, files: 0 },
+    counts: { templates: templates.length, microblends: 0, setups: 0, masks: 0 },
+    templates,
+    microblends: [],
+    failed: [],
+    missing: [],
+    seconds: 0,
+  };
+}
+
 /** Every game file whose path contains `query` and ends with `ext`, with the total the search reports. */
 async function findAll(bridge: BridgeClient, query: string, ext: string): Promise<{ paths: string[]; total: number }> {
   const r = await bridge.search(query, 2000);

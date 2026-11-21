@@ -47,6 +47,7 @@ Last updated 2026-10-26.
 | [Zoom on the setup map](#zoom-on-the-setup-map) | By hand, F5 | The setup editor | 2026-11-18 | **Passed** (owner) |
 | [Bumps the right way round](#bumps-the-right-way-round) | By hand, F5, with REDcode; then in the game | The bump fix (#11), and bumps on a garment, before 0.3.3 | 2026-11-18 | **Passed** (owner, rerun). The first run failed (white dots, no bumps: on a garment New Material kept the garment's own normal map and dropped Bumps); fixed the same day, the bumps laid over the folds. In the rerun, with photo mode's depth of field off, each stud is raised (a shadow along the edge away from the sun) and the seams still show |
 | [View in 3D follows a part's change](#view-in-3d-follows-a-parts-change) | By hand, F5 or Ctrl+F5, with REDcode | The fix after 0.3.3 | | Not run yet. Built 2026-11-19 |
+| [The Desk's edits in the 3D view](#the-desks-edits-in-the-3d-view) | By hand, F5 or Ctrl+F5, with REDcode | #17, before 0.3.4 | | Not run yet. Built 2026-11-21. The no-library half of #17 is in the smoke test (passed 2026-11-21) |
 | [Normal check](#normal-check) | From `npm run normal-check`, then in the game | #11, before Wardrobe Designer 0.1.0 | 2026-11-15 | **Done: the game reads green down (DirectX).** The owner, laptop, midday sun from above: the **blue** rows (green down) look raised and the red rows (green up, EDGEmat until then) dented, clearest where the light falls fullest (the hip); some dots on the curving sides read either way. Claude's enlargement of the knee agrees: blue dots bright on top, red dots bright at the bottom. It matches EDGEfab's evidence. Fixed the same day: `normalMap()` green down by default, `materialsFromModel` flips glTF's by default; smoke checks the direction |
 | [Wardrobe Designer install](#wardrobe-designer-install) | By hand, in the game, from the release zip | Each Wardrobe Designer release | | Not run yet. Added 2026-10-30 with the release scaffolding; the draft zip builds (65 KB, the game-folder layout) |
 | [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | 2026-11-13 | **Pass** (owner, laptop, 2026-11-13: steps 1 to 6, on this release's code: Connect Claude Code's `edgemat` server lists 14 tools). Found: the EDGE plugin's own EDGEmat server (npm 0.3.1, 10 tools) runs beside it, so Claude Code has two. Earlier: Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
@@ -766,6 +767,27 @@ Added 2026-11-19. The owner found that after **Use a Game Surface...** on a prop
 | 4 | Right-click `..._wit_back` › **Use a Game Material...**, type `glow blue`, choose **z emissive blue** | The back changes in the 3D view (color only for now: shine and glow come with the full preview) |
 | 5 | Optional, to leave the project as the earlier test had it: the front back to red car paint (step 2 with `red`), the body to `body_red_paint.mi` and the back to the model's texture | |
 | 6 | The button renamed 2026-11-21: right-click `..._wit_details` › **New Material Here...**, on the page that opens, the tab **From an image file** › **Choose an image...** › any `.png` or `.jpg` (no key needed), then **Add to Project** | The message after it has **Reveal in File Explorer** (no more **Show Files**); pressing it opens File Explorer on the new `.mi`. The 3D view follows this change too |
+
+| Run | Result |
+|---|---|
+
+### The Desk's edits in the 3D view
+
+Added 2026-11-21 ([EDGEmat #17](https://github.com/Edgemodders/EDGEmat/issues/17), for REDcode's sector view). A change to one Desk entry (a setup edited or saved there) now tells the 3D views by naming that entry's copy of its mesh, where before it told every view. So a 3D view opened from the Desk still follows each edit, and one opened on the game's mesh keeps the game's look. The other half of #17 (a layered material drawn without EDGEmat's library) is checked by the smoke test: a world sidewalk drawn without it, on an empty cache, comes out the same as with it.
+
+1. `npm run build` in `extensions\edgemat`, then **Ctrl+F5** (Run Without Debugging). REDcode must be installed in the development host (it is when you run from this repo's launch setup).
+2. EDGEmat's activity bar icon › the **Find** header › its magnifier › type `rocker's heart` › open the item › your V's body (Feminine or Masculine) › on the mesh line `t2_084_pw?__short_sleeves.mesh`, press **+** (Add to Desk). The **DESK** shows the jacket with a look open and its materials below it.
+
+| # | Do | Expect |
+|---|---|---|
+| 1 | On the Desk, the look row (above the materials), click the eye (**View in 3D**) | REDcode's 3D view opens the jacket in the editor area. Keep it open; the Desk stays in the side bar |
+| 2 | On the Desk, click a material row with the layers icon (multilayered) | The setup editor opens it, saying it is on the Desk |
+| 3 | In the setup editor, select the layer with the largest share, and pick a color far from its own (a green, say) | Within a second of letting go, the jacket in the 3D view changes to it, without closing anything |
+| 4 | **Ctrl+Z** in the setup editor | The 3D view goes back to the old color |
+| 5 | Pick the green again, then **Ctrl+S** | The Desk line says the entry is edited on the Desk; the 3D view keeps the green |
+| 6 | REDcode's **Game Assets** view: find `t2_084_pw?__short_sleeves.mesh` (the same file as step 2) and open it in the 3D view | This view shows the game's own colors, not the green: the Desk's edit is the Desk's alone |
+| 7 | Close the setup editor's tab | The Desk's 3D view keeps the green (it is saved on the Desk) |
+| 8 | Afterwards: right-click the jacket's line on the Desk › **Take Off the Desk**, then **Take It Off** in the question | |
 
 | Run | Result |
 |---|---|
