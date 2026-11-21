@@ -236,10 +236,10 @@ export class MaterialPage {
     const where = result.applied.length ? ` and put on ${result.applied.length} mesh material${result.applied.length === 1 ? "" : "s"}` : "";
     if (result.applied.length) this.host.materialsChanged();
     const pack = this.host.packAndPlay(project);
-    const actions = [...(pack ? ["Pack and Play"] : []), "Show Files"];
+    const actions = [...(pack ? ["Pack and Play"] : []), "Reveal in File Explorer"];
     void vscode.window.showInformationMessage(`Saved ${materialSlug(req.name)} into ${project.name}${where}.`, ...actions).then(async (pick) => {
       if (pick === "Pack and Play") await pack?.();
-      else if (pick === "Show Files") await vscode.commands.executeCommand("revealFileInOS", vscode.Uri.file(path.join(project.archive, result.mi)));
+      else if (pick === "Reveal in File Explorer") await vscode.commands.executeCommand("revealFileInOS", vscode.Uri.file(path.join(project.archive, result.mi)));
     });
     return { folder: result.folder, mi: result.mi, applied: result.applied, written: result.written.length, project: project.name };
   }

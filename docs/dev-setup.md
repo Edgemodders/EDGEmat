@@ -122,6 +122,13 @@ From 0.3.0, the first preview (0.2.0 was never released). `.github/workflows/rel
 
    Follow EDGEweb's `CLAUDE.md`, Wiki, for front matter, terms and screenshots. Commit and push to EDGEweb's `main` as `CyberbuildsAI`, with the dashboard entry.
 
+   **For the next release's wiki** (each change a modder would notice since the last release, with the pages it touches; emptied after each release's step 6):
+
+   | Change | EDGEweb pages |
+   |---|---|
+   | View in 3D follows a prop's part as it changes | `wiki/edgemat/view-in-3d.md`, `wiki/edgemat/desk.md` (if either says to reopen the view) |
+   | New Material's **Show Files** is now **Reveal in File Explorer** | `wiki/edgemat/new-material.md`, `wiki/edgemat/tutorial-worn-leather.md` (its text and, at line 84, its screenshot's caption) |
+
 **When a release run stops partway** (0.3.2, 2026-11-13: the VS Code Marketplace step failed on an expired `VSCE_PAT`, so npm never ran): do not run Release again, which stops at "already released". Fix the cause (renew the token in the organisation's secrets), then **Actions** › **Finish a release** › **Run workflow** with the version and what is missing (`gh workflow run finish-release.yml --ref main -f version=<version> -f marketplace=true -f npm=true`). It works from the tag: the Marketplace gets the GitHub release's VSIX, and npm the MCP server and the core built from the tag, skipping a package already at that version. `VSCE_PAT` is an Azure DevOps personal access token with the **Marketplace › Manage** scope for **All accessible organizations**; they expire, at most a year after they are made.
 
 **Nexus Mods** (page 35422) is kept through Nexus's v3 API, as REDnode's is: the Nexus tool (in [EDGErepo](https://github.com/Edgemodders/EDGErepo): check it out beside this repo to run the `nexus:*` scripts; the release workflows clone it at the tag `v1`), `nexus/nexus.json`, the organisation secret `NEXUS_KEY` in CI and a DPAPI key file on the dev PC. With **Update Nexus Mods** the workflow checks the page before building (it stops if the description changed on Nexus since the last pull) and, after the GitHub release, uploads the Nexus zip as the main file's new version with Mod Manager Download off (an extension, not a game mod), archives the old one, adds the changelog and pushes the description. Details in [`nexus/README.md`](https://github.com/Edgemodders/EDGEmat/blob/main/nexus/README.md).

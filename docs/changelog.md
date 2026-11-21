@@ -12,6 +12,10 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+**Changed**
+
+- New Material's **Show Files** button is now **Reveal in File Explorer**, as every other EDGE tool calls it.
+
 **Fixed**
 
 - View in 3D now follows a prop's part as you change it (**Use a Game Surface...**, **Use a Game Material...**, **Back to the Model's Texture**), instead of needing to be closed and opened again.
