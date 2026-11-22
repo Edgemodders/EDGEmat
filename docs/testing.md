@@ -48,6 +48,7 @@ Last updated 2026-10-26.
 | [Bumps the right way round](#bumps-the-right-way-round) | By hand, F5, with REDcode; then in the game | The bump fix (#11), and bumps on a garment, before 0.3.3 | 2026-11-18 | **Passed** (owner, rerun). The first run failed (white dots, no bumps: on a garment New Material kept the garment's own normal map and dropped Bumps); fixed the same day, the bumps laid over the folds. In the rerun, with photo mode's depth of field off, each stud is raised (a shadow along the edge away from the sun) and the seams still show |
 | [View in 3D follows a part's change](#view-in-3d-follows-a-parts-change) | By hand, F5 or Ctrl+F5, with REDcode | The fix after 0.3.3 | 2026-11-22 | **Passed** (owner, all 6 steps; step 6 failed first and was fixed the same day: New Material Here now refreshes the Desk's copy). Built 2026-11-19 |
 | [Shared keys](#shared-keys) | By hand, F5 "Run EDGEmat with REDcode main", REDbridge 0.18.0, then Claude Code | #18, before 0.3.4 | 2026-11-22 | **Passed** (owner, all 7 steps; step 7, Don't Allow, added and run the same day). Built 2026-11-22. The key store client was checked against REDbridge 0.18.0 the same day (each service's `keys.info`; `keys.get`; REDbridge 0.12.1 gives the "needs 0.18.0" words; a wrong exe gives words, not a hang) |
+| [Glow and tint in the 3D view](#glow-and-tint-in-the-3d-view) | By hand, F5 or Ctrl+F5, with REDcode | After 0.3.3, before 0.3.4 | | Not run yet. Built 2026-11-22. Checked outside the game the same day: z emissive blue on a scratch copy of EDGEmat_PropParts draws (0, 138, 255); the smoke test's sneakers draw `dec_lights` amber (255, 187, 0) |
 | [The Desk's edits in the 3D view](#the-desks-edits-in-the-3d-view) | By hand, F5 or Ctrl+F5, with REDcode | #17, before 0.3.4 | 2026-11-22 | **Passed** (owner, all 8 steps). Built 2026-11-21. The no-library half of #17 is in the smoke test (passed 2026-11-21) |
 | [Normal check](#normal-check) | From `npm run normal-check`, then in the game | #11, before Wardrobe Designer 0.1.0 | 2026-11-15 | **Done: the game reads green down (DirectX).** The owner, laptop, midday sun from above: the **blue** rows (green down) look raised and the red rows (green up, EDGEmat until then) dented, clearest where the light falls fullest (the hip); some dots on the curving sides read either way. Claude's enlargement of the knee agrees: blue dots bright on top, red dots bright at the bottom. It matches EDGEfab's evidence. Fixed the same day: `normalMap()` green down by default, `materialsFromModel` flips glTF's by default; smoke checks the direction |
 | [Wardrobe Designer install](#wardrobe-designer-install) | By hand, in the game, from the release zip | Each Wardrobe Designer release | | Not run yet. Added 2026-10-30 with the release scaffolding; the draft zip builds (65 KB, the game-folder layout) |
@@ -774,6 +775,23 @@ Added 2026-11-19. The owner found that after **Use a Game Surface...** on a prop
 | 2026-11-22, owner, dev PC | Step 6: **failed**, fixed the same day. **Add to Project** wrote `openai_playground_2026_09.mi` and put it on `..._wit_details` in the project's `vending_parts.mesh` (the log says so), but the Desk and its 3D view still showed the old material: the material page told the 3D views to draw again without copying the project's mesh over the Desk's copy, or refreshing Find and the Desk, as the part commands do. Now it does all three. Step 6 to run again; steps 1 to 5 not reported yet |
 | 2026-11-22, owner, dev PC | Step 6 again, after the fix: **passed**. The part's new material shows on the Desk and in the 3D view. (On the way: a part wearing **z emissive blue** draws flat white, since that material's color texture is the game's white and its blue is a glow the 3D view does not draw yet.) Steps 1 to 5 not reported yet |
 | 2026-11-22, owner, dev PC | Steps 1 to 5: **passed**. With step 6 above, the whole test has passed |
+
+### Glow and tint in the 3D view
+
+Added 2026-11-22 (owner's ask, after **z emissive blue** on a part drew flat white). REDcode's 3D view takes one color image per material and draws no glow yet ([REDcode #31](https://github.com/Edgemodders/REDcode/issues/31)), so EDGEmat puts both into that image: a textured material's color texture is multiplied by its `BaseColorScale` (the tint metal_base.remt materials use), and where its `Emissive` mask is on and `EmissiveEV` is above 0 (0 or below is off in the game), its `EmissiveColor` is laid over it. It shows the glow's color, not its light. **z emissive blue** is the game's plain white texture tinted blue, with a blue glow over the whole part. Layered materials are as before.
+
+1. `npm run build` in `extensions\edgemat`, then **Ctrl+F5**. In the development host: **File › Open Folder...** › `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_PropParts`.
+2. In REDcode's **Project** view, `source\archive\edgefab_partmaterials\props\vending_parts`, right-click `vending_parts.mesh` › **Open in EDGEmat**. On the Desk, the look row › the eye (**View in 3D**). Keep the 3D view open.
+
+| # | Do | Expect |
+|---|---|---|
+| 1 | On the Desk, right-click `a_battered_cyberpunk_vending_machine_wit_back` › **Use a Game Material...**, type `glow blue`, choose **z emissive blue** | The back turns a bright blue in the 3D view (it was flat white before this fix) |
+| 2 | Right-click the same part › **Use a Game Material...**, type `emissive`, and choose another glowing one in a different color (a red or a green, say) | The back takes that glow's color |
+| 3 | EDGEmat's activity bar icon › **Find** › its magnifier › `sunny ammo high-tops` › the item › a body › on its mesh line (`s1_055_p?a_shoe__converse.mesh`), **+** (Add to Desk). On the Desk, the look row › its eye (**View in 3D**) | The sneakers' light strips (`dec_lights`) are amber; before, they were the viewer's flat color |
+| 4 | Afterwards: the back as you want it (**Back to the Model's Texture**, or a material of your choice); the sneakers' line › **Remove** | |
+
+| Run | Result |
+|---|---|
 
 ### Shared keys
 

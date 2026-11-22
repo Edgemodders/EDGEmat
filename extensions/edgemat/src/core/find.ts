@@ -34,6 +34,10 @@ export interface MaterialUse {
   baseColor?: string;
   /** A textured material's normal map (Normal or NormalTexture), the nearest in its chain. A layered one's is globalNormal. */
   normal?: string;
+  /** A textured material's BaseColorScale (metal_base.remt and kin), the nearest in its chain: the color texture is multiplied by it, 0 to 1 a channel. */
+  tint?: [number, number, number];
+  /** A textured material's glow, when its chain sets EmissiveEV above 0 (0 or below is off): the Emissive mask, EmissiveColor (0 to 255 a channel), EmissiveEV. */
+  glow?: { mask?: string; color: [number, number, number]; ev: number };
   /** The .mi files between the mesh and the base material, when the material is external. */
   instances: string[];
 }
@@ -143,12 +147,23 @@ const isShadow = (meshPath: string) => /\\shadow_meshes\\|_shadow\.mesh$/i.test(
 /** A material's chain through .mi files to its base, and the multilayered parameters found on the way (the nearest wins). */
 async function resolveMaterial(read: Reader, material: Json, name: string, chunks: number): Promise<MaterialUse> {
   const use: MaterialUse = { name, chunks, base: "", multilayered: false, instances: [] };
+  // The glow's three values, each the nearest in the chain.
+  let glowMask: string | undefined, glowColor: [number, number, number] | undefined, glowEV: number | undefined;
   let current: Json | undefined = material;
   for (let depth = 0; current && depth < 8; depth++) {
     for (const value of current.values ?? []) {
       if (value.MultilayerSetup && !use.setup) use.setup = v(value.MultilayerSetup) || undefined;
       if (value.MultilayerMask && !use.mask) use.mask = v(value.MultilayerMask) || undefined;
       if (value.GlobalNormal && !use.globalNormal) use.globalNormal = v(value.GlobalNormal) || undefined;
+      const s = value.BaseColorScale;
+      if (s && !use.tint && [s.X, s.Y, s.Z].every((n) => typeof n === "number")) use.tint = [s.X, s.Y, s.Z];
+      if (value.Emissive && glowMask === undefined) {
+        const p = v(value.Emissive);
+        if (typeof p === "string" && /\.xbm$/i.test(p)) glowMask = p;
+      }
+      const c = value.EmissiveColor;
+      if (c && !glowColor && [c.Red, c.Green, c.Blue].every((n) => typeof n === "number")) glowColor = [c.Red, c.Green, c.Blue];
+      if (typeof value.EmissiveEV === "number" && glowEV === undefined) glowEV = value.EmissiveEV;
     }
     if (!use.normal) {
       const found = (current.values ?? []).map((value: Json) => v(value.Normal ?? value.NormalTexture)).find((p: unknown) => typeof p === "string" && /\.xbm$/i.test(p));
@@ -171,6 +186,8 @@ async function resolveMaterial(read: Reader, material: Json, name: string, chunk
     current = (await read.json(base)).Data?.RootChunk;
   }
   use.multilayered = !!use.setup || /multilayer/i.test(use.base);
+  // EmissiveEV 0 or below is off (design, "How glow works in the game"). Without a color, the mask's own.
+  if (glowEV !== undefined && glowEV > 0 && (glowMask || glowColor)) use.glow = { mask: glowMask, color: glowColor ?? [255, 255, 255], ev: glowEV };
   return use;
 }
 

@@ -20,6 +20,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **Fixed**
 
+- View in 3D shows a glowing material in its glow's color, and a material's tint, instead of plain white: **z emissive blue** on a part is blue, and the sneakers' light strips are amber. It shows the glow's color, not its light, until the 3D view draws glow.
 - View in 3D now follows a prop's part as you change it (**Use a Game Surface...**, **Use a Game Material...**, **Back to the Model's Texture**, and **New Material Here...**'s **Add to Project**), instead of needing to be closed and opened again. The Desk shows the part's new material at once too.
 
 **Other**

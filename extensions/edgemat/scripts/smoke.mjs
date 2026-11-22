@@ -128,8 +128,10 @@ try {
   const isPng = (u) => !!u && u[0] === 0x89 && u[1] === 0x50 && u[2] === 0x4e && u[3] === 0x47;
   let t2 = Date.now();
   const shoeMaps = await core.renderMaterials(bridge, lib, cache, { mesh: fem.meshes[0].mesh, appearance: "red_yellow_graphic", materials: ["red_yellow_graphic", "dec_lights"] });
-  check(isPng(shoeMaps.red_yellow_graphic?.baseColor) && shoeMaps.red_yellow_graphic.fidelity === "approximate" && !shoeMaps.dec_lights,
-    `sneakers in ${Date.now() - t2} ms: the layered material's color map; dec_lights has no color texture, so the viewer keeps its flat color`);
+  // dec_lights has no color texture but glows (EmissiveColor amber, EmissiveEV 1.4), so it shows its glow's color.
+  const lights = isPng(shoeMaps.dec_lights?.baseColor) ? PNG.sync.read(Buffer.from(shoeMaps.dec_lights.baseColor)).data : undefined;
+  check(isPng(shoeMaps.red_yellow_graphic?.baseColor) && shoeMaps.red_yellow_graphic.fidelity === "approximate" && lights?.[0] === 255 && lights?.[1] === 187 && lights?.[2] === 0,
+    `sneakers in ${Date.now() - t2} ms: the layered material's color map; dec_lights in its glow's amber`);
   t2 = Date.now();
   const jacketMaps = await core.renderMaterials(bridge, lib, cache, { mesh: jacketPath, appearance: "default" });
   check(Object.keys(jacketMaps).length === 5 && isPng(jacketMaps.bags?.baseColor) && isPng(jacketMaps.decals?.baseColor),
