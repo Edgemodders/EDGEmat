@@ -12,6 +12,17 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+## 0.3.4 (2026-11-22)
+
+<!-- nexus
+Changed: Your AI keys are shared by every EDGE tool: set each once in REDcode's Keys view (REDcode 0.10.16)
+Changed: The Desk's Take Off the Desk is now Remove
+Changed: New Material's Show Files is now Reveal in File Explorer
+Fixed: View in 3D drew glowing and tinted materials plain white; they show their glow's color now
+Fixed: View in 3D now follows a prop's part as you change it, without reopening
+Other: For other tools: the core draws world layered materials, and the Desk's version shows in REDcode's views
+-->
+
 **Changed**
 
 - **Your AI keys are shared by every EDGE tool** (EDGEmat #18): EDGEmat reads its Google Gemini, OpenAI and Tripo keys from REDcode's **Keys** view, which keeps them for all the EDGE tools, so you set each one once. REDcode asks once whether EDGEmat may read a key, and for the key itself when none is set. A key EDGEmat kept itself moves there the first time, and EDGEmat says so. **EDGEmat: Set Image Service Key...** opens REDcode's box; **Clear Image Service Key...** points to Remove Key in REDcode's Keys. The MCP server reads the keys there too, at each call, so **Connect an Assistant** no longer puts a key in Claude Code's settings. Needs a REDcode with Keys (0.10.16) and REDbridge 0.18.0; with an older REDcode, EDGEmat keeps its own keys as before. An environment variable (`GEMINI_API_KEY`, `OPENAI_API_KEY`, `TRIPO_API_KEY`) still wins. If you press **Don't Allow** when REDcode asks, EDGEmat says how to allow it later instead of asking you for the key.
