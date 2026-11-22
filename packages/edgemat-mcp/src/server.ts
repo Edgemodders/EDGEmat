@@ -903,7 +903,7 @@ server.registerTool(
       "'to_project' puts entries (ids, else all) in a WolvenKit project: each setup edited on a mesh entry is saved as a new setup with that mesh copied in and pointed at it (no other mod needed), the other meshes as they are. " +
       "One variation of each file can go in: with several and no ids, to_project writes nothing and lists them; ask the modder which, then pass ids. " +
       "When the project already has its own copy of a mesh that no longer uses a setup edited on its entry, to_project writes nothing and lists the conflicts: ask the modder, then call again with replace true (the project's copy becomes the Desk's mesh) or false (the project keeps its copy; that entry stays on the Desk). " +
-      "clear true with to_project then takes off the Desk what went into the project. " +
+      "clear true with to_project then removes from the Desk what went into the project. " +
       "To edit a setup on the Desk, use mat_edit with save 'desk' and desk_id; mat_find lists a mesh's materials and their setups.",
     inputSchema: {
       action: z.enum(["list", "add", "remove", "rename", "clear", "to_project"]),
@@ -913,7 +913,7 @@ server.registerTool(
       name: z.string().optional().describe("For rename: the name; empty clears it"),
       project: z.string().optional().describe("For to_project: the project folder, its .cpmodproj, or its source\\archive folder"),
       replace: z.boolean().optional().describe("For to_project, when it reported conflicts: true replaces the project's copies with the Desk's meshes, false keeps them"),
-      clear: z.boolean().optional().describe("For to_project: afterwards, take off the Desk what went into the project"),
+      clear: z.boolean().optional().describe("For to_project: afterwards, remove from the Desk what went into the project"),
     },
   },
   async ({ action, path: p, ids, id, name, project, replace, clear }) => {
@@ -935,7 +935,7 @@ server.registerTool(
         return text({ added: { id: entry.id, label: deskLabel(entry), new: created }, ...list() });
       }
       if (action === "remove") {
-        if (!ids?.length) return failure(new Error("Pass ids: the entries to take off, from 'list'."));
+        if (!ids?.length) return failure(new Error("Pass ids: the entries to remove, from 'list'."));
         const unknown = ids.filter((x) => !desk.get(x));
         if (unknown.length) return failure(new Error(`Not on the Desk: ${unknown.join(", ")}.`));
         desk.remove(ids);
@@ -970,7 +970,7 @@ server.registerTool(
         saved: { project: pr.dir, written: r.written, setups: r.setups },
         kept: r.kept.length ? r.kept : undefined,
         notes: r.notes.length ? r.notes : undefined,
-        next: `Pack the project and install it (REDcode: Pack and Play), then look in the game. ${clear ? "What went in is off the Desk." : "The Desk is left as it was: to_project with clear true, or 'remove', takes entries off."}`,
+        next: `Pack the project and install it (REDcode: Pack and Play), then look in the game. ${clear ? "What went in is removed from the Desk." : "The Desk is left as it was: to_project with clear true, or 'remove', removes entries."}`,
       });
     } catch (e) {
       return failure(e);

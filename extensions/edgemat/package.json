@@ -293,7 +293,7 @@
       },
       {
         "command": "edgemat.removeFromDesk",
-        "title": "Take Off the Desk",
+        "title": "Remove",
         "category": "EDGEmat",
         "icon": "$(close)"
       },

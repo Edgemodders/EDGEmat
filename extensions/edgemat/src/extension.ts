@@ -391,8 +391,8 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
   const findTree = vscode.window.createTreeView("edgemat.find", { treeDataProvider: find, showCollapseAll: true });
   const desk = new Desk(cacheDir);
   fs.mkdirSync(desk.dir, { recursive: true });
-  desk.sweep(); // folders Windows held when they came off the Desk
-  const heldNote = () => void vscode.window.showInformationMessage("EDGEmat: off the Desk. Some of its files are still open (a setup tab or a 3D view of them), so Windows kept them for now; EDGEmat deletes them when it next starts.");
+  desk.sweep(); // folders Windows held when they were removed from the Desk
+  const heldNote = () => void vscode.window.showInformationMessage("EDGEmat: removed from the Desk. Some of its files are still open (a setup tab or a 3D view of them), so Windows kept them for now; EDGEmat deletes them when it next starts.");
   const deskView = new DeskView(desk, bridgeNow, () => cacheDir, log);
   const deskTree = vscode.window.createTreeView("edgemat.desk", { treeDataProvider: deskView, showCollapseAll: true });
   // The MCP server's mat_desk changes desk.json too.
@@ -517,7 +517,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       if (!entry) return;
       const edits = desk.edited(entry).length;
       if (edits) {
-        const go = await vscode.window.showWarningMessage(`Take ${deskLabel(entry)} off the Desk?`, { modal: true, detail: `Its ${edits === 1 ? "edit" : `${edits} edited setups`} on the Desk ${edits === 1 ? "is" : "are"} deleted. Your projects keep what you added to them.` }, "Take It Off");
+        const go = await vscode.window.showWarningMessage(`Remove ${deskLabel(entry)} from the Desk?`, { modal: true, detail: `Its ${edits === 1 ? "edit" : `${edits} edited setups`} on the Desk ${edits === 1 ? "is" : "are"} deleted. Your projects keep what you added to them.` }, "Remove");
         if (!go) return;
       }
       if (!deskView.remove([entry])) heldNote();
@@ -541,7 +541,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       if (!n && !edited) return;
       const go = await vscode.window.showWarningMessage(
         "Clear the Desk?",
-        { modal: true, detail: `${n} thing${n === 1 ? "" : "s"} come${n === 1 ? "s" : ""} off the Desk${edited ? `, and the edits of ${edited} setup${edited === 1 ? "" : "s"} saved there are deleted` : ""}. Nothing in your projects or the game changes.` },
+        { modal: true, detail: `${n} thing${n === 1 ? " is" : "s are"} removed from the Desk${edited ? `, and the edits of ${edited} setup${edited === 1 ? "" : "s"} saved there are deleted` : ""}. Nothing in your projects or the game changes.` },
         "Clear the Desk",
       );
       if (!go) return;
@@ -706,7 +706,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
     }
     const meshes = entries.filter((e) => e.kind === "mesh").length;
     const edited = entries.reduce((n, e) => n + desk.edited(e).length, 0);
-    const clearWord = entries.length === 1 ? "Add and Take It Off the Desk" : "Add and Clear the Desk";
+    const clearWord = entries.length === 1 ? "Add and Remove from the Desk" : "Add and Clear the Desk";
     // A project REDcode does not have open is opened afterwards, so the modder sees what went in.
     const opens = !openInRedcode(project) && fs.existsSync(project.dir);
     const opensHow = vscode.workspace.workspaceFolders?.length ? "in a new window" : "in this window, which reloads (the Desk stays as it is)";
@@ -718,7 +718,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
           `${plural(meshes, "mesh")} and ${plural(edited, "setup")} edited on the Desk go into ${project.archive}. ` +
           `Each edited setup is saved as a new setup (named with _${suffix}), and the mesh it was edited on is copied in and pointed at it; the other meshes are copied as they are. ` +
           `Meshes already in the project are kept, and changed only to point at the new setups${conflicts.length ? (replace ? ", except the ones you chose to replace" : "; the kept ones stay on the Desk with their edits") : ""}. ` +
-          `${clearWord} takes off the Desk only what went into the project.` +
+          `${clearWord} removes from the Desk only what went into the project.` +
           (opens ? `\n\nThen ${project.name} opens in REDcode, ${opensHow}.` : ""),
       },
       "Add to Project",

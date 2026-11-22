@@ -52,7 +52,7 @@ export class DeskView extends FindView {
     return n?.kind === "meshFile" || n?.kind === "setupFile" ? n.entry : undefined;
   }
 
-  /** Takes entries off the Desk; false when Windows kept some of their files (see Desk.remove). */
+  /** Removes entries from the Desk; false when Windows kept some of their files (see Desk.remove). */
   remove(entries: DeskEntry[]): boolean {
     const all = this.desk!.remove(entries.map((e) => e.id));
     for (const e of entries) this.opened.delete(e.id);
