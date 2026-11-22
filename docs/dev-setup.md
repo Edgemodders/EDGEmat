@@ -126,12 +126,7 @@ From 0.3.0, the first preview (0.2.0 was never released). `.github/workflows/rel
 
    | Change | EDGEweb pages |
    |---|---|
-   | View in 3D follows a prop's part as it changes | `wiki/edgemat/view-in-3d.md`, `wiki/edgemat/desk.md` (if either says to reopen the view) |
-   | `renderMaterials` without the library draws the world's layered materials; the Desk's version in REDcode's sector view (#17) | Probably none (an API change); check `wiki/edgemat/view-in-3d.md` |
-   | Keys from REDcode's Keys, shared by every EDGE tool; Set and Clear point there; the MCP server reads them itself (#18) | `wiki/edgemat/new-material.md` (the key note), the MCP or Connect an Assistant page, the shared wiki page on keys if there is one |
-   | The Desk's **Take Off the Desk** is now **Remove**; Add to Project's **Add and Remove from the Desk** | `wiki/edgemat/desk.md`, any page that says Take Off (`grep -rn "Take Off" docs/wiki`) |
-   | View in 3D shows a glowing material's glow color and a material's tint | `wiki/edgemat/view-in-3d.md` (what it shows and what not yet) |
-   | New Material's **Show Files** is now **Reveal in File Explorer** | `wiki/edgemat/new-material.md`, `wiki/edgemat/tutorial-worn-leather.md` (its text and, at line 84, its screenshot's caption) |
+   | (nothing yet) | |
 
 **When a release run stops partway** (0.3.2, 2026-11-13: the VS Code Marketplace step failed on an expired `VSCE_PAT`, so npm never ran): do not run Release again, which stops at "already released". Fix the cause (renew the token in the organisation's secrets), then **Actions** › **Finish a release** › **Run workflow** with the version and what is missing (`gh workflow run finish-release.yml --ref main -f version=<version> -f marketplace=true -f npm=true`). It works from the tag: the Marketplace gets the GitHub release's VSIX, and npm the MCP server and the core built from the tag, skipping a package already at that version. `VSCE_PAT` is an Azure DevOps personal access token with the **Marketplace › Manage** scope for **All accessible organizations**; they expire, at most a year after they are made.
 
