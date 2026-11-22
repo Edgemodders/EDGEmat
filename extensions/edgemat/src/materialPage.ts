@@ -20,8 +20,11 @@ export interface MaterialPageHost {
   bridge(): Promise<BridgeClient | undefined>;
   project(): Promise<Project | undefined>;
   packAndPlay(project: Project): (() => Promise<unknown>) | undefined;
-  /** Tells 3D views (REDcode's, through EDGEmat's API) that materials changed, so they draw them again. */
-  materialsChanged(): void;
+  /**
+   * A project's meshes now wear the new material: refreshes the Desk's copies of them, Find and the Desk, and
+   * tells 3D views (REDcode's, through EDGEmat's API) to draw them again, as the part commands do.
+   */
+  materialsChanged(archive: string, meshes: string[]): void;
   log(line: string): void;
 }
 
@@ -216,7 +219,7 @@ export class MaterialPage {
     for (const f of result.written) this.host.log(`  ${f}`);
     for (const a of result.applied) this.host.log(`  ${a.mesh} › ${a.material}: ${a.mi} (${a.how})`);
     const where = result.applied.length ? ` and put on ${result.applied.length} mesh material${result.applied.length === 1 ? "" : "s"}` : "";
-    if (result.applied.length) this.host.materialsChanged();
+    if (result.applied.length) this.host.materialsChanged(project.archive, [...new Set(result.applied.map((a) => a.mesh))]);
     const pack = this.host.packAndPlay(project);
     const actions = [...(pack ? ["Pack and Play"] : []), "Reveal in File Explorer"];
     void vscode.window.showInformationMessage(`Saved ${materialSlug(req.name)} into ${project.name}${where}.`, ...actions).then(async (pick) => {

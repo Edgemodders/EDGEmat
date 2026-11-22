@@ -19,7 +19,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 **Fixed**
 
-- View in 3D now follows a prop's part as you change it (**Use a Game Surface...**, **Use a Game Material...**, **Back to the Model's Texture**), instead of needing to be closed and opened again.
+- View in 3D now follows a prop's part as you change it (**Use a Game Surface...**, **Use a Game Material...**, **Back to the Model's Texture**, and **New Material Here...**'s **Add to Project**), instead of needing to be closed and opened again. The Desk shows the part's new material at once too.
 
 **Other**
 

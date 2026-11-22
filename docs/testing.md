@@ -767,10 +767,11 @@ Added 2026-11-19. The owner found that after **Use a Game Surface...** on a prop
 | 3 | Right-click `..._wit_body` › **Back to the Model's Texture** | The body changes from red paint to the model's own texture in the 3D view |
 | 4 | Right-click `..._wit_back` › **Use a Game Material...**, type `glow blue`, choose **z emissive blue** | The back changes in the 3D view (color only for now: shine and glow come with the full preview) |
 | 5 | Optional, to leave the project as the earlier test had it: the front back to red car paint (step 2 with `red`), the body to `body_red_paint.mi` and the back to the model's texture | |
-| 6 | The button renamed 2026-11-21: right-click `..._wit_details` › **New Material Here...**, on the page that opens, the tab **From an image file** › **Choose an image...** › any `.png` or `.jpg` (no key needed), then **Add to Project** | The message after it has **Reveal in File Explorer** (no more **Show Files**); pressing it opens File Explorer on the new `.mi`. The 3D view follows this change too |
+| 6 | The button renamed 2026-11-21: right-click `..._wit_details` › **New Material Here...**, on the page that opens, the tab **From an image file** › **Choose an image...** › any `.png` or `.jpg` (no key needed), then **Add to Project** | The message says the material was saved into EDGEmat_PropParts and put on 1 mesh material, with **Reveal in File Explorer** (no more **Show Files**); pressing it opens File Explorer on the new `.mi`. The details part on the Desk now shows the new material, and the 3D view draws it (both fixed 2026-11-22: the first run wrote the material onto the part, but the Desk and its 3D view kept their old copy) |
 
 | Run | Result |
 |---|---|
+| 2026-11-22, owner, dev PC | Step 6: **failed**, fixed the same day. **Add to Project** wrote `openai_playground_2026_09.mi` and put it on `..._wit_details` in the project's `vending_parts.mesh` (the log says so), but the Desk and its 3D view still showed the old material: the material page told the 3D views to draw again without copying the project's mesh over the Desk's copy, or refreshing Find and the Desk, as the part commands do. Now it does all three. Step 6 to run again; steps 1 to 5 not reported yet |
 
 ### Shared keys
 

@@ -437,7 +437,12 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
   const setupEditor = new SetupEditor(host);
   const keys = new Keys(context, settings, log);
   void keys.watch().then((d) => context.subscriptions.push(...d), (e) => log(`Keys: ${e instanceof Error ? e.message : String(e)}`));
-  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndPlay: packAndPlayFor, materialsChanged: () => materialsChanged.fire({ materials: [] }), log }, keys);
+  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndPlay: packAndPlayFor, materialsChanged: (archive, meshes) => {
+    for (const mesh of meshes) desk.recopy(archive, mesh);
+    find.refresh();
+    deskView.refresh();
+    materialsChanged.fire({ materials: [] });
+  }, log }, keys);
 
   context.subscriptions.push(
     output,
