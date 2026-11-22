@@ -1,8 +1,8 @@
-// Keys for the AI services, without storing them (EDGEmat #10, the owner's decision of 2026-11-11). The
-// extension keeps them in VS Code's secret storage (materialPage.ts). The MCP server, Wardrobe Designer's
-// core use and the check scripts get them from their environment; an environment variable wins in the
-// extension too. Nothing here reads or decrypts a file: the EDGE tools' shared key store is shelved, since
-// the VS Code Marketplace refused EDGEhack 0.1.0 as "suspicious content" with its PowerShell decryption inside.
+// Keys for the AI services: the environment variables and a typed key's check. Where the keys are kept is
+// elsewhere: in VS Code, REDcode's shared key store through REDcode's API, or with an older REDcode VS Code's
+// secret storage (src/keys.ts); the MCP server reads the store through a REDbridge of its own (keyStore.ts,
+// EDGEmat #18). An environment variable wins everywhere. Wardrobe Designer's core use and the check scripts
+// get their keys from the environment. Nothing here reads or decrypts a file.
 
 /** The services EDGEmat uses a key for, and the environment variable that holds each. */
 export const KeyEnv = { gemini: "GEMINI_API_KEY", openai: "OPENAI_API_KEY", tripo: "TRIPO_API_KEY" } as const;

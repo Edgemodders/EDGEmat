@@ -1,18 +1,19 @@
 // EDGEmat's MCP server for assistants ships inside the extension (dist/mcp/edgemat-mcp.cjs, built by
 // esbuild.mjs from packages/edgemat-mcp). On start the extension copies it to a fixed path in EDGEmat's own
 // folder, so a Claude Code registration survives updates and each update refreshes the file. It also
-// registers the server with VS Code's own MCP support where the editor has it (1.101 and later), with the
-// image service keys from secret storage; without that API, or where it fails (EDGEkit without Copilot),
-// nothing is registered and the rest works as before. "Connect an Assistant (MCP)..." registers it with
-// Claude Code, or copies the command or a JSON entry for other clients. The server reads its keys from its
-// environment only, so the keys go in there (EDGEmat #10, 2026-11-11: the shared key store is shelved).
+// registers the server with VS Code's own MCP support where the editor has it (1.101 and later); without
+// that API, or where it fails (EDGEkit without Copilot), nothing is registered and the rest works as before.
+// "Connect an Assistant (MCP)..." registers it with Claude Code, or copies the command or a JSON entry for
+// other clients. The server reads its keys from its environment, else from REDcode's Keys through a REDbridge
+// of its own (EDGEmat #18), so no key goes in its environment; with a REDcode that has no Keys, the keys in
+// EDGEmat's secret storage go in there as before (keys.ts, serverEnv).
 
 import * as vscode from "vscode";
 import { execFile, exec } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { defaultCacheDir, Services, type ServiceId } from "./core";
-import { KeySecret } from "./materialPage";
+import { defaultCacheDir, KeyEnv, Services, type KeyService } from "./core";
+import type { Keys } from "./keys";
 
 type Log = (line: string) => void;
 
@@ -37,16 +38,6 @@ export function installServer(extensionPath: string, log: Log): void {
   }
 }
 
-/** The image service keys EDGEmat holds, as the server's environment variables. */
-async function keyEnv(context: vscode.ExtensionContext): Promise<Record<string, string>> {
-  const env: Record<string, string> = {};
-  for (const id of Object.keys(Services) as ServiceId[]) {
-    const k = await context.secrets.get(KeySecret(id));
-    if (k) env[Services[id].env] = k;
-  }
-  return env;
-}
-
 interface McpApi {
   registerMcpServerDefinitionProvider?: (id: string, provider: unknown) => vscode.Disposable;
 }
@@ -59,7 +50,7 @@ const editorMcp = () => {
 };
 
 /** Registers the server with the editor's own MCP support, when it has one. VS Code's binary runs it as Node. */
-export function registerWithEditor(context: vscode.ExtensionContext, version: string, log: Log): vscode.Disposable[] {
+export function registerWithEditor(context: vscode.ExtensionContext, keys: Keys, version: string, log: Log): vscode.Disposable[] {
   const api = editorMcp();
   if (!api) return [];
   const changed = new vscode.EventEmitter<void>();
@@ -68,7 +59,7 @@ export function registerWithEditor(context: vscode.ExtensionContext, version: st
       changed,
       api.lm.registerMcpServerDefinitionProvider!("edgemat.mcp", {
         onDidChangeMcpServerDefinitions: changed.event,
-        provideMcpServerDefinitions: async () => [new api.Def("EDGEmat", process.execPath, [serverFile()], { ELECTRON_RUN_AS_NODE: "1", ...(await keyEnv(context)) }, version)],
+        provideMcpServerDefinitions: async () => [new api.Def("EDGEmat", process.execPath, [serverFile()], { ELECTRON_RUN_AS_NODE: "1", ...(await keys.serverEnv()) }, version)],
       }),
       context.secrets.onDidChange((e) => {
         if (e.key.startsWith("edgemat.")) changed.fire();
@@ -94,7 +85,7 @@ function runner(): Promise<{ command: string; env: Record<string, string> }> {
 }
 
 /** "Connect an Assistant (MCP)...". */
-export async function connectAssistant(context: vscode.ExtensionContext, log: Log): Promise<void> {
+export async function connectAssistant(context: vscode.ExtensionContext, keys: Keys, log: Log): Promise<void> {
   installServer(context.extensionPath, log);
   const file = serverFile();
   if (!fs.existsSync(file)) {
@@ -119,13 +110,14 @@ export async function connectAssistant(context: vscode.ExtensionContext, log: Lo
     return;
   }
 
-  // The image service keys, only when asked: the client keeps them in its own settings file, in plain text.
+  // With REDcode's Keys the server reads the keys itself and none go in the client's settings. Else the ones
+  // EDGEmat holds, only when asked: the client keeps them in its own settings file, in plain text.
   let env = { ...run.env };
-  const keys = await keyEnv(context);
-  const names = (Object.keys(Services) as ServiceId[]).filter((id) => keys[Services[id].env]).map((id) => Services[id].name);
+  const held = await keys.serverEnv();
+  const names = (Object.keys(KeyEnv) as KeyService[]).filter((id) => held[KeyEnv[id]]).map((id) => (id === "tripo" ? "Tripo" : Services[id].name));
   // The copied command names each key EDGEmat holds as <key> (masked below), never the key itself; the
   // user puts theirs in or leaves that -e out.
-  if (picked.action === "copy") env = { ...env, ...keys };
+  if (picked.action === "copy") env = { ...env, ...held };
   else if (names.length) {
     const give = await vscode.window.showQuickPick(
       [
@@ -135,7 +127,7 @@ export async function connectAssistant(context: vscode.ExtensionContext, log: Lo
       { title: "Give the assistant your image service key too?" },
     );
     if (!give) return;
-    if (give.give) env = { ...env, ...keys };
+    if (give.give) env = { ...env, ...held };
   }
   const envFlags = Object.entries(env).map(([k, v]) => `-e ${k}=${v}`);
   const command = (flags: string[]) => ["claude mcp add --scope user edgemat", ...flags, "--", quote(run.command), ...args.map(quote)].join(" ");
@@ -161,7 +153,8 @@ export async function connectAssistant(context: vscode.ExtensionContext, log: Lo
   const added = await shell(command(envFlags));
   if (added.ok) {
     log(`MCP: ${added.out}`);
-    void vscode.window.showInformationMessage("EDGEmat is connected to Claude Code. Start a new Claude Code session and ask it about a garment's materials.");
+    const shared = await keys.shared();
+    void vscode.window.showInformationMessage(`EDGEmat is connected to Claude Code${shared ? ", reading your image service and Tripo keys from REDcode's Keys" : ""}. Start a new Claude Code session and ask it about a garment's materials.`);
     return;
   }
   log(`MCP: claude mcp add failed: ${added.out}`);

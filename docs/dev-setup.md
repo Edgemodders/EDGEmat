@@ -71,7 +71,7 @@ npm run edgemat:package    # dist\edgemat-0.1.0.vsix
 code --install-extension dist\edgemat-0.1.0.vsix
 ```
 
-The smoke test finds the game and REDbridge from the VS Code settings (`edgemat.*`, then `redcode.*`), as the extension does, and writes the library to `%LOCALAPPDATA%\EDGEmat`. F5 in VS Code, with the repository open, runs the extension in a development host (`.vscode/launch.json`, "Run EDGEmat"); build first.
+The smoke test finds the game and REDbridge from the VS Code settings (`edgemat.*`, then `redcode.*`), as the extension does, and writes the library to `%LOCALAPPDATA%\EDGEmat`. F5 in VS Code, with the repository open, runs the extension in a development host (`.vscode/launch.json`, "Run EDGEmat"); build first. "Run EDGEmat with REDcode main" runs REDcode's checkout beside it (`../REDcode`: `git pull`, then `npm run build` in `extensions/redcode`), for what needs a REDcode not yet released, such as its Keys (EDGEmat #18).
 
 Register the MCP server with Claude Code (no options needed on a PC with REDcode set up). `--scope user` makes it available in every folder, the development host's too; without it, only in the folder where the command ran:
 
@@ -79,7 +79,7 @@ Register the MCP server with Claude Code (no options needed on a PC with REDcode
 claude mcp add --scope user edgemat -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
 ```
 
-For `mat_generate`, the server reads the image service's key from its environment only (it cannot read VS Code's secret storage); `mat_reshape` needs `TRIPO_API_KEY` too. Add `-e` with your own key, for each service; remove and add again to change it (`claude mcp remove --scope user edgemat`). `mat_from_image` and `mat_apply` need no key. The check scripts (`paint-check`, `reshape-check`) take the same variables, or on the dev PC the keys still in the shared key store, through REDnode's checkout (`scripts/devKey.mjs`).
+For `mat_generate` (and `mat_reshape`'s Tripo step), the server reads each key at each call from its environment (`GEMINI_API_KEY`, `OPENAI_API_KEY`, `TRIPO_API_KEY`) when set, else from REDcode's Keys (the EDGE tools' shared store), through a REDbridge 0.18.0 of its own started with `--keys` (found as for the game, else the one inside REDcode; EDGEmat #18). So with REDcode's Keys set up no `-e` is needed. `-e` with a key still wins; remove and add again to change it (`claude mcp remove --scope user edgemat`). `mat_from_image` and `mat_apply` need no key. The check scripts (`paint-check`, `reshape-check`) take the same variables, or on the dev PC the keys still in the shared key store, through REDnode's checkout (`scripts/devKey.mjs`).
 
 ```powershell
 claude mcp add --scope user edgemat -e GEMINI_API_KEY=<your key> -e OPENAI_API_KEY=<your key> -- node "E:\Modding\Cyberpunk 2077\EDGEmat\packages\edgemat-mcp\dist\server.cjs"
@@ -128,7 +128,8 @@ From 0.3.0, the first preview (0.2.0 was never released). `.github/workflows/rel
    |---|---|
    | View in 3D follows a prop's part as it changes | `wiki/edgemat/view-in-3d.md`, `wiki/edgemat/desk.md` (if either says to reopen the view) |
    | `renderMaterials` without the library draws the world's layered materials; the Desk's version in REDcode's sector view (#17) | Probably none (an API change); check `wiki/edgemat/view-in-3d.md` |
-| New Material's **Show Files** is now **Reveal in File Explorer** | `wiki/edgemat/new-material.md`, `wiki/edgemat/tutorial-worn-leather.md` (its text and, at line 84, its screenshot's caption) |
+   | Keys from REDcode's Keys, shared by every EDGE tool; Set and Clear point there; the MCP server reads them itself (#18) | `wiki/edgemat/new-material.md` (the key note), the MCP or Connect an Assistant page, the shared wiki page on keys if there is one |
+   | New Material's **Show Files** is now **Reveal in File Explorer** | `wiki/edgemat/new-material.md`, `wiki/edgemat/tutorial-worn-leather.md` (its text and, at line 84, its screenshot's caption) |
 
 **When a release run stops partway** (0.3.2, 2026-11-13: the VS Code Marketplace step failed on an expired `VSCE_PAT`, so npm never ran): do not run Release again, which stops at "already released". Fix the cause (renew the token in the organisation's secrets), then **Actions** › **Finish a release** › **Run workflow** with the version and what is missing (`gh workflow run finish-release.yml --ref main -f version=<version> -f marketplace=true -f npm=true`). It works from the tag: the Marketplace gets the GitHub release's VSIX, and npm the MCP server and the core built from the tag, skipping a package already at that version. `VSCE_PAT` is an Azure DevOps personal access token with the **Marketplace › Manage** scope for **All accessible organizations**; they expire, at most a year after they are made.
 

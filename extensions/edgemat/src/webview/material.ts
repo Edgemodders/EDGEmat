@@ -42,6 +42,12 @@ window.addEventListener("message", (e) => {
   } else if (m.type === "target") {
     target = m.target;
     showTarget();
+  } else if (m.type === "keys") {
+    // A key set, changed or removed (REDcode's Keys, by any tool): the note says so at once.
+    const k = e.data as Pick<MaterialPageData, "services" | "sharedKeys">;
+    data.services = k.services;
+    data.sharedKeys = k.sharedKeys;
+    fillModels();
   }
 });
 
@@ -117,7 +123,10 @@ function fillModels(): void {
   if (chosen && Array.from(model.options).some((o) => o.value === chosen)) model.value = chosen;
   quality.hidden = s !== "openai";
   const info = data.services.find((x) => x.id === s)!;
-  keyNote.textContent = `Each Generate spends your ${info.name} credits. ${info.hasKey ? "Your key is in VS Code's secret storage." : "EDGEmat asks for your API key the first time, and keeps it in VS Code's secret storage."} Nothing is sent until you press Generate or List models. ${s === "gemini" ? "Google marks its images with SynthID." : ""}`;
+  const where = data.sharedKeys
+    ? "EDGEmat reads your API key from REDcode's Keys, shared by every EDGE tool; REDcode asks you for it when none is set."
+    : info.hasKey ? "Your key is in VS Code's secret storage." : "EDGEmat asks for your API key the first time, and keeps it in VS Code's secret storage.";
+  keyNote.textContent = `Each Generate spends your ${info.name} credits. ${where} Nothing is sent until you press Generate or List models. ${s === "gemini" ? "Google marks its images with SynthID." : ""}`;
 }
 function fillPrompt(): void {
   if (!state.promptEdited) prompt.value = words.value.trim() ? texturePrompt(words.value, detail.value as DetailSize) : "";

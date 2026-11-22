@@ -3,16 +3,17 @@
 // a take; the chosen one is made seamless, its bumps and shine derived, and it is written into a project
 // and put on the mesh materials the page was opened for. The key never reaches the page: the page asks,
 // the extension calls the service. Nothing is sent until the modder presses Generate or lists models.
-// The keys are in VS Code's secret storage, one per service; an environment variable (GEMINI_API_KEY,
-// OPENAI_API_KEY) wins. Not the EDGE tools' shared key store, shelved on 2026-11-11 (EDGEmat #10).
+// The keys come from REDcode's Keys, shared by every EDGE tool, or with an older REDcode from VS Code's
+// secret storage; an environment variable (GEMINI_API_KEY, OPENAI_API_KEY) wins (keys.ts, EDGEmat #18).
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
-  checkKey, envKey, generateImage, imageAsPng, listModels, makeMaterial, makeSeamless, materialSlug, readPng, resize, squareCrop, tiling, writePng, Services,
+  generateImage, imageAsPng, listModels, makeMaterial, makeSeamless, materialSlug, readPng, resize, squareCrop, tiling, writePng, Services,
   type BridgeClient, type DetailSize, type MadeBy, type MaterialTarget, type Project, type Quality, type ServiceId, type Shine,
 } from "./core";
+import type { Keys } from "./keys";
 
 export interface MaterialPageHost {
   extensionUri: vscode.Uri;
@@ -32,6 +33,8 @@ export interface MaterialPageData {
   model: Partial<Record<ServiceId, string>>;
   quality: Quality;
   services: { id: ServiceId; name: string; hasKey: boolean }[];
+  /** The keys are REDcode's Keys, shared by every EDGE tool (EDGEmat #18); else EDGEmat's own secret storage. */
+  sharedKeys: boolean;
 }
 
 export type MaterialRequest =
@@ -51,8 +54,6 @@ export interface Take {
   name: string;
 }
 
-/** Where a key is kept in VS Code's secret storage (the same names since 0.3.0). */
-export const KeySecret = (s: ServiceId) => `edgemat.${s}.apiKey`;
 const MaxTakes = 20;
 const PreviewSize = 512;
 
@@ -63,7 +64,7 @@ export class MaterialPage {
   private nextTake = 1;
   private running: AbortController | undefined;
 
-  constructor(private readonly context: vscode.ExtensionContext, private readonly host: MaterialPageHost) {}
+  constructor(private readonly context: vscode.ExtensionContext, private readonly host: MaterialPageHost, private readonly keys: Keys) {}
 
   /** Opens the page, for the mesh materials given (from Find) or for none. */
   open(target?: MaterialPageData["target"]): void {
@@ -82,7 +83,10 @@ export class MaterialPage {
     });
     this.panel = panel;
     panel.iconPath = vscode.Uri.joinPath(this.host.extensionUri, "images", "icon.png");
+    // A key set, changed or removed elsewhere (REDcode's Keys, any tool): the page's key note follows.
+    const keyChange = this.keys.onDidChange(() => void this.data().then((d) => panel.webview.postMessage({ type: "keys", services: d.services, sharedKeys: d.sharedKeys })));
     panel.onDidDispose(() => {
+      keyChange.dispose();
       this.running?.abort();
       if (this.panel === panel) this.panel = undefined;
     });
@@ -102,7 +106,7 @@ export class MaterialPage {
 
   private async data(): Promise<MaterialPageData> {
     const g = this.context.globalState;
-    const services = await Promise.all((Object.keys(Services) as ServiceId[]).map(async (id) => ({ id, name: Services[id].name, hasKey: !!(envKey(id) ?? (await this.context.secrets.get(KeySecret(id)))) })));
+    const services = await Promise.all((Object.keys(Services) as ServiceId[]).map(async (id) => ({ id, name: Services[id].name, hasKey: await this.keys.known(id) })));
     return {
       target: this.target,
       service: g.get<ServiceId>("edgemat.generate.service") ?? "gemini",
@@ -110,39 +114,17 @@ export class MaterialPage {
       model: g.get("edgemat.generate.model") ?? {},
       quality: g.get<Quality>("edgemat.generate.quality") ?? "medium",
       services,
+      sharedKeys: await this.keys.shared(),
     };
   }
 
-  /** The service's key: from the environment, else VS Code's secret storage, else asked for once in a password box. */
-  async key(service: ServiceId, ask = true): Promise<string | undefined> {
-    const k = envKey(service) ?? (await this.context.secrets.get(KeySecret(service)))?.trim();
-    if (k || !ask) return k;
-    return this.setKey(service);
+  /** The service's key (keys.ts: the environment, REDcode's Keys, or with an older REDcode, VS Code's secret storage). */
+  key(service: ServiceId, ask = true): Promise<string | undefined> {
+    return this.keys.key(service, ask);
   }
 
-  async setKey(service?: ServiceId): Promise<string | undefined> {
-    const s = service ?? (await pickService("Set the API key for"));
-    if (!s) return undefined;
-    const info = Services[s];
-    const k = await vscode.window.showInputBox({
-      title: `EDGEmat: ${info.name} API key`,
-      prompt: `For Generate. Kept encrypted in VS Code's secret storage, for EDGEmat only, never in settings, and sent only to ${info.name}. Make one at ${info.keyFrom}.`,
-      password: true,
-      ignoreFocusOut: true,
-      validateInput: (v) => (v.trim() ? checkKey(s, v) : null),
-    });
-    if (!k?.trim()) return undefined;
-    await this.context.secrets.store(KeySecret(s), k.trim());
-    return k.trim();
-  }
-
-  async clearKey(): Promise<void> {
-    const s = await pickService("Clear the API key for");
-    if (!s) return;
-    const go = await vscode.window.showWarningMessage(`Clear the ${Services[s].name} API key?`, { modal: true, detail: `Generate asks for it again.${envKey(s) ? ` ${Services[s].env} is set in your environment, so EDGEmat goes on using that one.` : ""}` }, "Clear It");
-    if (!go) return;
-    await this.context.secrets.delete(KeySecret(s));
-    void vscode.window.showInformationMessage(`EDGEmat: the ${Services[s].name} API key is cleared.`);
+  setKey(service?: ServiceId): Promise<string | undefined> {
+    return this.keys.setKey(service);
   }
 
   private async handle(req: MaterialRequest): Promise<unknown> {
@@ -257,14 +239,6 @@ export class MaterialPage {
 <body><script id="data" type="application/json" nonce="${nonce}">${json}</script>
 <script nonce="${nonce}" src="${script}"></script></body></html>`;
   }
-}
-
-async function pickService(title: string): Promise<ServiceId | undefined> {
-  const pick = await vscode.window.showQuickPick(
-    (Object.keys(Services) as ServiceId[]).map((id) => ({ label: Services[id].name, id })),
-    { title: `EDGEmat: ${title}...` },
-  );
-  return pick?.id;
 }
 
 // Theme colors only, so the page follows the REDnode HUD theme (and any other).

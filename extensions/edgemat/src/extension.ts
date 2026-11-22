@@ -13,6 +13,7 @@ import { FindView, openFoundSetup, type Node } from "./findView";
 import { LibraryView } from "./libraryView";
 import { MaterialPage } from "./materialPage";
 import { connectAssistant, installServer, registerWithEditor } from "./mcp";
+import { Keys } from "./keys";
 import { GameFiles, gamePathOfUri, GameScheme, gameUri, openSetupCommand, SetupEditor, type SetupEditorHost } from "./setupEditor";
 import { SurfacePages } from "./surfacePage";
 
@@ -434,7 +435,9 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     deskChanged: () => deskView.refresh(),
   };
   const setupEditor = new SetupEditor(host);
-  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndPlay: packAndPlayFor, materialsChanged: () => materialsChanged.fire({ materials: [] }), log });
+  const keys = new Keys(context, settings, log);
+  void keys.watch().then((d) => context.subscriptions.push(...d), (e) => log(`Keys: ${e instanceof Error ? e.message : String(e)}`));
+  const materialPage = new MaterialPage(context, { extensionUri: context.extensionUri, bridge: bridgeNow, project: () => chooseProject(context), packAndPlay: packAndPlayFor, materialsChanged: () => materialsChanged.fire({ materials: [] }), log }, keys);
 
   context.subscriptions.push(
     output,
@@ -596,10 +599,10 @@ export function activate(context: vscode.ExtensionContext): EdgematApi {
     }),
     vscode.commands.registerCommand("edgemat.newMaterial", () => materialPage.open()),
     vscode.commands.registerCommand("edgemat.newMaterialHere", (node) => materialPage.open(FindView.targetsOf(node))),
-    vscode.commands.registerCommand("edgemat.setImageKey", () => materialPage.setKey()),
-    vscode.commands.registerCommand("edgemat.clearImageKey", () => materialPage.clearKey()),
-    vscode.commands.registerCommand("edgemat.connectAssistant", () => connectAssistant(context, log)),
-    ...registerWithEditor(context, String(context.extension.packageJSON.version), log),
+    vscode.commands.registerCommand("edgemat.setImageKey", () => keys.setKey()),
+    vscode.commands.registerCommand("edgemat.clearImageKey", () => keys.clearKey()),
+    vscode.commands.registerCommand("edgemat.connectAssistant", () => connectAssistant(context, keys, log)),
+    ...registerWithEditor(context, keys, String(context.extension.packageJSON.version), log),
     materialsChanged,
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (["edgemat.gamePath", "edgemat.bridgePath", "edgemat.dotnetRoot", "redcode.gamePath", "redcode.bridgePath"].some((k) => e.affectsConfiguration(k))) {

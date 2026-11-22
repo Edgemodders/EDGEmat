@@ -15,6 +15,21 @@
       "debugWebWorkerHost": false,
       "autoAttachChildProcesses": false,
       "trace": true
+    },
+    {
+      // REDcode's main branch beside EDGEmat, until a REDcode release has its shared key store (Keys,
+      // 0.10.16; EDGEmat #18). Build REDcode first: git pull, then npm run build in ../REDcode/extensions/redcode.
+      "name": "Run EDGEmat with REDcode main",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/extensions/edgemat",
+        "--extensionDevelopmentPath=${workspaceFolder}/../REDcode/extensions/redcode"
+      ],
+      "outFiles": ["${workspaceFolder}/extensions/edgemat/dist/**/*.js", "${workspaceFolder}/../REDcode/extensions/redcode/dist/**/*.js"],
+      "debugWebWorkerHost": false,
+      "autoAttachChildProcesses": false,
+      "trace": true
     }
   ]
 }
