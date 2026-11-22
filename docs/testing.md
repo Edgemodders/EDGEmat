@@ -772,6 +772,7 @@ Added 2026-11-19. The owner found that after **Use a Game Surface...** on a prop
 | Run | Result |
 |---|---|
 | 2026-11-22, owner, dev PC | Step 6: **failed**, fixed the same day. **Add to Project** wrote `openai_playground_2026_09.mi` and put it on `..._wit_details` in the project's `vending_parts.mesh` (the log says so), but the Desk and its 3D view still showed the old material: the material page told the 3D views to draw again without copying the project's mesh over the Desk's copy, or refreshing Find and the Desk, as the part commands do. Now it does all three. Step 6 to run again; steps 1 to 5 not reported yet |
+| 2026-11-22, owner, dev PC | Step 6 again, after the fix: **passed**. The part's new material shows on the Desk and in the 3D view. (On the way: a part wearing **z emissive blue** draws flat white, since that material's color texture is the game's white and its blue is a glow the 3D view does not draw yet.) Steps 1 to 5 not reported yet |
 
 ### Shared keys
 
