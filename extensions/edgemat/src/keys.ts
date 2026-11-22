@@ -20,6 +20,8 @@ export interface KeysApi {
   ask(service: string, caller: string): Promise<string | undefined>;
   /** A service's key was set, replaced or removed, here or by another tool. */
   readonly onDidChange: vscode.Event<string>;
+  /** Whether a key is set and the caller may read it, asking nothing, never the key (REDcode main f6c7cbf, unreleased: check it is there). */
+  status?(service: string, caller: string): Promise<{ service: string; set: boolean; access: "allowed" | "denied" | "unasked" }>;
 }
 
 /** Where EDGEmat kept a key in VS Code's secret storage (the same names since 0.3.0). */
@@ -114,6 +116,12 @@ export class Keys {
       const own = (await this.context.secrets.get(KeySecret(service)))?.trim();
       if (own) return own;
       throw new Error(`EDGEmat reads the ${Names[service]} key from REDcode's Keys, which cannot be reached: ${(e as Error).message}`);
+    }
+    // No key came: none is set, or the modder said Don't Allow. After a no, the password box would only
+    // replace the key every tool shares, so EDGEmat says how to allow it instead.
+    const st = typeof store.status === "function" ? await store.status(service, KeyCaller).catch(() => undefined) : undefined;
+    if (st?.access === "denied") {
+      throw new Error(`You told REDcode that EDGEmat may not use your ${Names[service]} key. To allow it: REDcode's Keys view, Forget Tool Permissions for Keys, then try again and press Allow.`);
     }
     return this.once(service, () => store.ask(service, KeyCaller));
   }
