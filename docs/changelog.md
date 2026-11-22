@@ -24,6 +24,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 **Other**
 
 - For other tools (EDGEmat #17, REDcode's sector view): `@edgemodders/edgemat-core`'s `renderMaterials` without EDGEmat's library now draws a layered material's colors and surfaces, reading the surfaces it needs from the game, instead of a flat grey. A change to one Desk entry now names that entry's copy of its mesh in `onDidChangeMaterials`, and **Open in EDGEmat** (`edgemat.openMesh`) answers with it, so a viewer can draw the Desk's version.
+- For other tools (EDGEmat #19): the API's type is now `EDGEmatApi`, named as the other EDGE tools' are (`REDcodeApi`, `EDGEdeckApi`). The old name `EdgematApi` stays for a while as a deprecated alias; nothing changes at run time and `apiVersion` stays 1.
 
 ## 0.3.3 (2026-11-18)
 

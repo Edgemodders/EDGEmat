@@ -15,7 +15,8 @@ export interface PartRequest {
 /** materialsFromModel's request: as the core's, with the project as a folder (or its .cpmodproj). */
 export type ModelMaterialsRequest = Omit<FromModelRequest, "project" | "log"> & { project: string };
 
-export interface EdgematApi {
+/** EDGEmat's API, named as the other EDGE tools' are (REDcodeApi, EDGEdeckApi; EDGEmat #19). */
+export interface EDGEmatApi {
   readonly apiVersion: 1;
   /**
    * Renderable materials for a mesh as one appearance shows it, keyed by material name. A first
@@ -55,3 +56,6 @@ export interface EdgematApi {
   /** The part back on the model's own texture (the .mi EDGEfab keeps for it). */
   partBackToModel(req: PartRequest): Promise<PartResult>;
 }
+
+/** @deprecated The old name; use EDGEmatApi. Kept for a while for code that copied it. */
+export type EdgematApi = EDGEmatApi;

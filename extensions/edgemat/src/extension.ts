@@ -3,7 +3,7 @@
 // REDcode is active, and builds the material library from the user's game in the background.
 
 import * as vscode from "vscode";
-import type { EdgematApi } from "./api";
+import type { EDGEmatApi } from "./api";
 import * as path from "node:path";
 import * as fs from "node:fs";
 import { addToInventory, backToModel, BridgeClient, buildLibrary, defaultCacheDir, Desk, deskLabel, deskProjectName, findGames, gamePathInProject, isCurrent, isFilePath, isGameFolder, loadLibrary, partsOf, projectAt, materialsFromModel, renderMaterials, resolveBridge, resolveGame, suffixFor, useGameMaterial, useSurface, type DeskConflict, type GameChoice, type Library, type Project } from "./core";
@@ -380,7 +380,7 @@ async function openMaterial(arg: unknown, host: SetupEditorHost): Promise<void> 
   }
 }
 
-export function activate(context: vscode.ExtensionContext): EdgematApi {
+export function activate(context: vscode.ExtensionContext): EDGEmatApi {
   output = vscode.window.createOutputChannel("EDGEmat");
   view = new LibraryView();
   tree = vscode.window.createTreeView("edgemat.library", { treeDataProvider: view, showCollapseAll: true }) as vscode.TreeView<unknown>;
