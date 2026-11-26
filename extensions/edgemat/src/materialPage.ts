@@ -222,7 +222,7 @@ export class MaterialPage {
     if (result.applied.length) this.host.materialsChanged(project.archive, [...new Set(result.applied.map((a) => a.mesh))]);
     const pack = this.host.packAndPlay(project);
     const actions = [...(pack ? ["Pack and Play"] : []), "Reveal in File Explorer"];
-    void vscode.window.showInformationMessage(`Saved ${materialSlug(req.name)} into ${project.name}${where}.`, ...actions).then(async (pick) => {
+    void vscode.window.showInformationMessage(`EDGEmat: Saved ${materialSlug(req.name)} into ${project.name}${where}.`, ...actions).then(async (pick) => {
       if (pick === "Pack and Play") await pack?.();
       else if (pick === "Reveal in File Explorer") await vscode.commands.executeCommand("revealFileInOS", vscode.Uri.file(path.join(project.archive, result.mi)));
     });

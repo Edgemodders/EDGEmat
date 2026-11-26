@@ -154,7 +154,7 @@ export class Keys {
     }
     const s = await pickService("Clear the API key for");
     if (!s) return;
-    const go = await vscode.window.showWarningMessage(`Clear the ${Services[s].name} API key?`, { modal: true, detail: `Generate asks for it again.${envKey(s) ? ` ${Services[s].env} is set in your environment, so EDGEmat goes on using that one.` : ""}` }, "Clear It");
+    const go = await vscode.window.showWarningMessage(`EDGEmat: Clear the ${Services[s].name} API key?`, { modal: true, detail: `Generate asks for it again.${envKey(s) ? ` ${Services[s].env} is set in your environment, so EDGEmat goes on using that one.` : ""}` }, "Clear It");
     if (!go) return;
     await this.context.secrets.delete(KeySecret(s));
     void vscode.window.showInformationMessage(`EDGEmat: the ${Services[s].name} API key is cleared.`);

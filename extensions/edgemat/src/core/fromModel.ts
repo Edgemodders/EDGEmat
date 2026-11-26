@@ -87,14 +87,31 @@ export interface FromModelRequest {
    * in the game on 2026-11-15 (test "Normal check", EDGEmat #11). False keeps a map that is green down already.
    */
   flipNormalGreen?: boolean;
+  /**
+   * Per material, the slots whose source is unchanged since the textures in the folder were made (EDGEmat
+   * #13): their .xbm files are kept as they are, when they exist, and only the others are written. The .mi
+   * is always written. A slot named here whose .xbm is missing is written as usual. No glTF value is baked
+   * into a texture: baseColorFactor, roughnessFactor, metallicFactor, the normal scale and the glow's color
+   * and strength all go in the .mi. Two things are: a roughness or metal channel that is one value all
+   * over becomes a .mi value and no texture (read again, so a kept slot stays right), and flipNormalGreen,
+   * baked into the normal map: when it changes, do not keep "normal".
+   */
+  keep?: Record<string, TextureSlot[]>;
   log?: (line: string) => void;
 }
+
+/** A material's texture slots, for keep: color, roughness and metal (both from the packed map), normal, glow. */
+export type TextureSlot = "baseColor" | "roughness" | "metal" | "normal" | "glow";
 
 export interface FromModelMaterial {
   name: string;
   mi: string;
-  /** The textures it uses that were written (game paths). */
+  /** Every texture it uses, written or kept (game paths). */
   textures: string[];
+  /** The textures written this time (#13). */
+  written: string[];
+  /** The textures kept as they were (keep, #13). */
+  kept: string[];
   /** Whether a mesh entry took it. */
   applied: boolean;
   glow?: { ev: number; color: [number, number, number]; map: boolean };
@@ -276,37 +293,65 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
     for (let n = 2; used.has(slug); n++) slug = `${materialSlug(p.name).slice(0, 36)}_${n}`;
     used.add(slug);
     const base = `${folder}\\${slug}`;
-    const mine: string[] = [];
+    const mine: string[] = [], wrote: string[] = [], keptHere: string[] = [];
     const tex = async (s: Source, suffix: string, img: Image, kind: TextureKind, keyPart: string) => {
-      const t = await written(`${s.key}:${keyPart}`, `${base}_${suffix}.xbm`, img, kind);
+      const key = `${s.key}:${keyPart}`;
+      const fresh = !textures.has(key);
+      const t = await written(key, `${base}_${suffix}.xbm`, img, kind);
       mine.push(t);
+      if (fresh) wrote.push(t);
       return t;
+    };
+    // keep (#13): a slot whose source did not change keeps its .xbm when it is there.
+    const keepSlots = new Set(Object.entries(req.keep ?? {}).find(([k]) => k.toLowerCase() === p.name.toLowerCase())?.[1] ?? []);
+    const keptTex = (slot: TextureSlot, suffix: string, s: Source, keyPart: string): string | undefined => {
+      const gamePath = `${base}_${suffix}.xbm`;
+      if (!keepSlots.has(slot) || !fs.existsSync(path.join(req.project.archive, gamePath))) return undefined;
+      if (!textures.has(`${s.key}:${keyPart}`)) textures.set(`${s.key}:${keyPart}`, gamePath);
+      mine.push(gamePath);
+      keptHere.push(gamePath);
+      log(`  ${path.win32.basename(gamePath)} kept`);
+      return gamePath;
     };
     log(`${p.name}:`);
     const m: TexturedMaterial = { baseColor: WhiteTexture, layerTile: 1 };
     // Color: the map, or white; the factor scales it.
-    if (p.color) m.baseColor = await tex(p.color, "d01", await picture(p.color), "color", "color");
+    if (p.color) m.baseColor = keptTex("baseColor", "d01", p.color, "color") ?? (await tex(p.color, "d01", await picture(p.color), "color", "color"));
     if (!p.colorFactor.every((c) => near(c, 1))) m.baseColorScale = p.colorFactor;
     // Roughness and metalness from the packed map; one value when a channel is flat.
     if (p.orm) {
-      const img = await picture(p.orm);
-      const rough = channel(img, 1), metal = channel(img, 2);
-      if (rough.flat !== undefined) Object.assign(m, { roughnessScale: 0, roughnessBias: rough.flat * p.roughness });
-      else Object.assign(m, { roughness: await tex(p.orm, "r01", rough.img, "rough", "rough"), roughnessScale: p.roughness, roughnessBias: 0 });
-      if (metal.flat !== undefined) m.metalness = metal.flat * p.metallic;
-      else Object.assign(m, { metalnessMap: await tex(p.orm, "m01", metal.img, "rough", "metal"), metalnessScale: p.metallic, metalness: 0 });
+      const keptR = keptTex("roughness", "r01", p.orm, "rough"), keptM = keptTex("metal", "m01", p.orm, "metal");
+      // Read only when a channel is not kept (or was one value all over, so no texture was there).
+      const img = keptR && keptM ? undefined : await picture(p.orm);
+      if (keptR) Object.assign(m, { roughness: keptR, roughnessScale: p.roughness, roughnessBias: 0 });
+      else {
+        const rough = channel(img!, 1);
+        if (rough.flat !== undefined) Object.assign(m, { roughnessScale: 0, roughnessBias: rough.flat * p.roughness });
+        else Object.assign(m, { roughness: await tex(p.orm, "r01", rough.img, "rough", "rough"), roughnessScale: p.roughness, roughnessBias: 0 });
+      }
+      if (keptM) Object.assign(m, { metalnessMap: keptM, metalnessScale: p.metallic, metalness: 0 });
+      else {
+        const metal = channel(img!, 2);
+        if (metal.flat !== undefined) m.metalness = metal.flat * p.metallic;
+        else Object.assign(m, { metalnessMap: await tex(p.orm, "m01", metal.img, "rough", "metal"), metalnessScale: p.metallic, metalness: 0 });
+      }
     } else {
       Object.assign(m, { roughnessScale: 0, roughnessBias: p.roughness });
       m.metalness = p.metallic;
     }
     if (p.normal) {
-      let img = await picture(p.normal);
-      if (flipGreen) {
-        const data = new Uint8Array(img.data);
-        for (let k = 1; k < data.length; k += 4) data[k] = 255 - data[k];
-        img = { ...img, data };
+      const keyPart = flipGreen ? "normal-flipped" : "normal";
+      const kept = keptTex("normal", "n01", p.normal, keyPart);
+      if (kept) m.normal = kept;
+      else {
+        let img = await picture(p.normal);
+        if (flipGreen) {
+          const data = new Uint8Array(img.data);
+          for (let k = 1; k < data.length; k += 4) data[k] = 255 - data[k];
+          img = { ...img, data };
+        }
+        m.normal = await tex(p.normal, "n01", img, "normal", keyPart);
       }
-      m.normal = await tex(p.normal, "n01", img, "normal", flipGreen ? "normal-flipped" : "normal");
       if (!near(p.normalScale, 1)) m.normalStrength = p.normalScale;
     }
     let glow: FromModelMaterial["glow"];
@@ -318,7 +363,7 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
       const color = p.glow.color.map((c) => srgb8((c / top) * glowDim(light))) as [number, number, number];
       const ev = glowEV(light);
       if (light < 1 / 8) notes.push(`${p.name}: a glow of strength ${Math.round(light * 1000) / 1000} is likely too dim to see in the game (about 0.125 is the limit on a full-white map)`);
-      const map = p.glow.map ? await tex(p.glow.map, "e01", await picture(p.glow.map), "color", "glow") : WhiteTexture;
+      const map = p.glow.map ? keptTex("glow", "e01", p.glow.map, "glow") ?? (await tex(p.glow.map, "e01", await picture(p.glow.map), "color", "glow")) : WhiteTexture;
       m.emissive = { map, color, ev };
       glow = { ev, color, map: !!p.glow.map };
       log(`  glows: EV ${ev}, color ${color.join(", ")}${p.glow.map ? ", by its map" : ", all over"}`);
@@ -333,7 +378,7 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
         applied = true;
       } else notes.push(`${p.name}: the mesh has no material entry of that name, so nothing wears it yet`);
     }
-    out.push({ name: p.name, mi, textures: mine, applied, glow, approximated: p.approximated });
+    out.push({ name: p.name, mi, textures: mine, written: wrote, kept: keptHere, applied, glow, approximated: p.approximated });
   }
   if (req.mesh) {
     const covered = new Set(plans.map((p) => p.name.toLowerCase()));
@@ -346,7 +391,7 @@ export async function materialsFromModel(bridge: BridgeClient, req: FromModelReq
   fs.mkdirSync(path.dirname(record), { recursive: true });
   fs.writeFileSync(
     record,
-    JSON.stringify({ model: req.model, materials: req.materials, mesh: req.mesh, folder, glow: req.glow, made: req.made, made_at: new Date().toISOString(), result: out, notes }, null, 2),
+    JSON.stringify({ model: req.model, materials: req.materials, mesh: req.mesh, folder, glow: req.glow, keep: req.keep, made: req.made, made_at: new Date().toISOString(), result: out, notes }, null, 2),
   );
   return { materials: out, files: [...files], record, notes };
 }

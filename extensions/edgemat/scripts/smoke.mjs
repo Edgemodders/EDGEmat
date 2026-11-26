@@ -429,10 +429,15 @@ try {
         if (text.includes("blocked")) return send(200, { promptFeedback: { blockReason: "SAFETY" } });
         if (j.generationConfig.imageConfig.imageSize) return send(400, { error: { message: "imageSize is not supported for this model" } });
         if (text.includes("recite") && (text.includes("always") || !text.includes("original design"))) return send(200, { candidates: [{ finishReason: "IMAGE_RECITATION" }] });
-        return send(200, { candidates: [{ content: { parts: [{ text: "here" }, { inlineData: { mimeType: "image/png", data: onePng } }] } }] });
+        return send(200, { candidates: [{ content: { parts: [{ text: "here" }, { inlineData: { mimeType: "image/png", data: onePng } }] } }], usageMetadata: { promptTokenCount: 12, candidatesTokenCount: 1290, totalTokenCount: 1302 } });
       }
       if (req.url === "/v1/models") return send(200, { data: [{ id: "gpt-image-1-mini" }, { id: "gpt-4o" }, { id: "gpt-image-2.5-flare" }] });
-      if (req.url === "/v1/images/generations") return send(200, { data: [{ b64_json: onePng }] });
+      if (req.url === "/v1/images/generations") {
+        // A model that takes 1024 only refuses a bigger size by name (#9).
+        const j = JSON.parse(body);
+        if (j.model === "gpt-image-1-mini" && j.size !== "1024x1024") return send(400, { error: { message: `Invalid value: '${j.size}'. Supported values are: '1024x1024'. (param: size)` } });
+        return send(200, { data: [{ b64_json: onePng }], usage: { input_tokens: 9, output_tokens: 4160, total_tokens: 4169 } });
+      }
       if (req.url === "/v1/images/edits") {
         // A form with the pictures as files.
         if (!/^multipart\/form-data; boundary=/.test(req.headers["content-type"] ?? "") || !body.includes('name="image[]"; filename="picture1.png"')) return send(400, { error: { message: "no image" } });
@@ -460,6 +465,19 @@ try {
     const always = await core.generateImage("gemini", "gemini-2.5-flash-image", "recite dots always", { key: "k1", base }).then(() => "", (e) => e.message);
     check(core.readPng(recited.bytes).width === 4 && recited.prompt.includes("original design") && always.includes("IMAGE_RECITATION"),
       `image services (stand-in): Gemini's IMAGE_RECITATION is asked once more, reworded; twice says why: "${always}"`);
+    // A size (#9): 2048 sent as such; refused by name, once more at 1024; Gemini's 1K and 2K; usage carried.
+    const big = await core.generateImage("openai", "gpt-image-2.5-flare", "a sheet of four views", { key: "k2", base, size: 2048 });
+    const bigSent = JSON.parse(seen.findLast((s) => s.url === "/v1/images/generations").body).size;
+    const small = await core.generateImage("openai", "gpt-image-1-mini", "a sheet of four views", { key: "k2", base, size: 2048 });
+    const smallSent = seen.filter((s) => s.url === "/v1/images/generations").slice(-2).map((s) => JSON.parse(s.body).size).join(" then ");
+    // The stand-in answers 400 to any Gemini imageSize, so the size sent is read from what it saw.
+    await core.generateImage("gemini", "gemini-3-pro-image", "a sheet", { key: "k1", base, size: 1024 });
+    const oneK = JSON.parse(seen.filter((s) => s.url.includes(":generateContent")).at(-2).body).generationConfig.imageConfig.imageSize;
+    const gUse = await core.generateImage("gemini", "gemini-3-pro-image", "a sheet", { key: "k1", base });
+    const twoK = JSON.parse(seen.filter((s) => s.url.includes(":generateContent")).at(-2).body).generationConfig.imageConfig.imageSize;
+    check(big.size === 2048 && bigSent === "2048x2048" && big.usage?.outputTokens === 4160 && small.size === 1024 && smallSent === "2048x2048 then 1024x1024" && small.notes?.[0]?.includes("refused 2048x2048")
+      && oneK === "1K" && twoK === "2K" && gUse.usage?.totalTokens === 1302,
+      `image services (stand-in): a size: OpenAI sent ${bigSent} (usage ${big.usage?.outputTokens} output tokens); a model that refuses it: ${smallSent} ("${small.notes?.[0]}"); Gemini ${oneK} for 1024, ${twoK} by default (usage ${gUse.usage?.totalTokens} tokens)`);
     const picture = { bytes: core.writePng({ width: 4, height: 4, data: new Uint8Array(64).fill(90) }), mime: "image/png" };
     const ge = await core.editImage("gemini", "gemini-3-pro-image", "make it red", [picture], { key: "k1", base });
     const sentGemini = JSON.parse(seen.filter((s) => s.url.includes(":generateContent")).at(-1).body);

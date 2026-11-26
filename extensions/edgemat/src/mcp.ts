@@ -157,13 +157,13 @@ export async function connectAssistant(context: vscode.ExtensionContext, keys: K
 
   if (picked.action === "copy") {
     await vscode.env.clipboard.writeText(masked);
-    void vscode.window.showInformationMessage(names.length ? "Copied. Put your key in place of <key>, or leave out that -e, then paste it in a terminal." : "Copied. Paste it in a terminal, then start a new Claude Code session.");
+    void vscode.window.showInformationMessage(names.length ? "EDGEmat: Copied. Put your key in place of <key>, or leave out that -e, then paste it in a terminal." : "EDGEmat: Copied. Paste it in a terminal, then start a new Claude Code session.");
     log(`MCP: ${masked}`);
     return;
   }
   if (picked.action === "json") {
     await vscode.env.clipboard.writeText(JSON.stringify({ edgemat: { command: run.command, args, ...(Object.keys(env).length ? { env } : {}) } }, null, 2));
-    void vscode.window.showInformationMessage("Copied the JSON entry for EDGEmat's server.");
+    void vscode.window.showInformationMessage("EDGEmat: Copied the JSON entry for EDGEmat's server.");
     return;
   }
 

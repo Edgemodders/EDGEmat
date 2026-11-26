@@ -295,7 +295,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
           await this.saveToProjectFlow(doc);
         }
       } catch (e) {
-        void vscode.window.showErrorMessage(e instanceof Error ? e.message : String(e));
+        void vscode.window.showErrorMessage(`EDGEmat: ${e instanceof Error ? e.message : String(e)}`);
       }
     });
 
@@ -438,7 +438,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     if (bridge && gamePath && !doc.warnedInPlace && (await isGameFile(bridge, gamePath))) {
       doc.warnedInPlace = true;
       void vscode.window.showWarningMessage(
-        `${path.basename(inPlace.file)} replaces the game's own setup at ${gamePath}. That shows in the game only with the Material Texture Override mod installed. Save to Project, "As a new setup", needs no other mod.`,
+        `EDGEmat: ${path.basename(inPlace.file)} replaces the game's own setup at ${gamePath}. That shows in the game only with the Material Texture Override mod installed. Save to Project, "As a new setup", needs no other mod.`,
       );
     }
     this.refresh(doc);
@@ -473,13 +473,13 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   /** Save to Project for the setup editor in front (the editor title button). */
   async saveActiveToProject(): Promise<void> {
     if (!this.active) {
-      void vscode.window.showInformationMessage("Open a setup in EDGEmat's setup editor first.");
+      void vscode.window.showInformationMessage("EDGEmat: Open a setup in EDGEmat's setup editor first.");
       return;
     }
     try {
       await this.saveToProjectFlow(this.active);
     } catch (e) {
-      void vscode.window.showErrorMessage(e instanceof Error ? e.message : String(e));
+      void vscode.window.showErrorMessage(`EDGEmat: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -491,7 +491,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     if (!doc.setup) return false;
     const bridge = await this.host.bridge();
     if (!bridge) {
-      void vscode.window.showErrorMessage("Saving into a project needs REDbridge. Set the game folder and REDbridge first.");
+      void vscode.window.showErrorMessage("EDGEmat: Saving into a project needs REDbridge. Set the game folder and REDbridge first.");
       return false;
     }
     const project = await this.host.project();
@@ -542,7 +542,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
           : search.read
             ? `None of the ${search.read} meshes in ${search.folder} uses ${name}.`
             : `No mesh found in ${search.folder}.`;
-        const go = await vscode.window.showWarningMessage(`${why} So nothing would point at the new setup. Save the setup alone?`, { modal: true }, "Save the Setup Alone");
+        const go = await vscode.window.showWarningMessage(`EDGEmat: ${why} So nothing would point at the new setup. Save the setup alone?`, { modal: true }, "Save the Setup Alone");
         if (!go) return false;
       } else {
         // The project's own meshes are ticked when any use the setup; the game's others are offered, not ticked.
@@ -579,7 +579,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   private async afterSave(project: Project, file: string, message: string): Promise<void> {
     const pack = this.host.packAndPlay(project);
     const buttons = [...(pack ? ["Pack and Play"] : []), "Open the Saved Setup"];
-    const choice = await vscode.window.showInformationMessage(message, ...buttons);
+    const choice = await vscode.window.showInformationMessage(`EDGEmat: ${message}`, ...buttons);
     if (choice === "Pack and Play" && pack) await pack();
     else if (choice === "Open the Saved Setup") await vscode.commands.executeCommand("vscode.openWith", vscode.Uri.file(file), SetupEditor.viewType);
   }
@@ -589,7 +589,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   private async pickSurface(doc: SetupDocument, index: number): Promise<string | undefined> {
     const lib = this.host.library();
     if (!lib) {
-      void vscode.window.showInformationMessage("Game Materials is not built yet.");
+      void vscode.window.showInformationMessage("EDGEmat: Game Materials is not built yet.");
       return undefined;
     }
     const current = doc.setup?.layers[index]?.material.toLowerCase();
@@ -603,7 +603,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
   private async pickMicroblend(doc: SetupDocument, index: number): Promise<string | undefined> {
     const lib = this.host.library();
     if (!lib) {
-      void vscode.window.showInformationMessage("Game Materials is not built yet.");
+      void vscode.window.showInformationMessage("EDGEmat: Game Materials is not built yet.");
       return undefined;
     }
     const current = doc.setup?.layers[index]?.microblend.toLowerCase();
@@ -775,7 +775,7 @@ export async function openSetupCommand(host: SetupEditorHost): Promise<void> {
   if (pick.id === "game") {
     const bridge = await host.bridge();
     if (!bridge) {
-      void vscode.window.showErrorMessage("Opening a game setup needs REDbridge. Set the game folder and REDbridge first.");
+      void vscode.window.showErrorMessage("EDGEmat: Opening a game setup needs REDbridge. Set the game folder and REDbridge first.");
       return;
     }
     const chosen = await findGameSetup(bridge);
@@ -791,13 +791,13 @@ export async function openSetupCommand(host: SetupEditorHost): Promise<void> {
   }
   const bridge = await host.bridge();
   if (!bridge) {
-    void vscode.window.showErrorMessage("Reading a mod archive needs REDbridge.");
+    void vscode.window.showErrorMessage("EDGEmat: Reading a mod archive needs REDbridge.");
     return;
   }
   const mod = await bridge.openMod(file);
   const setups = mod.items.map((i) => i.name).filter((n) => /\.mlsetup$/i.test(n));
   if (!setups.length) {
-    void vscode.window.showInformationMessage(`${mod.name} holds no setups (${mod.files} files).`);
+    void vscode.window.showInformationMessage(`EDGEmat: ${mod.name} holds no setups (${mod.files} files).`);
     return;
   }
   const chosen = await vscode.window.showQuickPick(setups.map((n) => ({ label: n.split("\\").pop()!.replace(/\.mlsetup$/i, ""), detail: n })), { title: `${setups.length} setups in ${mod.name}`, matchOnDetail: true });
@@ -810,7 +810,7 @@ export async function openSetupCommand(host: SetupEditorHost): Promise<void> {
   const masks = mod.items.map((i) => i.name).filter((n) => /\.mlmask$/i.test(n) && n.toLowerCase().startsWith(folder) && !n.slice(folder.length).includes("\\"));
   const r = await bridge.extractFromMod(file, [{ path: chosen.detail, outFile: out }, ...masks.map((m) => ({ path: m, outFile: path.join(root, m) }))]);
   if (!r.extracted) {
-    void vscode.window.showErrorMessage(`Could not read ${chosen.detail} from ${mod.name}.`);
+    void vscode.window.showErrorMessage(`EDGEmat: Could not read ${chosen.detail} from ${mod.name}.`);
     return;
   }
   fromMods.set(out.toLowerCase(), { gamePath: chosen.detail, archive: mod.name });

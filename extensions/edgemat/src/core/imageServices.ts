@@ -41,7 +41,41 @@ export interface GeneratedImage {
   service: ServiceId;
   model: string;
   prompt: string;
+  /** What the picture used, as the service counts it (tokens), when it says: so a tool can show the cost (#9). */
+  usage?: ImageUsage;
+  /** The square size asked for in pixels, when one was (OpenAI; Gemini's 1K is about 1024, 2K about 2048). */
+  size?: number;
+  /** Anything worth telling the modder, such as a size the model refused. */
+  notes?: string[];
 }
+
+export interface ImageUsage {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+}
+
+/** A square picture's size: 1024 (the default for OpenAI), 1536 or 2048 pixels a side (#9). */
+export type ImageSize = 1024 | 1536 | 2048;
+
+const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+
+/** The usage in an answer: OpenAI's usage, Gemini's usageMetadata. */
+function usageOf(j: any): ImageUsage | undefined {
+  const o = j?.usage, g = j?.usageMetadata;
+  const u: ImageUsage = o
+    ? { inputTokens: num(o.input_tokens), outputTokens: num(o.output_tokens), totalTokens: num(o.total_tokens) }
+    : g
+      ? { inputTokens: num(g.promptTokenCount), outputTokens: num(g.candidatesTokenCount), totalTokens: num(g.totalTokenCount) }
+      : {};
+  return Object.values(u).some((v) => v !== undefined) ? u : undefined;
+}
+
+/** Gemini's imageSize for a size: 1K for 1024, else 2K (its default here before sizes came, #9). */
+const geminiSize = (size?: ImageSize) => (size === 1024 ? "1K" : "2K");
+
+/** An OpenAI refusal of the size itself (HTTP 400 naming size), which is asked once more at 1024. */
+const sizeRefused = (e: unknown) => e instanceof ImageServiceError && e.status === 400 && /size/i.test(e.message);
 
 export class ImageServiceError extends Error {
   constructor(message: string, readonly status?: number) {
@@ -167,13 +201,17 @@ function noImageWhy(j: any): string {
   return c?.finishReason ? `it stopped (${c.finishReason})` : "no reason given";
 }
 
-/** One square image from words. */
-export async function generateImage(id: ServiceId, model: string, prompt: string, opts: CallOptions & { quality?: Quality }): Promise<GeneratedImage> {
+/**
+ * One square image from words. `size`: pixels a side (#9); without it OpenAI makes 1024 and Gemini its 2K, as
+ * before. OpenAI asks once more at 1024 when the model refuses the size; Gemini without a size when the model
+ * takes none.
+ */
+export async function generateImage(id: ServiceId, model: string, prompt: string, opts: CallOptions & { quality?: Quality; size?: ImageSize }): Promise<GeneratedImage> {
   const s = Services[id];
   if (id === "gemini") {
     const body = (text: string, size: boolean, modalities: string[]) => ({
       contents: [{ parts: [{ text }] }],
-      generationConfig: { responseModalities: modalities, imageConfig: { aspectRatio: "1:1", ...(size ? { imageSize: "2K" } : {}) } },
+      generationConfig: { responseModalities: modalities, imageConfig: { aspectRatio: "1:1", ...(size ? { imageSize: geminiSize(opts.size) } : {}) } },
     });
     const path = `v1beta/models/${encodeURIComponent(model)}:generateContent`;
     let sized = true;
@@ -197,15 +235,28 @@ export async function generateImage(id: ServiceId, model: string, prompt: string
     }
     const img = findInline(j);
     if (!img) throw new ImageServiceError(`${s.name} sent no image: ${noImageWhy(j)}.`);
-    return { bytes: Buffer.from(img.data, "base64"), mime: img.mime, service: id, model, prompt: used };
+    const notes = opts.size && !sized ? [`${model} takes no image size: it made its own.`] : undefined;
+    return { bytes: Buffer.from(img.data, "base64"), mime: img.mime, service: id, model, prompt: used, usage: usageOf(j), ...(notes ? { notes } : {}) };
   }
-  const j = await call(s, "v1/images/generations", opts, {
-    headers: openaiHeaders(opts),
-    body: { model, prompt, size: "1024x1024", n: 1, quality: opts.quality ?? "medium", output_format: "png" },
-  });
+  const ask = (size: number) =>
+    call(s, "v1/images/generations", opts, {
+      headers: openaiHeaders(opts),
+      body: { model, prompt, size: `${size}x${size}`, n: 1, quality: opts.quality ?? "medium", output_format: "png" },
+    });
+  let size: number = opts.size ?? 1024;
+  let notes: string[] | undefined;
+  let j: any;
+  try {
+    j = await ask(size);
+  } catch (e) {
+    if (size === 1024 || !sizeRefused(e)) throw e;
+    notes = [`${model} refused ${size}x${size}, so it made 1024x1024.`];
+    size = 1024;
+    j = await ask(size);
+  }
   const b64 = j?.data?.[0]?.b64_json;
   if (!b64) throw new ImageServiceError(`${s.name} sent no image.`);
-  return { bytes: Buffer.from(b64, "base64"), mime: "image/png", service: id, model, prompt };
+  return { bytes: Buffer.from(b64, "base64"), mime: "image/png", service: id, model, prompt, usage: usageOf(j), size, ...(notes ? { notes } : {}) };
 }
 
 /**
@@ -228,7 +279,7 @@ export async function editImage(id: ServiceId, model: string, prompt: string, im
     const j = await call(s, "v1/images/edits", opts, { headers: openaiHeaders(opts), form });
     const b64 = j?.data?.[0]?.b64_json;
     if (!b64) throw new ImageServiceError(`${s.name} sent no image.`);
-    return { bytes: Buffer.from(b64, "base64"), mime: "image/png", service: id, model, prompt };
+    return { bytes: Buffer.from(b64, "base64"), mime: "image/png", service: id, model, prompt, usage: usageOf(j), size: opts.size ?? 1024 };
   }
   const path = `v1beta/models/${encodeURIComponent(model)}:generateContent`;
   const ask = (text: string) =>
@@ -247,11 +298,11 @@ export async function editImage(id: ServiceId, model: string, prompt: string, im
   }
   const img = findInline(j);
   if (!img) throw new ImageServiceError(`${s.name} sent no image: ${noImageWhy(j)}.`);
-  return { bytes: Buffer.from(img.data, "base64"), mime: img.mime, service: id, model, prompt: used };
+  return { bytes: Buffer.from(img.data, "base64"), mime: img.mime, service: id, model, prompt: used, usage: usageOf(j) };
 }
 
 /** A texture from words: EDGEmat's texture prompt (or `prompt`), on `model` or the newest image model the key can use. */
-export async function generateTexture(id: ServiceId, words: string, opts: CallOptions & { model?: string; detail?: DetailSize; prompt?: string; quality?: Quality }): Promise<GeneratedImage> {
+export async function generateTexture(id: ServiceId, words: string, opts: CallOptions & { model?: string; detail?: DetailSize; prompt?: string; quality?: Quality; size?: ImageSize }): Promise<GeneratedImage> {
   const model = opts.model ?? (await listModels(id, { ...opts, timeoutMs: 30_000 }))[0]?.id;
   if (!model) throw new ImageServiceError(`${Services[id].name} lists no image models for this key.`);
   return generateImage(id, model, opts.prompt ?? texturePrompt(words, opts.detail), opts);

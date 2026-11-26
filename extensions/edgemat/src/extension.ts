@@ -28,6 +28,8 @@ interface REDcodeApi {
   packAndPlay?(): Promise<"hot" | "installed" | undefined>;
   /** packAndPlay's name in REDcode 0.10.4 and older; still there after. */
   packAndTry?(): Promise<"hot" | "installed" | undefined>;
+  /** Selects a file of the open project in REDcode's Project view; false when it is not there. Since REDcode 0.10.10. */
+  revealInProject?(file: string): Promise<boolean>;
 }
 
 /** The part of EDGEdeck's API (version 1) EDGEmat uses. */
@@ -69,6 +71,12 @@ function activeApi<T extends { apiVersion: number }>(id: string): T | undefined 
 const REDcodeId = "edgemodders.redcode-cyberpunk";
 const redcode = () => activeApi<REDcodeApi>(REDcodeId);
 const edgedeck = () => activeApi<EDGEdeckApi>("edgemodders.edgedeck");
+
+/** Shows a project file in REDcode's Project view (#15); says so when REDcode does not have it open. */
+async function revealInRedcode(file: string): Promise<void> {
+  const ok = await redcode()?.revealInProject?.(file).catch(() => false);
+  if (!ok) void vscode.window.showInformationMessage(`EDGEmat: REDcode's Project view does not have ${path.basename(file)}: open its project in REDcode first.`);
+}
 
 async function findGame(search: boolean): Promise<GameChoice | undefined> {
   return resolveGame(settings, { redcodeGamePath: () => redcode()?.gamePath(), edgedeckGamePath: () => edgedeck()?.gamePath() }, search);
@@ -190,7 +198,7 @@ async function setGameFolder(): Promise<void> {
   }
   if (!dir) return;
   if (!isGameFolder(dir)) {
-    void vscode.window.showErrorMessage(`${dir} is not the game: it has no bin\\x64\\Cyberpunk2077.exe.`);
+    void vscode.window.showErrorMessage(`EDGEmat: ${dir} is not the game: it has no bin\\x64\\Cyberpunk2077.exe.`);
     return;
   }
   await vscode.workspace.getConfiguration("edgemat").update("gamePath", dir, vscode.ConfigurationTarget.Global);
@@ -221,7 +229,7 @@ async function chooseProject(context: vscode.ExtensionContext, title = "Save to 
     if (!p) return undefined;
     project = projectAt(p);
     if (!project) {
-      void vscode.window.showErrorMessage(`${p} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`);
+      void vscode.window.showErrorMessage(`EDGEmat: ${p} is not a WolvenKit project: it has no .cpmodproj and no source\\archive folder.`);
       return undefined;
     }
   }
@@ -295,7 +303,7 @@ async function finishProjectOpen(context: vscode.ExtensionContext): Promise<void
   }
   const where = p.file && !shown ? ` It is in the Project view under ${path.relative(p.dir, path.dirname(p.file))}.` : "";
   const pack = project && packAndPlayFor(project);
-  const choice = await vscode.window.showInformationMessage(`${p.message}${where}`, ...(pack ? ["Pack and Play"] : []));
+  const choice = await vscode.window.showInformationMessage(`EDGEmat: ${p.message}${where}`, ...(pack ? ["Pack and Play"] : []));
   if (choice === "Pack and Play" && pack) await pack();
 }
 
@@ -307,7 +315,7 @@ async function viewIn3D(target: { mesh: string; appearance?: string } | undefine
   if (!target) return;
   const ext = vscode.extensions.getExtension<REDcodeApi>(REDcodeId);
   if (!ext) {
-    const pick = await vscode.window.showInformationMessage("View in 3D uses REDcode's 3D view, and REDcode is not installed.", "Show REDcode");
+    const pick = await vscode.window.showInformationMessage("EDGEmat: View in 3D uses REDcode's 3D view, and REDcode is not installed.", "Show REDcode");
     if (pick) await vscode.commands.executeCommand("extension.open", REDcodeId);
     return;
   }
@@ -315,7 +323,7 @@ async function viewIn3D(target: { mesh: string; appearance?: string } | undefine
   // REDcode starts its bridge when VS Code starts; give a fresh start a moment to load the game.
   for (let i = 0; i < 30 && !api?.bridge()?.running; i++) await new Promise((r) => setTimeout(r, 500));
   if (!api?.bridge()?.running) {
-    const pick = await vscode.window.showWarningMessage("REDcode's REDbridge is not running, so its 3D view cannot open game files.", "Restart REDbridge");
+    const pick = await vscode.window.showWarningMessage("EDGEmat: REDcode's REDbridge is not running, so its 3D view cannot open game files.", "Restart REDbridge");
     if (pick) await vscode.commands.executeCommand("redcode.restartBridge");
     return;
   }
@@ -422,7 +430,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
     openSurface: (p) => {
       const template = library()?.templates.find((t) => t.path.toLowerCase() === p.toLowerCase());
       if (template) void pages.show({ kind: "surface", template });
-      else void vscode.window.showInformationMessage(`${p} is not in Game Materials: a custom or missing surface.`);
+      else void vscode.window.showInformationMessage(`EDGEmat: ${p} is not in Game Materials: a custom or missing surface.`);
     },
     openMicroblend: (p) => {
       const found = library()?.microblends.find((m) => m.path.toLowerCase() === p.toLowerCase());
@@ -484,7 +492,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       const req = meshOfRequest(arg ?? vscode.window.activeTextEditor?.document.uri);
       const kind = !req ? undefined : /\.mesh$/i.test(req.mesh) ? "mesh" : /\.mlsetup$/i.test(req.mesh) ? "setup" : /\.mltemplate$/i.test(req.mesh) ? "surface" : undefined;
       if (!req || !kind) {
-        void vscode.window.showInformationMessage("Open in EDGEmat takes a mesh (.mesh), a setup (.mlsetup) or a surface (.mltemplate), from REDcode's Game Assets, Project or 3D view.");
+        void vscode.window.showInformationMessage("EDGEmat: Open in EDGEmat takes a mesh (.mesh), a setup (.mlsetup) or a surface (.mltemplate), from REDcode's Game Assets, Project or 3D view.");
         return;
       }
       if (kind === "surface") {
@@ -517,7 +525,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       if (!entry) return;
       const edits = desk.edited(entry).length;
       if (edits) {
-        const go = await vscode.window.showWarningMessage(`Remove ${deskLabel(entry)} from the Desk?`, { modal: true, detail: `Its ${edits === 1 ? "edit" : `${edits} edited setups`} on the Desk ${edits === 1 ? "is" : "are"} deleted. Your projects keep what you added to them.` }, "Remove");
+        const go = await vscode.window.showWarningMessage(`EDGEmat: Remove ${deskLabel(entry)} from the Desk?`, { modal: true, detail: `Its ${edits === 1 ? "edit" : `${edits} edited setups`} on the Desk ${edits === 1 ? "is" : "are"} deleted. Your projects keep what you added to them.` }, "Remove");
         if (!go) return;
       }
       if (!deskView.remove([entry])) heldNote();
@@ -540,7 +548,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       const edited = desk.editCount();
       if (!n && !edited) return;
       const go = await vscode.window.showWarningMessage(
-        "Clear the Desk?",
+        "EDGEmat: Clear the Desk?",
         { modal: true, detail: `${n} thing${n === 1 ? " is" : "s are"} removed from the Desk${edited ? `, and the edits of ${edited} setup${edited === 1 ? "" : "s"} saved there are deleted` : ""}. Nothing in your projects or the game changes.` },
         "Clear the Desk",
       );
@@ -566,7 +574,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       else {
         const worn = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "Finding the items that wear this mesh..." }, () => find.wornBy(of.mesh, of.appearance));
         if (!worn.length) {
-          void vscode.window.showInformationMessage(`No clothing item in the game wears ${of.mesh.split("\\").pop()}${of.appearance ? `, look ${of.appearance}` : ""}. It may be worn by an NPC, or added by a mod.`);
+          void vscode.window.showInformationMessage(`EDGEmat: No clothing item in the game wears ${of.mesh.split("\\").pop()}${of.appearance ? `, look ${of.appearance}` : ""}. It may be worn by an NPC, or added by a mod.`);
           return;
         }
         id = worn.length === 1 ? worn[0].id : (await vscode.window.showQuickPick(
@@ -596,6 +604,8 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       cacheDir: () => cacheDir,
       log,
       desk,
+      reveal: (file) => revealInRedcode(file),
+      canReveal: () => !!redcode()?.revealInProject,
       changed: (archive, mesh, _material, deskId) => {
         find.refresh();
         deskView.refresh();
@@ -650,7 +660,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
   async function deskToProject(only?: string[]): Promise<void> {
     let ids = only ?? desk.entries().map((e) => e.id);
     if (!ids.length) {
-      void vscode.window.showInformationMessage("The Desk is empty. Right-click a mesh in REDcode's Game Assets or Project view and pick Open in EDGEmat to put it here.");
+      void vscode.window.showInformationMessage("EDGEmat: The Desk is empty. Right-click a mesh in REDcode's Game Assets or Project view and pick Open in EDGEmat to put it here.");
       return;
     }
     for (const group of only ? [] : desk.duplicates(ids)) {
@@ -669,12 +679,12 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
     const what = entries.length === 1 ? deskLabel(entries[0]) : "the Desk";
     const unsaved = setupEditor.unsavedOnDesk(ids);
     if (unsaved.length) {
-      const go = await vscode.window.showWarningMessage(`${unsaved.join(", ")} ${unsaved.length === 1 ? "has" : "have"} edits not saved yet, which would not go into the project. Save them first with Ctrl+S.`, { modal: true }, "Add Without Them");
+      const go = await vscode.window.showWarningMessage(`EDGEmat: ${unsaved.join(", ")} ${unsaved.length === 1 ? "has" : "have"} edits not saved yet, which would not go into the project. Save them first with Ctrl+S.`, { modal: true }, "Add Without Them");
       if (!go) return;
     }
     const bridge = await bridgeNow();
     if (!bridge) {
-      void vscode.window.showErrorMessage("Adding the Desk to a project needs REDbridge. Set the game folder and REDbridge first.");
+      void vscode.window.showErrorMessage("EDGEmat: Adding the Desk to a project needs REDbridge. Set the game folder and REDbridge first.");
       return;
     }
     const project = await chooseProject(context, entries.length === 1 ? `Add ${deskLabel(entries[0])} to Project` : "Add the Desk to Project");
@@ -687,13 +697,13 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
     try {
       conflicts = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Comparing ${what} with ${project.name}` }, () => desk.conflicts(bridge, project, suffix, ids));
     } catch (e) {
-      void vscode.window.showErrorMessage(`Could not compare the Desk with ${project.name}: ${e instanceof Error ? e.message : String(e)}`);
+      void vscode.window.showErrorMessage(`EDGEmat: Could not compare the Desk with ${project.name}: ${e instanceof Error ? e.message : String(e)}`);
       return;
     }
     let replace = false;
     if (conflicts.length) {
       const which = await vscode.window.showWarningMessage(
-        `${project.name} already has its own ${conflicts.length === 1 ? base(conflicts[0].mesh) : plural(conflicts.length, "mesh")} from the Desk, with other materials.`,
+        `EDGEmat: ${project.name} already has its own ${conflicts.length === 1 ? base(conflicts[0].mesh) : plural(conflicts.length, "mesh")} from the Desk, with other materials.`,
         {
           modal: true,
           detail:
@@ -715,7 +725,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
     const opens = !openInRedcode(project) && fs.existsSync(project.dir);
     const opensHow = vscode.workspace.workspaceFolders?.length ? "in a new window" : "in this window, which reloads (the Desk stays as it is)";
     const go = await vscode.window.showWarningMessage(
-      `Add ${what} to ${project.name}?`,
+      `EDGEmat: Add ${what} to ${project.name}?`,
       {
         modal: true,
         detail:
@@ -740,21 +750,27 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       const pack = packAndPlayFor(project);
       const kept = r.kept.length ? ` ${plural(r.kept.length, "mesh")} stayed on the Desk with ${r.kept.length === 1 ? "its" : "their"} edits, since the project keeps its own.` : "";
       const done = r.written.length ? `${plural(r.written.length, "file")} written` : "nothing new to write: the project has it all already";
-      const message = `Added ${what} to ${project.name}: ${done}.${kept}${r.notes.length ? ` Details in the EDGEmat log.` : ""}`;
+      const message = `EDGEmat: Added ${what} to ${project.name}: ${done}.${kept}${r.notes.length ? ` Details in the EDGEmat log.` : ""}`;
       if (opens) {
         const mesh = entries.find((e) => e.kind === "mesh" && r.added.includes(e.id)) ?? entries.find((e) => r.added.includes(e.id));
         await openProject(context, project, mesh && path.join(project.archive, mesh.path), message);
         return;
       }
+      // Reveal in REDcode (#15): the first mesh that went in, else the first setup or file, in REDcode's Project view.
+      const firstMesh = entries.find((e) => e.kind === "mesh" && r.added.includes(e.id) && !r.kept.includes(e.id));
+      const shown = firstMesh?.path ?? r.setups[0]?.to ?? r.written[0];
+      const revealable = shown && fs.existsSync(path.join(project.archive, shown)) ? path.join(project.archive, shown) : undefined;
       const choice = await vscode.window.showInformationMessage(
         message,
+        ...(revealable && redcode()?.revealInProject ? ["Reveal in REDcode"] : []),
         ...(pack && r.written.length ? ["Pack and Play"] : []),
         ...(r.notes.length ? ["Show Log"] : []),
       );
-      if (choice === "Pack and Play" && pack) await pack();
+      if (choice === "Reveal in REDcode" && revealable) await revealInRedcode(revealable);
+      else if (choice === "Pack and Play" && pack) await pack();
       else if (choice === "Show Log") output.show();
     } catch (e) {
-      void vscode.window.showErrorMessage(`Adding ${what} to ${project.name} failed: ${e instanceof Error ? e.message : String(e)}`);
+      void vscode.window.showErrorMessage(`EDGEmat: Adding ${what} to ${project.name} failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

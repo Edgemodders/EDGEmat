@@ -912,15 +912,17 @@ server.registerTool(
         .describe("Glow per material; replaces the model's own for the materials it names"),
       made: z.record(z.unknown()).optional().describe("Where the model came from (a Tripo task, a file) and its license, kept in the record"),
       flip_normal_green: z.boolean().optional().describe("Flip the normal maps' green from glTF's green up to the game's green down (DirectX). Default true, settled in the game; false only for maps that are green down already"),
+      keep: z.record(z.string(), z.array(z.enum(["baseColor", "roughness", "metal", "normal", "glow"]))).optional()
+        .describe("Per material name, the texture slots whose source did not change since the last run into the same folder: their .xbm files are kept and only the .mi and the rest are written (a glow strength change then writes only the .mi). Leave out normal when flip_normal_green changed"),
     },
   },
-  async ({ project, model, materials, mesh, folder, glow, made, flip_normal_green }) => {
+  async ({ project, model, materials, mesh, folder, glow, made, flip_normal_green, keep }) => {
     try {
       const p = projectFor(project);
       const b = await getBridge();
       const r = await materialsFromModel(b, {
         project: { archive: p.archive, raw: path.join(p.dir, "source", "raw") },
-        model, materials, mesh, folder, glow, made, flipNormalGreen: flip_normal_green, log,
+        model, materials, mesh, folder, glow, made, flipNormalGreen: flip_normal_green, keep, log,
       });
       return text({
         saved: { project: p.dir, materials: r.materials, files: r.files, record: r.record },

@@ -5,6 +5,7 @@
 // the material page's. The work is the core's (parts.ts, desk.ts), which mat_apply, mat_parts and
 // mat_materials run too.
 
+import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { AnyMask, backToGame, backToModel, deskPartFolder, describeSurface, dropPartFiles, gameMaterials, materialFit, useGameMaterial, useSurface, type BridgeClient, type Desk, type GameMaterialList, type Library, type PartResult, type Template } from "./core";
@@ -18,6 +19,10 @@ export interface PartHost {
   desk: Desk;
   /** After a part changed: the trees and REDcode's 3D view draw it again (`desk`: the Desk entry it changed on). */
   changed(archive: string, mesh: string, material: string, desk?: string): void;
+  /** Shows a project file in REDcode's Project view (#15); undefined when REDcode cannot. */
+  reveal?: (file: string) => Promise<void>;
+  /** Whether REDcode can reveal a file (0.10.10 and later, active). */
+  canReveal?: () => boolean;
 }
 
 type Part = NonNullable<ReturnType<typeof FindView.partOf>>;
@@ -37,7 +42,7 @@ export function registerPartCommands(host: PartHost): vscode.Disposable[] {
     }
     const bridge = await host.bridge();
     if (!bridge) {
-      void vscode.window.showErrorMessage("EDGEmat needs the game folder and REDbridge.");
+      void vscode.window.showErrorMessage("EDGEmat: this needs the game folder and REDbridge.");
       return undefined;
     }
     if (!part.onDesk) return { part, bridge };
@@ -63,7 +68,11 @@ export function registerPartCommands(host: PartHost): vscode.Disposable[] {
     host.changed(part.archive, part.mesh, part.material, part.onDesk ? part.desk : undefined);
     const tile = r.tile !== undefined ? ` Tiling ${r.tile}.` : "";
     const next = part.onDesk ? "It changed on the Desk: + on the Desk line puts the mesh in a project." : "Pack the project to see it in the game.";
-    const pick = await vscode.window.showInformationMessage(`EDGEmat: ${part.material} now wears ${what}.${tile} ${next}`, ...(r.setup ? ["Open Setup"] : []));
+    // In a project, Reveal in REDcode shows the part's new .mi, else the mesh (#15).
+    const shown = [r.mi, part.mesh].map((f) => path.join(part.archive, f)).find((f) => fs.existsSync(f));
+    const reveal = !part.onDesk && shown && host.canReveal?.() ? host.reveal : undefined;
+    const pick = await vscode.window.showInformationMessage(`EDGEmat: ${part.material} now wears ${what}.${tile} ${next}`, ...(r.setup ? ["Open Setup"] : []), ...(reveal ? ["Reveal in REDcode"] : []));
+    if (pick === "Reveal in REDcode" && reveal && shown) await reveal(shown);
     // On the Desk the setup opens from the entry, and Ctrl+S saves it there.
     if (pick === "Open Setup" && r.setup) await vscode.commands.executeCommand("edgemat.openFoundSetup", r.setup, AnyMask, part.via, part.onDesk ? undefined : part.archive, part.onDesk ? part.desk : undefined, part.mesh, part.look);
   };
@@ -121,7 +130,7 @@ export function registerPartCommands(host: PartHost): vscode.Disposable[] {
       let force = false;
       const fit = await materialFit(bridge, mi, part.archive);
       if (!fit.fits) {
-        const go = await vscode.window.showWarningMessage(`${file(mi)} may not suit this part: ${fit.why}. Use it anyway?`, { modal: true }, "Use Anyway");
+        const go = await vscode.window.showWarningMessage(`EDGEmat: ${file(mi)} may not suit this part: ${fit.why}. Use it anyway?`, { modal: true }, "Use Anyway");
         if (go !== "Use Anyway") return;
         force = true;
       }

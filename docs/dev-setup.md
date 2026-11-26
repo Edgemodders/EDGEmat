@@ -128,6 +128,7 @@ From 0.3.0, the first preview (0.2.0 was never released). `.github/workflows/rel
    |---|---|
    | Game materials on a game mesh on the Desk: Use a Game Surface, Use a Game Material, Back to the Game's Material; Add to Project carries the changed mesh | `desk.md`, `settings.md` (the new command), `assistants.md` (`mat_apply`/`mat_parts` `desk_id`) |
    | Connect Claude Code finds `claude` outside the Windows PATH | `assistants.md`, `troubleshooting.md` |
+   | Messages start with EDGEmat: and offer Reveal in REDcode (#15) | `desk.md` |
 
 **When a release run stops partway** (0.3.2, 2026-11-13: the VS Code Marketplace step failed on an expired `VSCE_PAT`, so npm never ran): do not run Release again, which stops at "already released". Fix the cause (renew the token in the organisation's secrets), then **Actions** › **Finish a release** › **Run workflow** with the version and what is missing (`gh workflow run finish-release.yml --ref main -f version=<version> -f marketplace=true -f npm=true`). It works from the tag: the Marketplace gets the GitHub release's VSIX, and npm the MCP server and the core built from the tag, skipping a package already at that version. `VSCE_PAT` is an Azure DevOps personal access token with the **Marketplace › Manage** scope for **All accessible organizations**; they expire, at most a year after they are made.
 

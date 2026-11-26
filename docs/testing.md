@@ -43,6 +43,8 @@ Last updated 2026-10-26.
 | [Parts check](#parts-check) | From `node scripts/parts-check.mjs` | #12 | 2026-11-18 | **Passed** (Claude, outside the game, on a copy of EDGEfab's vending machine): 9 parts listed; red car paint on one (a one-layer setup, nothing embedded, tiling 5.9 from the part's size); 331 of the game's 10,660 materials suit any shape (read in 9 s); bulletproof glass on another; a decal refused; a third back on the model's texture; packed |
 | [Game materials on a prop's parts](#game-materials-on-a-props-parts) | By hand, F5, with REDcode; then in the game with EDGEbuilder | #12, before EDGEfab 0.1.0 | 2026-11-18 | **Passed**, all 11 steps (owner) |
 | [Desk parts check](#desk-parts-check) | From `npm run desk-parts-check` | Desk part commands | 2026-11-25 | **Passed** (Claude, outside the game, on the s1_055 sneakers with a scratch Desk and project) |
+| [Keep check](#keep-check) | From `npm run keep-check` | #13 | 2026-11-25 | **Passed** (Claude, outside the game, on EDGEfab's `neon_vending_box2` Tripo model: 70 materials; a new glow with every slot kept in 0.1 s against 60.7 s, no texture written) |
+| [Messages name EDGEmat](#messages-name-edgemat) | By hand, F5, with REDcode | #15, before 0.3.5 | | **Not run yet** |
 | [Game materials on a Desk mesh](#game-materials-on-a-desk-mesh) | By hand, F5, with REDcode; then in the game | Desk part commands, before 0.3.5 | | **Not run yet** |
 | [Reshape with the game's materials](#reshape-with-the-games-materials) | From `node scripts/reshape-check.mjs` (no credits: the hat made in the Reshape and keys test), then in the game | W3, before Wardrobe Designer 0.1.0 | 2026-11-18 | **Passed** (owner, steps 3 to 5, the three cowboy hats): the textures are the game's own, bright, not Tripo's paint. Finding: the band is a little distorted on the new shape ("not terrible"); it is the game's band bent by EDGEmat's fit (`transfer.ts`), not Tripo, so it can be improved later |
 | [The bake: color](#the-bake-color) | By hand, F5, with REDcode; then in the game | M5's first part, before Wardrobe Designer 0.1.0 | 2026-11-18 | **Passed**, all 4 steps (owner). Built 2026-11-16; smoke passes (the slim-fits' leather: median 50 against the flat map's 8, with grain). Claude drew the Cowboy hat's Reshape views with it: median 158 (was 81), light grey felt; black specks and peach patches remain |
@@ -764,6 +766,29 @@ Added 2026-11-25: game surfaces and game materials on a game mesh's materials on
 |---|---|
 | 2026-11-25, Claude, `s1_055_pma_shoe__converse.mesh` | **Passed.** The entry's copy of the mesh in its folder; 18 materials. Concrete on `ml_s1_001_pma_shoe__converse_masksset`: its setup and `.mi` in `...\s1_055_shoe__converse\edgemat\s1_055_pma_shoe__converse`, not counted as an edited setup, the game's mesh unchanged. A metal grate on `white`, then back on the game's. Add to Project: the mesh and the surface's two files went in, the project's material wearing the surface. The surface's files deleted when a game material replaced it. Bulletproof glass on the same material on the Desk: a conflict with the project's copy (`parts` names it); without replace the project kept its copy, with replace it took the glass |
 
+### Keep check
+
+Added 2026-11-25 (EDGEmat #13, from EDGEfab): `materialsFromModel` with `keep`. A textured model's materials into a scratch project; again with every slot kept and a new glow (no texture written, the same textures named, the glow's EV right, much faster); again without the color slot (only the color textures written); and with one kept texture deleted (that one written again). `npm run build` in `extensions\edgemat`, then `npm run keep-check -- <model.glb>`.
+
+| Run | Result |
+|---|---|
+| 2026-11-25, Claude, `neon_vending_box2\original.glb` (from EDGEfab's Desk, read only) | **Passed.** 1. All written: 280 textures for 70 materials in 60.7 s. 2. Every slot kept and a new glow on `tripo_part_0_material`: 0.1 s, nothing written, 280 kept, each material naming the same textures, the glow at EV 2. 3. The color slot not kept: 19.2 s, only the 70 color textures written. 4. One kept texture deleted: 3.9 s, that one written again |
+
+### Messages name EDGEmat
+
+Added 2026-11-25 (EDGEmat #15, from EDGEfab): the owner took EDGEmat's Add to Project message for EDGEfab's. Every EDGEmat message now starts with **EDGEmat:**, and after a file lands in a project the message has **Reveal in REDcode**. Uses the test project `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_PropParts` (from "Game materials on a prop's parts"). Needs REDcode 0.10.10 or later with that project open.
+
+1. `npm run build` in `extensions\edgemat`, then **F5** (**Run EDGEmat**). In the development host: **File › Open Folder...** › `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_PropParts`.
+2. In REDcode's **Project** view, right-click `source\archive\edgefab_partmaterials\props\vending_parts\vending_parts.mesh` › **Open in EDGEmat**.
+
+| # | Do | Expect |
+|---|---|---|
+| 1 | On the Desk, right-click `..._wit_details` › **Use a Game Material...**, type `glow blue`, choose **z emissive blue** | A notification that starts "EDGEmat: ..._wit_details now wears z_emissive_blue.mi." with **Reveal in REDcode** |
+| 2 | Press **Reveal in REDcode** (on the notification at the bottom right, or under the bell in the status bar) | REDcode's **Project** view opens and selects `vending_parts.mesh` (a game material has no new `.mi` in the project) |
+| 3 | Right-click `..._wit_front` › **Use a Game Surface...** › **car paint metallic 01**, any color. Press **Reveal in REDcode** on its notification | The Project view selects `a_battered_cyberpunk_vending_machine_wit_front.mi` in `vending_parts\materials` |
+| 4 | Click **+** on the Desk line `vending_parts.mesh` (**Add to Project**), pick **EDGEmat_PropParts** | The answer starts "EDGEmat: Added vending_parts.mesh to EDGEmat_PropParts" (nothing new to write: the mesh is the project's own), with **Reveal in REDcode** |
+| 5 | Any other EDGEmat message you see on the way | It starts with **EDGEmat:** |
+
 ### Game materials on a Desk mesh
 
 Added 2026-11-25 (owner, 2026-11-22: part commands for game meshes on the Desk, Add to Project carrying the changed mesh). Uses the sneakers `s1_055_pwa_shoe__converse.mesh` (the feminine body's; for a masculine V use `s1_055_pma_shoe__converse.mesh` the same way) and the empty test project `E:\Modding\Cyberpunk 2077\Projects\EDGEmat_DeskParts`. Needs REDcode and REDnode.
@@ -781,7 +806,7 @@ Added 2026-11-25 (owner, 2026-11-22: part commands for game meshes on the Desk, 
 | 6 | Right-click `dec_lights` › **Use a Game Material...**. Type `glow blue`, choose **z emissive blue** | The row says "changed on the Desk · z_emissive_blue.mi"; in the 3D view the lights turn blue |
 | 7 | Right-click `dec_lights` › **Back to the Game's Material** | A notification "dec_lights now wears the game's material (metal_base.remt)"; the row loses "changed on the Desk"; the 3D view's lights are as before. **Back to the Game's Material** is on changed rows only: right-click a row you did not change, it is not there |
 | 8 | Hover the mesh line `s1_055_pwa_shoe__converse.mesh` | The tooltip ends "Changed on this Desk entry: red. + puts the changed mesh in a project." |
-| 9 | Click **+** on the mesh line (**Add to Project**), pick **EDGEmat_DeskParts** | The dialog says "The mesh whose materials you changed on the Desk goes in changed, with its new material files." Press **Add to Project**. A message "Added s1_055_pwa_shoe__converse.mesh to EDGEmat_DeskParts: 3 files written". In REDcode's **Project** view: `base\characters\garment\player_equipment\feet\s1_055_shoe__converse\s1_055_pwa_shoe__converse.mesh`, and in its `edgemat\s1_055_pwa_shoe__converse` folder `red.mi` and `red.mlsetup` |
+| 9 | Click **+** on the mesh line (**Add to Project**), pick **EDGEmat_DeskParts** | The dialog says "The mesh whose materials you changed on the Desk goes in changed, with its new material files." Press **Add to Project**. A message "EDGEmat: Added s1_055_pwa_shoe__converse.mesh to EDGEmat_DeskParts: 3 files written" with **Reveal in REDcode**: press it, and REDcode's **Project** view selects the mesh. There: `base\characters\garment\player_equipment\feet\s1_055_shoe__converse\s1_055_pwa_shoe__converse.mesh`, and in its `edgemat\s1_055_pwa_shoe__converse` folder `red.mi` and `red.mlsetup` |
 | 10 | On the Desk, right-click `red` › **Use a Game Material...**, type `glass`, choose **glass bulletproof tileable a**. Then **+** on the mesh line again, **EDGEmat_DeskParts** | A warning "EDGEmat_DeskParts already has its own s1_055_pwa_shoe__converse.mesh from the Desk, with other materials", its detail "...has other materials on red, which you changed on the Desk." Press **Keep the Project's**, then **Add to Project**: the message says 1 mesh stayed on the Desk. The project's `red` still wears the car paint |
 | 11 | REDcode's Project view: **Pack and Install** (or Pack and Play). Start the game. REDnode's Console: `addItem("Items.CasualShoes_01_basic_05")`, then wear **Street tactical-fiber high-tops** | The sneakers in car paint, in the color from step 4, the lights as the game has them. By day and by night |
 | 12 | Afterwards: uninstall `EDGEmat_DeskParts.archive`; on the Desk, **Remove** the sneakers | |

@@ -16,6 +16,14 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 - **Game materials on a game mesh on the Desk.** Right-click a material of a game mesh on the Desk (one you put there with **Open in EDGEmat** or Find's **+**): **Use a Game Surface...** and **Use a Game Material...** work there as on a project's mesh, in the Desk entry's own copy of the mesh, and **Back to the Game's Material** undoes one. A surface's files go in `<mesh folder>\edgemat\<mesh name>`, a folder the game does not have, so they never replace a game file. **+** (Add to Project) carries the changed mesh and those files into the project; if the project already has its own copy with other materials there, it asks to replace or keep it. The MCP server's `mat_apply` and `mat_parts` take `desk_id` in place of `project` (`mat_apply` `game: true` puts the game's material back), and `mat_desk list` shows each entry's changed materials.
 
+**Changed**
+
+- Every EDGEmat message starts with **EDGEmat:**, so it is not taken for another tool's (EDGEfab has a Desk and an Add to Project too). After **Add to Project**, **Use a Game Surface...** or **Use a Game Material...** on a project's mesh, the message has **Reveal in REDcode**, which selects the mesh or the new `.mi` in REDcode's Project view (REDcode 0.10.10 or later).
+
+**Other**
+
+- For other tools: `materialsFromModel` takes `keep`, the texture slots per material whose source did not change, and keeps their `.xbm` files, so a new glow strength writes only the `.mi` (EDGEmat #13; `mat_from_model` `keep`); each material lists the textures `written` and `kept`. `generateImage` takes a `size` (1024, 1536 or 2048; OpenAI asks once more at 1024 when the model refuses it, Gemini 1K or 2K) and returns the service's `usage` (EDGEmat #9).
+
 **Fixed**
 
 - **Connect an Assistant (MCP)...** › **Connect Claude Code** finds Claude Code's `claude` where its installer put it (`%USERPROFILE%\.local\bin`, or npm's folder) when that folder is not on the Windows PATH, as with Claude Code's own installer. Before, it said `claude` was not on the PATH.

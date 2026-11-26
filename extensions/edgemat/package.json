@@ -638,6 +638,7 @@
     "reshape-check": "node scripts/reshape-check.mjs",
     "glow-check": "node scripts/glow-check.mjs",
     "desk-parts-check": "node scripts/desk-parts-check.mjs",
+    "keep-check": "node scripts/keep-check.mjs",
     "normal-check": "node scripts/normal-check.mjs"
   },
   "dependencies": {

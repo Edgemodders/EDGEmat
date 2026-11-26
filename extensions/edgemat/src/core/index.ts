@@ -27,10 +27,10 @@ export { addToInventory, isFilePath, itemMaterials, itemsWearing, loadItems, mes
 export { Desk, deskLabel, deskProjectName, type DeskConflict, type DeskEntry, type DeskResult } from "./desk";
 export { renderMaterials, type RenderedMaterial, type RenderRequest } from "./render";
 export { blendNormals, makeSeamless, normalMap, readPng, repeat, resize, roughnessMap, seamScore, squareCrop, tilesAlready, tiling, writePng, type Image } from "./maps";
-export { editImage, errorText, generateImage, generateTexture, listModels, texturePrompt, ImageServiceError, Services, type CallOptions, type DetailSize, type GeneratedImage, type ImageModel, type Quality, type ServiceId, type ServiceInfo } from "./imageServices";
+export { editImage, errorText, generateImage, generateTexture, listModels, texturePrompt, ImageServiceError, Services, type CallOptions, type DetailSize, type GeneratedImage, type ImageModel, type ImageSize, type ImageUsage, type Quality, type ServiceId, type ServiceInfo } from "./imageServices";
 export { imageAsPng, makeMaterial, materialSlug, type MadeBy, type MaterialResult, type MaterialTarget, type NewMaterial, type Shine } from "./material";
 export { applyMaterial, texturedMaterialJson, uvTestPattern, writeTexture, writeTexturedMaterial, MetalBase, TextureTemplates, WhiteTexture, type TexturedMaterial, type TextureKind } from "./apply";
-export { glowDim, glowEV, materialsFromModel, GlowEV, type FromModelMaterial, type FromModelRequest, type FromModelResult, type ModelGlow, type ModelMaterialFiles } from "./fromModel";
+export { glowDim, glowEV, materialsFromModel, GlowEV, type FromModelMaterial, type FromModelRequest, type FromModelResult, type ModelGlow, type ModelMaterialFiles, type TextureSlot } from "./fromModel";
 export { checkKey, envKey, KeyEnv, type KeyService } from "./keys";
 export { installedRedcodeDirs, KeyCaller, KeysBridge, keysBridgeExe, KeysTooOld, McpKeyCaller, type KeyInfo, type KeyRead } from "./keyStore";
 export { bridgeOver, type BridgeCall } from "./kernelBridge";
