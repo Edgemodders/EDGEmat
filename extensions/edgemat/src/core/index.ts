@@ -41,7 +41,7 @@ export {
   type ReshapeChange, type ReshapeFit, type ReshapeMesh, type ReshapeModel, type ReshapeViews, type ViewName,
 } from "./reshape";
 export {
-  AnyMask, backToModel, gameMaterials, layeredMaterialJson, loadGameMaterials, materialFit, partFolder, partsOf, propRecord, searchGameMaterials, useGameMaterial, useSurface, SurfaceRepeat,
+  AnyMask, backToGame, backToModel, deskPartFolder, dropPartFiles, gameMaterials, layeredMaterialJson, materialOf, loadGameMaterials, materialFit, partFolder, partsOf, propRecord, searchGameMaterials, useGameMaterial, useSurface, SurfaceRepeat,
   type GameMaterial, type GameMaterialList, type MaterialFit, type Part, type PartResult, type PartWear, type PropRecord, type SurfaceChoice,
 } from "./parts";
 export { applyPatterns, applyRecipe, describeLook, RestyleBrief, type Look, type LookLayer, type LookMaterial, type PatternImage, type PatternPlan, type PatternResult, type Recipe, type RestyleResult } from "./restyle";

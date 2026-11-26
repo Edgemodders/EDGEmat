@@ -252,6 +252,12 @@
         "icon": "$(discard)"
       },
       {
+        "command": "edgemat.backToGame",
+        "title": "Back to the Game's Material",
+        "category": "EDGEmat",
+        "icon": "$(discard)"
+      },
+      {
         "command": "edgemat.setImageKey",
         "title": "Set Image Service Key...",
         "category": "EDGEmat"
@@ -454,6 +460,11 @@
           "group": "make@4"
         },
         {
+          "command": "edgemat.backToGame",
+          "when": "view == edgemat.desk && viewItem =~ /edgemat\\.gamePart /",
+          "group": "make@4"
+        },
+        {
           "command": "edgemat.deskEntryToProject",
           "when": "view == edgemat.desk && viewItem =~ /edgemat\\.deskEntry/",
           "group": "inline@8"
@@ -541,6 +552,10 @@
           "when": "false"
         },
         {
+          "command": "edgemat.backToGame",
+          "when": "false"
+        },
+        {
           "command": "edgemat.removeFromDesk",
           "when": "false"
         },
@@ -622,6 +637,7 @@
     "paint-check": "node scripts/paint-check.mjs",
     "reshape-check": "node scripts/reshape-check.mjs",
     "glow-check": "node scripts/glow-check.mjs",
+    "desk-parts-check": "node scripts/desk-parts-check.mjs",
     "normal-check": "node scripts/normal-check.mjs"
   },
   "dependencies": {

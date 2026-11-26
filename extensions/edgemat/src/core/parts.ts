@@ -7,7 +7,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { applyMaterial } from "./apply";
+import { applyMaterial, restoreMaterial } from "./apply";
 import type { BridgeClient } from "./bridgeClient";
 import { applyLayerEdit, DefaultMicroblend, patchFromWords, setupToJson, type LayerWords } from "./edit";
 import { gameKey, jsonValue, type Library, type Template } from "./library";
@@ -115,6 +115,13 @@ export interface Part {
 /** The folder EDGEmat writes a prop's part materials to: `<mesh folder>\materials`. */
 export const partFolder = (mesh: string) => `${path.dirname(mesh).replace(/\//g, "\\")}\\materials`;
 
+/**
+ * The folder EDGEmat writes the part materials of a game mesh on the Desk to: `<mesh folder>\edgemat\<mesh
+ * name>`. The game has no such folder, so the files never replace a game file when they go into a project,
+ * and two meshes in one folder keep their own.
+ */
+export const deskPartFolder = (mesh: string) => `${path.dirname(mesh).replace(/\//g, "\\")}\\edgemat\\${path.basename(mesh, path.extname(mesh))}`;
+
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "part";
 const stemWords = (p: string) => path.basename(p, path.extname(p)).replace(/[_-]+/g, " ").trim();
 
@@ -139,7 +146,7 @@ async function wearOf(bridge: BridgeClient, lib: Library | undefined, archive: s
   if (!mi) return { kind: "other", plain: "no material" };
   if (model && lower(mi) === lower(model) && !ownValues) return { kind: "model", mi, plain: "the model's own texture" };
   const inProject = fs.existsSync(path.join(archive, mi));
-  if (inProject && lower(path.dirname(mi)) === lower(partFolder(mesh))) {
+  if (inProject && [partFolder(mesh), deskPartFolder(mesh)].some((f) => lower(path.dirname(mi)) === lower(f))) {
     const setup = mi.replace(/\.mi$/i, ".mlsetup");
     if (fs.existsSync(path.join(archive, setup))) {
       try {
@@ -222,9 +229,10 @@ export function layeredMaterialJson(setup: string, mask: string = AnyMask): Json
 /**
  * A game surface on one part: a one-layer setup and its .mi, written to `<mesh folder>\materials\<part>`
  * (the same files each time, so a part has one), and the part's entry pointed at the .mi. The setup is an
- * ordinary one: the setup editor opens it for the color, tiling and the rest.
+ * ordinary one: the setup editor opens it for the color, tiling and the rest. `folder`: where the files go
+ * (deskPartFolder for a game mesh on the Desk).
  */
-export async function useSurface(bridge: BridgeClient, lib: Library, archive: string, mesh: string, material: string, choice: SurfaceChoice): Promise<PartResult> {
+export async function useSurface(bridge: BridgeClient, lib: Library, archive: string, mesh: string, material: string, choice: SurfaceChoice, folder = partFolder(mesh)): Promise<PartResult> {
   const notes: string[] = [];
   const words: LayerWords = { surface: choice.surface, color: choice.color, roughness: choice.roughness, metal: choice.metal, bumps: choice.bumps, microblend: choice.microblend };
   let setup = oneLayer();
@@ -241,7 +249,7 @@ export async function useSurface(bridge: BridgeClient, lib: Library, archive: st
     notes.push(size ? `Tiling ${tile}: the part spans about ${size.toFixed(2)} m of its UV square, one repeat a ${SurfaceRepeat} m (change it in the setup editor).` : "Tiling 1: the part's size could not be read (change it in the setup editor).");
   }
   setup = applyLayerEdit(setup, 0, { matTile: tile }, lib).setup;
-  const base = `${partFolder(mesh)}\\${slug(material)}`;
+  const base = `${folder}\\${slug(material)}`;
   const setupPath = `${base}.mlsetup`, mi = `${base}.mi`;
   await writeJson(bridge, archive, setupPath, setupToJson(setup));
   await writeJson(bridge, archive, mi, layeredMaterialJson(setupPath));
@@ -359,6 +367,43 @@ export async function backToModel(bridge: BridgeClient, archive: string, mesh: s
   if (!own) throw new Error(record ? `EDGEfab's record (${record.file}) has no material ${material}.` : `${mesh} has no EDGEfab record, so there is no model texture to go back to.`);
   const written = await applyMaterial(bridge, archive, mesh, material, own);
   return { written, mi: own, notes: [] };
+}
+
+/**
+ * A material of a game mesh's copy (on the Desk) back as the game's mesh has it, and the surface files
+ * EDGEmat wrote for it in `folder` deleted. The mesh's other materials keep their changes.
+ */
+export async function backToGame(bridge: BridgeClient, archive: string, mesh: string, material: string, folder = deskPartFolder(mesh)): Promise<PartResult> {
+  const written = await restoreMaterial(bridge, archive, mesh, material);
+  if (!written.length) throw new Error(`${mesh} has no copy in ${archive} to change.`);
+  const notes = dropPartFiles(archive, material, folder).map((f) => `Deleted ${f}.`);
+  const root = (await readJson(bridge, archive, mesh)).json.Data.RootChunk;
+  return { written, mi: materialOf(root, material) ?? "", notes };
+}
+
+/**
+ * Deletes the surface files EDGEmat wrote for a material in `folder` (its setup and .mi), when the material
+ * no longer wears them (a game material or the game's own went on). Answers the game paths deleted.
+ */
+export function dropPartFiles(archive: string, material: string, folder: string): string[] {
+  const out: string[] = [];
+  for (const ext of [".mi", ".mlsetup"]) {
+    const rel = `${folder}\\${slug(material)}${ext}`;
+    const f = path.join(archive, rel);
+    if (fs.existsSync(f)) {
+      fs.rmSync(f, { force: true });
+      out.push(rel);
+    }
+  }
+  return out;
+}
+
+/** The .mi a mesh's material entry takes as its base (its local instance's, or its external one). */
+export function materialOf(root: Json, material: string): string | undefined {
+  const e = (root.materialEntries ?? []).find((x: Json) => String(jsonValue(x.name)).toLowerCase() === material.toLowerCase());
+  if (!e) return undefined;
+  const local = Number(e.isLocalInstance) === 1 || e.isLocalInstance === true;
+  return local ? jsonValue(localMaterial(root, e.index)?.baseMaterial) : jsonValue(root.externalMaterials?.[e.index]);
 }
 
 // ---------- the game's materials that suit any shape ----------

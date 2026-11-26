@@ -22,8 +22,8 @@ import {
   saveToProject, searchItems, isCurrent, isGameFolder, loadLibrary, loadMicroblends, nearestColors, parseColor, plainColorName, resolveBridge, resolveGame, searchMicroblends, searchTemplates, suffixFor, vscodeUserSettings, withSetup,
   applyMaterial, materialsFromModel, applyPatterns, applyRecipe, describeLook, RestyleBrief, generateTexture, envKey, imageAsPng, keysBridgeExe, KeysBridge, McpKeyCaller, type KeyService, makeMaterial, materialSlug, texturePrompt, Services,
   bridgeOver, loadReshape, readPng, reshapeBack, reshapeChange, reshapeFit, reshapeModel, reshapeViews, resize, Tripo, writePng,
-  backToModel, gameMaterials, partsOf, searchGameMaterials, useGameMaterial, useSurface,
-  type ColorInfo, type LayerInfo, type Library, type MaterialResult, type PatternImage, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
+  backToGame, backToModel, deskPartFolder, dropPartFiles, gameMaterials, partsOf, searchGameMaterials, useGameMaterial, useSurface,
+  type ColorInfo, type DeskEntry, type LayerInfo, type Library, type MaterialResult, type PatternImage, type MaterialUse, type MeshLook, type MeshSearch, type ServiceId, type SettingsReader, type Template,
 } from "../../../extensions/edgemat/src/core";
 
 declare const __VERSION__: string;
@@ -728,6 +728,18 @@ server.registerTool(
   },
 );
 
+/** Where a part changes: a project's source\archive, or a game mesh's Desk entry (its own copy of the mesh). */
+async function partPlace(project: string | undefined, deskId: string | undefined, b: BridgeClient): Promise<{ archive: string; entry?: DeskEntry; where: string }> {
+  if (!!project === !!deskId) throw new Error("Give one of project (a WolvenKit project) or desk_id (a game mesh on the Desk: mat_desk list shows the ids).");
+  if (project) {
+    const p = projectFor(project);
+    return { archive: p.archive, where: p.dir };
+  }
+  const entry = desk.get(deskId);
+  if (!entry) throw new Error(`No Desk entry ${deskId}: mat_desk list shows the ids.`);
+  return { archive: await desk.partArchive(b, entry), entry, where: `the Desk, ${deskLabel(entry)}` };
+}
+
 server.registerTool(
   "mat_apply",
   {
@@ -736,9 +748,11 @@ server.registerTool(
       "mi: an existing .mi as it is (a game path, or one mat_from_image wrote); a game .mi that does not suit any shape (a decal, a layered material with its mask painted for another mesh, textures painted for one mesh) is refused unless force. " +
       "surface (with color, tile, roughness, metal, bumps, microblend in words, as mat_edit takes them): a game surface (mat_templates) as a one-layer setup and its .mi, written beside the mesh in a materials folder, one per material entry; tile defaults to one repeat a metre of the part. " +
       "model: true puts the part back on the model's own texture (a prop EDGEfab made: the .mi EDGEfab keeps for it). For a prop's parts (one material entry per part), mat_parts lists them and mat_materials finds game materials that suit any shape. " +
+      "desk_id in place of project: a game mesh on the Desk (mat_desk) changes in that entry's own copy, its surface files in <mesh folder>\\edgemat\\<mesh name>; game: true puts a material back as the game's mesh has it; mat_desk to_project then carries the changed mesh and its files into a project. " +
       "Unlike mat_generate and mat_from_image it does not bake a repeat for a garment; to put a new material on a garment, make it with targets instead.",
     inputSchema: {
-      project: z.string(),
+      project: z.string().optional().describe("The WolvenKit project folder; or desk_id"),
+      desk_id: z.string().optional().describe("A game mesh's Desk entry (mat_desk list), in place of project: each target's mesh is that entry's mesh"),
       targets: z.array(TargetSchema).min(1),
       mi: z.string().optional(),
       surface: z.string().optional().describe("A game surface: its path, name or words ('car paint metallic', 'concrete')"),
@@ -749,15 +763,22 @@ server.registerTool(
       bumps: z.string().optional(),
       microblend: z.string().optional(),
       model: z.boolean().optional().describe("Back to the model's own texture (an EDGEfab prop)"),
+      game: z.boolean().optional().describe("With desk_id: back to the game's own material for that mesh"),
       force: z.boolean().default(false).describe("With mi: use a game material even when it does not suit any shape"),
     },
   },
-  async ({ project, targets, mi, surface, color, tile, roughness, metal, bumps, microblend, model, force }) => {
+  async ({ project, desk_id, targets, mi, surface, color, tile, roughness, metal, bumps, microblend, model, game, force }) => {
     try {
-      const chosen = [mi !== undefined, surface !== undefined, !!model].filter(Boolean).length;
-      if (chosen !== 1) throw new Error("Give one of mi, surface or model: true.");
-      const p = projectFor(project);
+      const chosen = [mi !== undefined, surface !== undefined, !!model, !!game].filter(Boolean).length;
+      if (chosen !== 1) throw new Error("Give one of mi, surface, model: true or game: true.");
       const b = await getBridge();
+      const p = await partPlace(project, desk_id, b);
+      const onDesk = p.entry;
+      if (onDesk) {
+        const other = targets.find((t) => t.mesh.toLowerCase() !== onDesk.path.toLowerCase());
+        if (other) throw new Error(`Desk entry ${onDesk.id} is ${onDesk.path}, not ${other.mesh}.`);
+        if (model) throw new Error("model: true is for a prop EDGEfab made, in a project; on the Desk, game: true puts the game's material back.");
+      } else if (game) throw new Error("game: true is for a game mesh on the Desk (desk_id).");
       const written: string[] = [];
       const done: Record<string, unknown>[] = [];
       const add = (fs: string[]) => {
@@ -765,13 +786,17 @@ server.registerTool(
       };
       for (const t of targets) {
         if (surface !== undefined) {
-          const r = await useSurface(b, await library(), p.archive, t.mesh, t.material, { surface, color, tile, roughness, metal, bumps, microblend });
+          const r = await useSurface(b, await library(), p.archive, t.mesh, t.material, { surface, color, tile, roughness, metal, bumps, microblend }, onDesk ? deskPartFolder(t.mesh) : undefined);
           add(r.written);
           done.push({ ...t, surface: r.surface?.path, color: r.color, tile: r.tile, setup: r.setup, mi: r.mi, notes: r.notes.length ? r.notes : undefined });
         } else if (model) {
           const r = await backToModel(b, p.archive, t.mesh, t.material);
           add(r.written);
           done.push({ ...t, mi: r.mi });
+        } else if (game) {
+          const r = await backToGame(b, p.archive, t.mesh, t.material);
+          add(r.written);
+          done.push({ ...t, mi: r.mi, notes: r.notes.length ? r.notes : undefined });
         } else if (/\.mi$/i.test(mi!) && !(await isGameFile(b, mi!))) {
           // A project's own .mi (one mat_from_image wrote): as it is.
           add(await applyMaterial(b, p.archive, t.mesh, t.material, mi!));
@@ -779,10 +804,15 @@ server.registerTool(
         } else {
           const r = await useGameMaterial(b, p.archive, t.mesh, t.material, mi!, { force });
           add(r.written);
-          done.push({ ...t, mi, fits: r.fit.fits, why: r.fit.why });
+          // On the Desk a surface it wore before is gone with it, so it does not go into a project.
+          const dropped = onDesk ? dropPartFiles(p.archive, t.material, deskPartFolder(t.mesh)) : [];
+          done.push({ ...t, mi, fits: r.fit.fits, why: r.fit.why, ...(dropped.length ? { deleted: dropped } : {}) });
         }
+        if (onDesk) desk.markPart(onDesk.id, t.material, !game);
       }
-      return text({ saved: { project: p.dir, applied: done, files: written }, next: "Pack the project and install it (REDcode: Pack and Play), then look in the game. A surface's setup opens in EDGEmat's setup editor (mat_edit) for its color, tiling and the rest." });
+      if (onDesk)
+        return text({ saved: { desk: onDesk.id, where: p.where, folder: p.archive, applied: done, files: written }, next: "It changed on the Desk only: mat_desk to_project with this id puts the changed mesh and its files in a project. A surface's setup edits with mat_edit save 'desk' and this desk_id." });
+      return text({ saved: { project: p.where, applied: done, files: written }, next: "Pack the project and install it (REDcode: Pack and Play), then look in the game. A surface's setup opens in EDGEmat's setup editor (mat_edit) for its color, tiling and the rest." });
     } catch (e) {
       return failure(e);
     }
@@ -794,14 +824,27 @@ server.registerTool(
   {
     description:
       "A prop's parts in a project (its material entries: an EDGEfab prop has one per part) and what each wears: the model's own texture, a game surface (and its color), a game material, or one made in the project. " +
-      "Change one with mat_apply (mi, surface, or model: true).",
-    inputSchema: { project: z.string(), mesh: z.string().describe("The mesh's game path in the project") },
+      "Change one with mat_apply (mi, surface, or model: true). desk_id in place of project: a game mesh on the Desk, as its entry's copy has it.",
+    inputSchema: {
+      project: z.string().optional(),
+      desk_id: z.string().optional().describe("A game mesh's Desk entry (mat_desk list), in place of project"),
+      mesh: z.string().optional().describe("The mesh's game path in the project; with desk_id, the entry's mesh"),
+    },
   },
-  async ({ project, mesh }) => {
+  async ({ project, desk_id, mesh }) => {
     try {
-      const p = projectFor(project);
-      const { parts, record } = await partsOf(await getBridge(), await library(), p.archive, mesh);
-      return text({ mesh, edgefab: record ? path.relative(p.dir, record.file) : undefined, parts: parts.map((x) => ({ material: x.name, wears: x.wears.kind, plain: x.wears.plain, mi: x.wears.mi, setup: x.wears.setup, model: x.model })) });
+      const b = await getBridge();
+      const p = await partPlace(project, desk_id, b);
+      const m = mesh ?? p.entry?.path;
+      if (!m) throw new Error("Pass mesh: the mesh's game path in the project.");
+      const { parts, record } = await partsOf(b, await library(), p.archive, m);
+      const changed = p.entry?.parts ?? [];
+      return text({
+        mesh: m,
+        ...(p.entry ? { desk: p.entry.id } : {}),
+        edgefab: record && project ? path.relative(projectFor(project).dir, record.file) : undefined,
+        parts: parts.map((x) => ({ material: x.name, wears: x.wears.kind, plain: x.wears.plain, mi: x.wears.mi, setup: x.wears.setup, model: x.model, ...(p.entry ? { changedOnDesk: changed.some((c) => c.toLowerCase() === x.name.toLowerCase()) } : {}) })),
+      });
     } catch (e) {
       return failure(e);
     }
@@ -900,7 +943,7 @@ server.registerTool(
       "Each entry has an id and its own edits, so one mesh can be on the Desk more than once as variations (variation 2, 3, or a name). " +
       "action 'list' shows the entries with their ids and edited setups. 'add' puts a mesh (.mesh) or a setup (.mlsetup) on it: a game path, or a file in a project's source\\archive; a copy there with no edits is reused, else a new variation starts. " +
       "'remove' takes entries off (ids), with their edits. 'rename' names an entry (id, name). 'clear' empties the Desk, edits included. " +
-      "'to_project' puts entries (ids, else all) in a WolvenKit project: each setup edited on a mesh entry is saved as a new setup with that mesh copied in and pointed at it (no other mod needed), the other meshes as they are. " +
+      "'to_project' puts entries (ids, else all) in a WolvenKit project: each setup edited on a mesh entry is saved as a new setup with that mesh copied in and pointed at it (no other mod needed), the other meshes as they are; a game mesh whose materials changed on the Desk (mat_apply desk_id; its parts) goes in as its changed copy, with the files written for them. " +
       "One variation of each file can go in: with several and no ids, to_project writes nothing and lists them; ask the modder which, then pass ids. " +
       "When the project already has its own copy of a mesh that no longer uses a setup edited on its entry, to_project writes nothing and lists the conflicts: ask the modder, then call again with replace true (the project's copy becomes the Desk's mesh) or false (the project keeps its copy; that entry stays on the Desk). " +
       "clear true with to_project then removes from the Desk what went into the project. " +
@@ -919,7 +962,7 @@ server.registerTool(
   async ({ action, path: p, ids, id, name, project, replace, clear }) => {
     try {
       const list = () => ({
-        entries: desk.entries().map((e) => ({ id: e.id, kind: e.kind, path: e.path, label: deskLabel(e), ...(e.root ? { project: e.root } : {}), edited: desk.edited(e) })),
+        entries: desk.entries().map((e) => ({ id: e.id, kind: e.kind, path: e.path, label: deskLabel(e), ...(e.root ? { project: e.root } : {}), edited: desk.edited(e), ...(e.parts?.length ? { parts: e.parts, partFiles: desk.partFiles(e) } : {}) })),
         folder: desk.dir,
       });
       if (action === "list") return text(list());
@@ -961,7 +1004,7 @@ server.registerTool(
           return text({
             written: [],
             conflicts,
-            next: "Nothing written. The project already has its own copy of these Desk meshes, and it no longer uses the setups edited on their entries. Ask the modder: replace the project's copies with the Desk's (replace true; what the copies had is lost), or keep them (replace false; those entries stay on the Desk). Then call to_project again.",
+            next: "Nothing written. The project already has its own copy of these Desk meshes, and it no longer uses the setups edited on their entries, or has other materials on the parts changed there. Ask the modder: replace the project's copies with the Desk's (replace true; what the copies had is lost), or keep them (replace false; those entries stay on the Desk). Then call to_project again.",
           });
       }
       const r = await desk.toProject(b, pr, suffixFor(pr.name), { replace, ids });

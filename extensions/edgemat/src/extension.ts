@@ -595,10 +595,13 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
       library,
       cacheDir: () => cacheDir,
       log,
-      changed: (archive, mesh) => {
-        desk.recopy(archive, mesh);
+      desk,
+      changed: (archive, mesh, _material, deskId) => {
         find.refresh();
         deskView.refresh();
+        // A game mesh on the Desk: REDcode's views redraw the entry's copy (#17).
+        if (deskId) return void deskMaterialsChanged(deskId);
+        desk.recopy(archive, mesh);
         materialsChanged.fire({ materials: [] });
       },
     }),
@@ -694,7 +697,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
         {
           modal: true,
           detail:
-            `${conflicts.map((c) => `${base(c.mesh)} no longer uses ${c.setups.map(base).join(", ")}, which you edited on the Desk.`).join("\n")}\n\n` +
+            `${conflicts.map((c) => `${base(c.mesh)} ${[c.setups.length ? `no longer uses ${c.setups.map(base).join(", ")}, which you edited on the Desk` : "", c.parts.length ? `has other materials on ${c.parts.join(", ")}, which you changed on the Desk` : ""].filter(Boolean).join(", and ")}.`).join("\n")}\n\n` +
             "Replace: the project's copy becomes the Desk's mesh, with your Desk edits; what the project's copy had is lost. " +
             "Keep: the project's copy stays as it is, and those edits stay on the Desk.",
         },
@@ -706,6 +709,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
     }
     const meshes = entries.filter((e) => e.kind === "mesh").length;
     const edited = entries.reduce((n, e) => n + desk.edited(e).length, 0);
+    const changedMeshes = entries.filter((e) => e.kind === "mesh" && e.parts?.length).length;
     const clearWord = entries.length === 1 ? "Add and Remove from the Desk" : "Add and Clear the Desk";
     // A project REDcode does not have open is opened afterwards, so the modder sees what went in.
     const opens = !openInRedcode(project) && fs.existsSync(project.dir);
@@ -717,6 +721,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
         detail:
           `${plural(meshes, "mesh")} and ${plural(edited, "setup")} edited on the Desk go into ${project.archive}. ` +
           `Each edited setup is saved as a new setup (named with _${suffix}), and the mesh it was edited on is copied in and pointed at it; the other meshes are copied as they are. ` +
+          (changedMeshes ? `${changedMeshes === 1 ? "The mesh" : plural(changedMeshes, "mesh")} whose materials you changed on the Desk ${changedMeshes === 1 ? "goes" : "go"} in changed, with ${changedMeshes === 1 ? "its" : "their"} new material files. ` : "") +
           `Meshes already in the project are kept, and changed only to point at the new setups${conflicts.length ? (replace ? ", except the ones you chose to replace" : "; the kept ones stay on the Desk with their edits") : ""}. ` +
           `${clearWord} removes from the Desk only what went into the project.` +
           (opens ? `\n\nThen ${project.name} opens in REDcode, ${opensHow}.` : ""),

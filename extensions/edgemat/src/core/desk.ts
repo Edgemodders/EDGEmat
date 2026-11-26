@@ -13,7 +13,8 @@ import type { BridgeClient } from "./bridgeClient";
 import { sameSetup, setupToJson } from "./edit";
 import { isFilePath } from "./find";
 import { readSetup } from "./openSetup";
-import { meshUses, newPathFor, projectArchive, saveToProject, type Project } from "./project";
+import { deskPartFolder, materialOf } from "./parts";
+import { meshUses, newPathFor, projectArchive, readJson, saveToProject, type Project } from "./project";
 import type { Setup } from "./setup";
 
 export interface DeskEntry {
@@ -30,6 +31,11 @@ export interface DeskEntry {
   name?: string;
   /** When it was put on the Desk (ISO time). */
   added: string;
+  /**
+   * A game mesh's materials changed on the Desk (a game surface or a game material on one, in the entry's
+   * copy of the mesh): Add to Project carries that copy and the files written for them.
+   */
+  parts?: string[];
 }
 
 export interface DeskResult {
@@ -50,6 +56,8 @@ export interface DeskConflict {
   mesh: string;
   /** The entry's edited setups its mesh uses and the project's copy does not. */
   setups: string[];
+  /** The materials changed on the entry (parts) that the project's copy has otherwise. */
+  parts: string[];
 }
 
 /** One setup edited on one entry, and the game path it goes to in a project. */
@@ -179,7 +187,7 @@ export class Desk {
    */
   open(kind: DeskEntry["kind"], p: string): { entry: DeskEntry; created: boolean } {
     const there = this.matching(p, kind);
-    const fresh = there.find((e) => !this.edited(e).length);
+    const fresh = there.find((e) => !this.edited(e).length && !e.parts?.length);
     if (fresh || (there.length && isFilePath(p) && this.entryAt(p))) return { entry: fresh ?? there[0], created: false };
     const w = where(p);
     const entry: DeskEntry = { id: newId(), kind, ...w, variation: Math.max(0, ...there.map((e) => e.variation)) + 1, added: new Date().toISOString() };
@@ -234,8 +242,15 @@ export class Desk {
     return fs.existsSync(f) ? f : undefined;
   }
 
-  /** The game paths of the setups edited on an entry. */
+  /** The game paths of the setups edited on an entry (a game mesh's part setups are its parts, not edits). */
   edited(e: Pick<DeskEntry, "id">): string[] {
+    const full = this.get(e.id);
+    const parts = full?.kind === "mesh" && !full.root ? path.join(this.archiveOf(e), deskPartFolder(full.path)).toLowerCase() + path.sep : undefined;
+    return this.files(e, (f) => /\.mlsetup$/i.test(f) && !(parts && f.toLowerCase().startsWith(parts)));
+  }
+
+  /** The game paths of the files in an entry's folder that pass `keep` (a full path). */
+  private files(e: Pick<DeskEntry, "id">, keep: (full: string) => boolean, from?: string): string[] {
     const out: string[] = [];
     const archive = this.archiveOf(e);
     const walk = (d: string) => {
@@ -243,11 +258,36 @@ export class Desk {
       for (const f of fs.readdirSync(d, { withFileTypes: true })) {
         const full = path.join(d, f.name);
         if (f.isDirectory()) walk(full);
-        else if (/\.mlsetup$/i.test(f.name)) out.push(path.relative(archive, full));
+        else if (keep(full)) out.push(path.relative(archive, full));
       }
     };
-    walk(archive);
+    walk(from ? path.join(archive, from) : archive);
     return out;
+  }
+
+  /**
+   * The folder a game mesh entry's parts change in (its own, shaped like a project's source\archive), with
+   * the game's mesh copied there first. A project's mesh changes in its project instead.
+   */
+  async partArchive(bridge: BridgeClient, e: DeskEntry): Promise<string> {
+    if (e.kind !== "mesh" || e.root || isFilePath(e.path)) throw new Error(`${deskLabel(e)} is not a game mesh on the Desk.`);
+    await this.meshFile(bridge, e);
+    return this.archiveOf(e);
+  }
+
+  /** Marks a material of a game mesh entry changed on the Desk, or no longer (after Back to the Game's Material). */
+  markPart(id: string, material: string, changed: boolean): void {
+    this.write(this.entries().map((e) => {
+      if (e.id !== id) return e;
+      const rest = (e.parts ?? []).filter((m) => !same(m, material));
+      const parts = changed ? [...rest, material] : rest;
+      return { ...e, parts: parts.length ? parts : undefined };
+    }));
+  }
+
+  /** The files written for a game mesh entry's parts (surface setups and their .mi), by game path. */
+  partFiles(e: DeskEntry): string[] {
+    return e.kind === "mesh" && !e.root && !isFilePath(e.path) ? this.files(e, () => true, deskPartFolder(e.path)) : [];
   }
 
   /** How many setups are edited across the Desk. */
@@ -344,6 +384,17 @@ export class Desk {
     for (const e of entries) {
       if (!fs.existsSync(path.join(project.archive, e.path))) continue;
       const setups: string[] = [];
+      const parts: string[] = [];
+      if (!e.root && e.parts?.length) {
+        // A part changed on the Desk that the project's copy has otherwise.
+        try {
+          const mine = (await readJson(bridge, this.archiveOf(e), e.path)).json.Data.RootChunk;
+          const theirs = (await readJson(bridge, project.archive, e.path)).json.Data.RootChunk;
+          for (const m of e.parts) if ((materialOf(mine, m) ?? "").toLowerCase() !== (materialOf(theirs, m) ?? "").toLowerCase()) parts.push(m);
+        } catch {
+          // An unreadable mesh is reported by toProject.
+        }
+      }
       for (const x of edits.filter((y) => y.entry.id === e.id)) {
         try {
           const desk = await meshUses(bridge, e.root, e.path, [x.gamePath]);
@@ -354,7 +405,7 @@ export class Desk {
           // An unreadable mesh is reported by toProject.
         }
       }
-      if (setups.length) out.push({ entry: e.id, mesh: e.path, setups });
+      if (setups.length || parts.length) out.push({ entry: e.id, mesh: e.path, setups, parts });
     }
     return out;
   }
@@ -379,7 +430,7 @@ export class Desk {
     if (!opts.replace) {
       for (const c of conflicts) {
         result.kept.push(c.entry);
-        result.notes.push(`${c.mesh}: the project keeps its own copy, which uses other materials, so the Desk's edits to ${c.setups.join(", ")} stay on the Desk.`);
+        result.notes.push(`${c.mesh}: the project keeps its own copy, which uses other materials, so the Desk's changes to ${[...c.setups, ...c.parts].join(", ")} stay on the Desk.`);
       }
     }
     // Meshes from another project (or replacing the project's own) come over first, so the pointing below changes the copy in this one.
@@ -392,15 +443,29 @@ export class Desk {
       if (result.kept.includes(e.id)) continue;
       const ownProject = sameDir(e.root, project.archive);
       const replace = opts.replace && conflicted.has(e.id);
+      // A game mesh whose parts changed on the Desk comes over as the entry's copy, with the files written for its parts.
+      const changed = !e.root && e.parts?.length ? path.join(this.archiveOf(e), e.path) : undefined;
+      if (changed && !fs.existsSync(changed)) {
+        result.notes.push(`${deskLabel(e)}: its changed copy is missing, so the game's mesh goes in without the parts' changes.`);
+      }
+      const copy = changed && fs.existsSync(changed) ? changed : undefined;
       if (!ownProject && (replace || !fs.existsSync(into(e.path)))) {
         fs.mkdirSync(path.dirname(into(e.path)), { recursive: true });
         if (e.root) fs.copyFileSync(path.join(e.root, e.path), into(e.path));
+        else if (copy) fs.copyFileSync(copy, into(e.path));
         else if (replace) await bridge.extract(e.path, into(e.path));
         // A game mesh not yet in the project is extracted below, unless the pointing writes it.
-        if (e.root || replace) result.written.push(e.path);
+        if (e.root || copy || replace) result.written.push(e.path);
         if (replace) result.notes.push(`${e.path}: the project's own copy, with other materials, was replaced by the Desk's.`);
       } else if (!ownProject) {
         result.notes.push(`${e.path} is in the project already: kept as it is.`);
+      }
+      if (copy) {
+        for (const f of this.partFiles(e)) {
+          fs.mkdirSync(path.dirname(into(f)), { recursive: true });
+          fs.copyFileSync(path.join(this.archiveOf(e), f), into(f));
+          if (!result.written.includes(f)) result.written.push(f);
+        }
       }
       meshes.push(e);
     }
