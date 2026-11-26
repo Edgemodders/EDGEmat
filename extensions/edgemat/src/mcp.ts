@@ -11,6 +11,7 @@
 import * as vscode from "vscode";
 import { execFile, exec } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { defaultCacheDir, KeyEnv, Services, type KeyService } from "./core";
 import type { Keys } from "./keys";
@@ -84,6 +85,27 @@ function runner(): Promise<{ command: string; env: Record<string, string> }> {
   });
 }
 
+/** Where Claude Code's installers put `claude` when its folder may not be on the PATH the editor got. */
+function claudeSpots(): string[] {
+  const home = os.homedir();
+  if (process.platform === "win32") {
+    const appData = process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
+    return [path.join(home, ".local", "bin", "claude.exe"), path.join(appData, "npm", "claude.cmd")];
+  }
+  return [path.join(home, ".local", "bin", "claude"), path.join(home, ".claude", "local", "claude")];
+}
+
+/** `claude` when the shell finds it; else the first installed copy, quoted; else `claude`, to fail as before. */
+function claudeCommand(): Promise<string> {
+  return new Promise((resolve) => {
+    exec("claude --version", { windowsHide: true, timeout: 20000 }, (err) => {
+      if (!err) return resolve("claude");
+      const found = claudeSpots().find((p) => fs.existsSync(p));
+      resolve(found ? quote(found) : "claude");
+    });
+  });
+}
+
 /** "Connect an Assistant (MCP)...". */
 export async function connectAssistant(context: vscode.ExtensionContext, keys: Keys, log: Log): Promise<void> {
   installServer(context.extensionPath, log);
@@ -149,8 +171,13 @@ export async function connectAssistant(context: vscode.ExtensionContext, keys: K
   const shell = (line: string) => new Promise<{ ok: boolean; out: string }>((resolve) =>
     exec(line, { windowsHide: true, timeout: 60000 }, (err, stdout, stderr) => resolve({ ok: !err, out: `${stdout}${stderr}`.trim() })),
   );
-  await shell("claude mcp remove --scope user edgemat");
-  const added = await shell(command(envFlags));
+  // The native installer's folder (~/.local/bin) is often on the PATH of the shell Claude Code runs in but
+  // not on the user's Windows PATH, which the editor's shell gets.
+  const claude = await claudeCommand();
+  if (claude !== "claude") log(`MCP: claude is not on the PATH; using ${claude}`);
+  const viaClaude = (line: string) => line.replace(/^claude /, `${claude} `);
+  await shell(viaClaude("claude mcp remove --scope user edgemat"));
+  const added = await shell(viaClaude(command(envFlags)));
   if (added.ok) {
     log(`MCP: ${added.out}`);
     const shared = await keys.shared();

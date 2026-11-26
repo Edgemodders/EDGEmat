@@ -12,6 +12,10 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 
 ## Unreleased
 
+**Fixed**
+
+- **Connect an Assistant (MCP)...** › **Connect Claude Code** finds Claude Code's `claude` where its installer put it (`%USERPROFILE%\.local\bin`, or npm's folder) when that folder is not on the Windows PATH, as with Claude Code's own installer. Before, it said `claude` was not on the PATH.
+
 ## 0.3.4 (2026-11-22)
 
 <!-- nexus

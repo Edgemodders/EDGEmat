@@ -52,8 +52,8 @@ Last updated 2026-10-26.
 | [The Desk's edits in the 3D view](#the-desks-edits-in-the-3d-view) | By hand, F5 or Ctrl+F5, with REDcode | #17, before 0.3.4 | 2026-11-22 | **Passed** (owner, all 8 steps). Built 2026-11-21. The no-library half of #17 is in the smoke test (passed 2026-11-21) |
 | [Normal check](#normal-check) | From `npm run normal-check`, then in the game | #11, before Wardrobe Designer 0.1.0 | 2026-11-15 | **Done: the game reads green down (DirectX).** The owner, laptop, midday sun from above: the **blue** rows (green down) look raised and the red rows (green up, EDGEmat until then) dented, clearest where the light falls fullest (the hip); some dots on the curving sides read either way. Claude's enlargement of the knee agrees: blue dots bright on top, red dots bright at the bottom. It matches EDGEfab's evidence. Fixed the same day: `normalMap()` green down by default, `materialsFromModel` flips glTF's by default; smoke checks the direction |
 | [Wardrobe Designer install](#wardrobe-designer-install) | By hand, in the game, from the release zip | Each Wardrobe Designer release | | Not run yet. Added 2026-10-30 with the release scaffolding; the draft zip builds (65 KB, the game-folder layout) |
-| [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | 2026-11-13 | **Pass** (owner, laptop, 2026-11-13: steps 1 to 6, on this release's code: Connect Claude Code's `edgemat` server lists 14 tools). Found: the EDGE plugin's own EDGEmat server (npm 0.3.1, 10 tools) runs beside it, so Claude Code has two. Earlier: Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
-| [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-11-13 (0.3.2 test build) | **0.3.4 from the Marketplace: not run yet** (released 2026-11-22; its test build's VSIX was not installed before the run). **0.3.3 from the Marketplace: not run** (0.3.4 replaces it). **0.3.2's test build: pass** (owner, laptop, 2026-11-13: the VSIX from release run 43449615746, installed over 0.3.1 in a normal VS Code; version 0.3.2, Desk, Game Materials with its filter, Find and New Material open). 0.3.2 is on the Marketplace since 2026-11-13: its install there is open. **0.3.1 from the Marketplace: installs and opens** (owner, laptop, 2026-11-13), with its **Library** view, as 0.3.1 has. The next release: its test build's VSIX before it, then the Marketplace after it. Earlier: 0.3.0 from the Marketplace: not run yet |
+| [Connect an assistant](#connect-an-assistant) | By hand, in a normal VS Code, with Claude Code | Each release | 2026-11-24 (scripted) | **0.3.4, by script: partly run** (the EDGEweb session, 2026-11-24, in EDGEkit 1.143.1 with a scratch profile; see the section): steps 1 and 2 pass; step 3 said `claude` was not on the PATH (it is in `%USERPROFILE%\.local\bin`, not on the Windows PATH), **fixed 2026-11-25** (Connect Claude Code looks there); step 4 found no server; 5 skipped; 6 EDGEkit has no MCP list. The owner's run in a normal VS Code is open. **0.3.2: pass** (owner, laptop, 2026-11-13: steps 1 to 6, on this release's code: Connect Claude Code's `edgemat` server lists 14 tools). Found: the EDGE plugin's own EDGEmat server (npm 0.3.1, 10 tools) runs beside it, so Claude Code has two. Earlier: Not run yet (0.3.1). The bundled server was checked over stdio under Node and VS Code's binary on 2026-10-21: all 10 tools, `mat_library` reads the library |
+| [Install of the release](#install-of-the-release) | By hand, in a normal VS Code | Each release | 2026-11-24 (0.3.4, scripted) | **0.3.4 from the Marketplace: not run yet by hand** (released 2026-11-22; its test build's VSIX was not installed before the run). **0.3.4 by script: pass for what fits** (the EDGEweb session, 2026-11-24, EDGEkit 1.143.1, scratch profile, no game: installed from Open VSX over EDGEkit's built-in 0.3.3, version 0.3.4, Desk, Game Materials (REDbridge not found, as expected), Find and New Material open without an error). **0.3.3 from the Marketplace: not run** (0.3.4 replaces it). **0.3.2's test build: pass** (owner, laptop, 2026-11-13: the VSIX from release run 43449615746, installed over 0.3.1 in a normal VS Code; version 0.3.2, Desk, Game Materials with its filter, Find and New Material open). 0.3.2 is on the Marketplace since 2026-11-13: its install there is open. **0.3.1 from the Marketplace: installs and opens** (owner, laptop, 2026-11-13), with its **Library** view, as 0.3.1 has. The next release: its test build's VSIX before it, then the Marketplace after it. Earlier: 0.3.0 from the Marketplace: not run yet |
 | [Spec checks 1 to 10](#spec-checks-against-the-game) | Reading game files | M0 | 2026-10-14/15 | Done |
 | [In-game round 1](#in-game-round-1-colors-masks-overrides) | In the game | M0 | 2026-10-15 | Done |
 | [In-game round 2](#in-game-round-2-ratio) | In the game | M0 | 2026-10-15 | Done |
@@ -887,10 +887,21 @@ Added for 0.3.1, when the MCP server came into the extension. In a normal VS Cod
 |---|---|---|
 | 1 | Check `%LOCALAPPDATA%\EDGEmat\mcp\` | `edgemat-mcp.cjs` is there, made when EDGEmat started |
 | 2 | Game Materials › **...** (top right of the view) › **Connect an Assistant (MCP)...** | Four choices; the hint at the top says whether agents inside this editor already see EDGEmat |
-| 3 | **Connect Claude Code**; with a key set, answer the key question | "EDGEmat is connected to Claude Code" |
+| 3 | **Connect Claude Code**; with a key set, answer the key question | "EDGEmat is connected to Claude Code". Also where `claude` is only in `%USERPROFILE%\.local\bin` (Claude Code's own installer) and not on the Windows PATH: the log says `MCP: claude is not on the PATH; using "...claude.exe"`, then connects (fixed 2026-11-25) |
 | 4 | In a terminal: `claude mcp list` | `edgemat` points at the file from step 1, connected |
 | 5 | A new Claude Code session: "Which EDGEmat tools do you have?", then "Describe the Comfy rocker slim-fits' materials" | The 14 `mat_` tools (since 0.3.1: `mat_desk`, `mat_from_model`, `mat_reshape`, `mat_restyle` added to the 10); `mat_find` and `mat_describe` answer. With the EDGE plugin for Claude Code installed, its own EDGEmat server (from npm) is listed too: two sets of tools until the plugin's copy is the same version |
 | 6 | VS Code 1.101 or later: open the editor's own agent chat and its tools list | EDGEmat and its tools are listed |
+
+**Scripted run of 0.3.4, 2026-11-24** (the EDGEweb session, in EDGEkit 1.143.1, not a normal VS Code; fresh scratch profile and extensions folder; `LOCALAPPDATA`, `APPDATA` and `CLAUDE_CONFIG_DIR` scratch; no game folder; the other EDGE extensions off):
+
+| Step | Result |
+|---|---|
+| 1 | Pass: `edgemat-mcp.cjs`, 1,267,951 bytes, written when EDGEmat started |
+| 2 | Pass: the four choices; the hint "Agents inside this editor already see EDGEmat's tools." |
+| 3 | Failed: "EDGEmat: Claude Code's claude command isn't on the PATH...". The log: `'claude' is not recognized`. On this PC `claude.exe` is in `%USERPROFILE%\.local\bin`, on the bash PATH only. Fixed 2026-11-25: Connect Claude Code looks there and in npm's folder |
+| 4 | `No MCP servers configured.` (follows from step 3); the owner's own Claude Code config untouched |
+| 5 | Skipped (needs the game) |
+| 6 | Not seen: this EDGEkit has no MCP list in its palette |
 
 ### Install of the release
 
@@ -907,6 +918,8 @@ code --install-extension edgemat-<version>.vsix
 ```
 
 Uninstall with `code --uninstall-extension edgemodders.edgemat`.
+
+**Scripted run of 0.3.4, 2026-11-24** (the EDGEweb session, EDGEkit 1.143.1, scratch profile and folders, no game): step 1, `edgekit --install-extension edgemodders.edgemat --force` installed 0.3.4 from Open VSX over EDGEkit's built-in 0.3.3 (without `--force` it said 0.3.3 was installed); `code --install-extension edgemodders.edgemat` from the Marketplace also answered "v0.3.4 was successfully installed" in a real VS Code profile, whose window could not open. Step 2, the Extensions view lists EDGEmat 0.3.4. Step 3, Desk, Game Materials ("EDGEmat reads the game through REDbridge, which was not found...", as expected without REDcode), Find and New Material open with no error. The owner's run in a normal VS Code is still open.
 
 ### MCP server
 
