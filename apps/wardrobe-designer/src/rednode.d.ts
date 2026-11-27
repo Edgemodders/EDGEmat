@@ -1,4 +1,4 @@
-// The parts of REDnode's "rednode" package this app uses, from its own types (REDnode 0.49.0,
+// The parts of REDnode's "rednode" package this app uses, from its own types (REDnode 0.49.0 and 0.68.0,
 // packages/rednode/dist). REDnode gives the package at run time; it is not on npm.
 
 declare module "rednode" {
@@ -35,6 +35,8 @@ declare module "rednode" {
   }
   export interface TextProps { text: string; tone?: "normal" | "dim" | "accent" | "danger" }
   export interface ButtonProps { label: string; variant?: "primary" | "ghost" | "danger"; disabled?: boolean }
+  export type SelectOption = string | { value: string; label?: string; disabled?: boolean };
+  export interface SelectProps { label: string; options: SelectOption[]; value?: string; placeholder?: string; disabled?: boolean }
   export interface InputProps { label?: string; placeholder?: string; value?: string }
   export interface UiList extends UiNode<{ lines: string[] }> {
     push(...lines: string[]): void;
@@ -48,6 +50,12 @@ declare module "rednode" {
     list(options?: { lines?: string[]; keep?: number; height?: number; follow?: boolean }): UiList;
     row(...children: UiNode<any>[]): UiNode<Record<string, never>>;
     column(...children: UiNode<any>[]): UiNode<Record<string, never>>;
+    /** A dropdown (REDnode 0.68.0). `onChange` gets the value the player picks; `set` from code fires none. */
+    select(
+      label: string,
+      options: SelectOption[],
+      props?: Omit<SelectProps, "label" | "options"> & { onChange?: (value: string) => void },
+    ): UiNode<SelectProps>;
     progress(value: number, options?: { label?: string; max?: number }): UiNode<{ value: number; label?: string; max?: number }>;
     /**
      * A picture (REDnode 0.55.0, #37): a PNG, JPEG, WebP or GIF file in the package's folder or

@@ -12,7 +12,7 @@ It is a [REDnode](https://edgemodders.github.io/REDnode/) app for players, built
 
 | Needs | Why |
 |---|---|
-| [REDnode](https://www.nexusmods.com/cyberpunk2077/mods/35419) 0.56.1 or later, with REDswap (installed with it) | Runs the app, and swaps its archive into the game |
+| [REDnode](https://www.nexusmods.com/cyberpunk2077/mods/35419) 0.68.0 or later, with REDswap (installed with it) | Runs the app, and swaps its archive into the game |
 | REDbridge, from REDnode's Mod Manager (**Get REDbridge**; it installs .NET 10 if missing) | Reads the game's clothing and writes the new materials |
 | [REDagent](https://www.nexusmods.com/cyberpunk2077/mods/35670), with your Anthropic key | Plans each restyle |
 | An OpenAI key, for patterns and Reshape; a Tripo key, for Reshape | Your own accounts and credits; the [Keys](#your-keys) panel asks for them |
@@ -28,12 +28,12 @@ Not needed: Cyber Engine Tweaks, ArchiveXL, TweakXL, WolvenKit.
 
 | Do | What happens |
 |---|---|
-| Open the inventory (**I**), with V in view. Press **F10** until the window takes input | The window shows one button for each piece V visibly wears, named by where it is worn (**Head**, **Outer torso**, **Legs**...). With Equipment-EX, its slots too (**Torso outer**, **Necklace short**, **Hands**...). A **\*** marks one you restyled |
-| Press a slot | The log lists that item's layered materials: each layer's surface, color and share of the garment |
+| Open the inventory (**I**), with V in view. Press **F10** until the window takes input | The **Clothing** dropdown lists each piece V visibly wears, named by where it is worn and what it is (**Head: Cowboy hat...**, **Outer torso: ...**, **Legs: ...**). With Equipment-EX, its slots too (**Torso outer**, **Necklace short**, **Hands**...), however many pieces V wears. A **\*** marks one you restyled |
+| Pick a piece in **Clothing** | The log lists that item's layered materials: each layer's surface, color and share of the garment |
 | Type how it should look in **How should it look?**, press **Restyle** | REDagent's plan (a few seconds, one to five US cents), the materials saved, packed and swapped in. V and the inventory's preview show it |
 | Restyle it again | It builds on the first: "make it glossier" keeps the red |
 | **Restore** | The item goes back to the game's own look |
-| **Refresh** | Reads what V wears again, after you change clothes |
+| **Refresh** | Reads what V wears again, after you change clothes. The piece you picked stays picked while V still wears it |
 
 What words do:
 

@@ -98,8 +98,13 @@ interface State {
 // ---------- the window ----------
 
 const status = ui.text("Waiting for V to be in the world...", { tone: "dim" });
-/** One button for each item V wears, made again each time the window reads V (see mainView). */
-let slotButtons: UiNode<ButtonProps>[] = [];
+/**
+ * What V wears, one option for each piece (REDnode 0.68.0's dropdown): with Equipment-EX, V can wear a
+ * dozen pieces or more, too many for buttons. Each option's value is its slot, which stays the same
+ * across a Refresh; its options follow what V wears (labelSlots).
+ */
+const NoPick = "Pick a piece of clothing V wears";
+const slotSelect = ui.select("Clothing", [], { placeholder: "Reading what V wears...", value: "", disabled: true, onChange: (slot) => void pickSlot(slot) });
 const picked = ui.text("Pick a piece of clothing V wears.", { tone: "dim" });
 let words = "";
 const wordsInput = ui.input({ label: "How should it look?", placeholder: "red leather, yellow denim...", onChange: (v) => (words = v), onSubmit: (v) => { words = v; void restyle(); } });
@@ -176,14 +181,11 @@ let mainWindow: { close(): void } | undefined;
 const refreshButton = ui.button("Refresh", () => void readWorn(), { variant: "ghost" });
 const keysButton = ui.button("Keys", () => void openKeys(), { variant: "ghost" });
 
-/** The main view: the items V wears as buttons, three to a row, then Restyle and Reshape. */
+/** The main view: the dropdown of what V wears, then Restyle and Reshape. */
 function mainView() {
-  slotButtons = worn.map((w, i) => ui.button(slotLabel(w), () => void pick(i), { variant: w.item ? "primary" : "ghost", disabled: busy || !w.item }));
-  const rows = [];
-  for (let i = 0; i < slotButtons.length; i += 3) rows.push(ui.row(...slotButtons.slice(i, i + 3)));
   return [
     status,
-    ...(rows.length ? rows : [ui.text("What V wears shows here, one button for each piece.", { tone: "dim" })]),
+    slotSelect,
     picked,
     wordsInput,
     ui.row(restyleButton, restoreButton, refreshButton),
@@ -240,7 +242,7 @@ const setBusy = (on: boolean) => {
   busy = on;
   restyleButton.set({ disabled: on || !current });
   restoreButton.set({ disabled: on || !current || !readState().restyles[current.item.id] });
-  slotButtons.forEach((b, i) => b.set({ disabled: on || !worn[i]?.item }));
+  slotSelect.set({ disabled: on || !worn.some((w) => w.item) });
   refreshButton.set({ disabled: on });
   shapeButtons();
 };
@@ -397,11 +399,16 @@ async function readWorn(soon = false): Promise<void> {
     });
     const ex = outfit || found.some((w) => exSlot(w.slot));
     if (soon && !found.length) throw new NotReady("V wears nothing yet.");
+    // The piece picked before stays picked while V still wears it in the same slot; else nothing is.
+    const was = pickedSlot !== undefined ? worn[pickedSlot] : undefined;
     worn = found;
+    const still = was?.item ? worn.findIndex((w) => w.slot === was.slot && w.item?.id === was.item?.id) : -1;
+    if (still >= 0) pickedSlot = still;
+    else if (was) unpick();
     say(`V (${body} body) wears ${worn.length} item(s)${outfit ? ", in Equipment-EX's outfit (the base slots it hides left out)" : ex ? ", with Equipment-EX's slots" : ""}, read in ${seconds(t)}`);
     for (const w of worn) say(`  ${w.label}: ${w.item ? `${w.item.name ?? "(no name)"}, ${w.item.id}${restyled[w.item.id] ? `, restyled: ${restyled[w.item.id].words.join(", then ")}` : ""}` : `${w.hash}, not in EDGEmat's item index`}`);
     status.set({ text: "Pick a piece of clothing, then say how it should look. * marks one you restyled.", tone: "normal" });
-    openMain();
+    labelSlots();
   } catch (e) {
     if (soon && e instanceof NotReady) throw e;
     failed("Reading what V wears", e);
@@ -421,15 +428,43 @@ async function readWornSoon(): Promise<void> {
   }
 }
 
-/** A slot button's words: where V wears it, what it is, and * for an item restyled. */
+/** An option's words: where V wears it, what it is, and * for an item restyled. */
 function slotLabel(w: Worn): string {
   const name = w.item?.name ?? w.item?.id ?? "(not in the index)";
   return `${w.label}: ${name}${w.item && readState().restyles[w.item.id] ? " *" : ""}`;
 }
 
-/** Each slot button names what V wears there, with * for an item restyled. */
+/**
+ * The dropdown follows what V wears: one option per piece, in the slots' order, naming it with * for one
+ * restyled; a piece not in EDGEmat's item index is listed but cannot be picked. The picked one stays chosen.
+ */
 function labelSlots(): void {
-  worn.forEach((w, i) => slotButtons[i]?.set({ label: slotLabel(w), disabled: busy || !w.item, variant: w.item ? "primary" : "ghost" }));
+  const any = worn.some((w) => w.item);
+  slotSelect.set({
+    options: worn.map((w) => ({ value: w.slot, label: slotLabel(w), disabled: !w.item })),
+    value: pickedSlot !== undefined && worn[pickedSlot] ? worn[pickedSlot].slot : "",
+    placeholder: worn.length ? `${NoPick} (${worn.length})` : "V wears nothing the window can restyle",
+    disabled: busy || !any,
+  });
+}
+
+/** The player picked a piece in the dropdown. */
+function pickSlot(slot: string): void {
+  const i = worn.findIndex((w) => w.slot === slot);
+  if (i < 0 || busy) return labelSlots();
+  void pick(i);
+}
+
+/** Nothing picked: after a Refresh finds the picked piece gone. */
+function unpick(): void {
+  pickedSlot = undefined;
+  current = undefined;
+  shape = undefined;
+  showShape();
+  picked.set({ text: "Pick a piece of clothing V wears.", tone: "dim" });
+  restyleButton.set({ disabled: true });
+  restoreButton.set({ disabled: true });
+  shapeButtons();
 }
 
 // ---------- one item's materials ----------
