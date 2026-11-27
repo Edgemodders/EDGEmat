@@ -295,7 +295,7 @@ async function finishProjectOpen(context: vscode.ExtensionContext): Promise<void
     const rc = ext.isActive ? ext.exports : await ext.activate().then((a) => a, () => undefined);
     for (let i = 0; i < 40 && !(project && openInRedcode(project)); i++) await new Promise((r) => setTimeout(r, 250));
     await vscode.commands.executeCommand("redcode.project.focus").then(undefined, () => undefined);
-    // REDcode selects a file in its Project view only from inside; revealInProject is asked for (REDcode #27).
+    // REDcode selects a file in its Project view through revealInProject (REDcode #27, 0.10.10 and later).
     const reveal = (rc as { revealInProject?: (f: string) => Promise<boolean> } | undefined)?.revealInProject;
     if (p.file && typeof reveal === "function") shown = (await reveal.call(rc, p.file).then((ok) => ok !== false, () => false)) ?? false;
   } else if (p.file && fs.existsSync(p.file)) {
