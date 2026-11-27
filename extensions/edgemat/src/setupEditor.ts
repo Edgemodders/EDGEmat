@@ -530,7 +530,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
     }
     if (pick.route === "new") {
       const search: MeshSearch = { folder: "", read: 0, skipped: [] };
-      const uses = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Finding the meshes that use this setup" }, () =>
+      const uses = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "EDGEmat: finding the meshes that use this setup" }, () =>
         meshesUsing(bridge, gamePath!, project.archive, 60, true, search, [target]),
       );
       this.host.log(`Meshes that use ${gamePath}: ${uses.length} of ${search.read} read in ${search.folder}`);
@@ -556,7 +556,7 @@ export class SetupEditor implements vscode.CustomEditorProvider<SetupDocument> {
       }
     }
 
-    const result = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Saving into ${project.name}` }, () =>
+    const result = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `EDGEmat: saving into ${project.name}` }, () =>
       saveToProject(bridge, { setup: doc.setup!, archive: project.archive, target, from: gamePath, meshes, suffix }),
     );
     doc.saved = doc.setup;

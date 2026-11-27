@@ -27,6 +27,7 @@ How to keep it (the same way as [REDnode's](https://edgemodders.github.io/REDnod
 **Fixed**
 
 - **Connect an Assistant (MCP)...** › **Connect Claude Code** finds Claude Code's `claude` where its installer put it (`%USERPROFILE%\.local\bin`, or npm's folder) when that folder is not on the Windows PATH, as with Claude Code's own installer. Before, it said `claude` was not on the PATH.
+- **Use a Game Material...** finds a material by every word you type, in its name, its path, "glow" for one that glows and "glass" for glass, as the assistants' `mat_materials` does. Before, `glow blue` found nothing, since VS Code's list wanted the words together.
 
 ## 0.3.4 (2026-11-22)
 

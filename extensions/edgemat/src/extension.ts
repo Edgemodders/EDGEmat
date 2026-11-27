@@ -695,7 +695,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
     // Meshes the project already has with other materials: replace them with the Desk's, or keep them and leave those edits on the Desk.
     let conflicts: DeskConflict[];
     try {
-      conflicts = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Comparing ${what} with ${project.name}` }, () => desk.conflicts(bridge, project, suffix, ids));
+      conflicts = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `EDGEmat: comparing ${what} with ${project.name}` }, () => desk.conflicts(bridge, project, suffix, ids));
     } catch (e) {
       void vscode.window.showErrorMessage(`EDGEmat: Could not compare the Desk with ${project.name}: ${e instanceof Error ? e.message : String(e)}`);
       return;
@@ -741,7 +741,7 @@ export function activate(context: vscode.ExtensionContext): EDGEmatApi {
     );
     if (!go) return;
     try {
-      const r = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Adding ${what} to ${project.name}` }, () => desk.toProject(bridge, project, suffix, { replace, ids }));
+      const r = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `EDGEmat: adding ${what} to ${project.name}` }, () => desk.toProject(bridge, project, suffix, { replace, ids }));
       log(`${what === "the Desk" ? "The Desk" : what} added to ${project.archive}: ${r.written.join(", ") || "nothing written"}`);
       for (const s of r.setups) log(`  ${s.from} saved as ${s.to}${s.meshes.length ? `, pointed at by ${s.meshes.join(", ")}` : ""}`);
       for (const n of r.notes) log(`  ${n}`);

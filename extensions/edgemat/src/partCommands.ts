@@ -8,7 +8,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { AnyMask, backToGame, backToModel, deskPartFolder, describeSurface, dropPartFiles, gameMaterials, materialFit, useGameMaterial, useSurface, type BridgeClient, type Desk, type GameMaterialList, type Library, type PartResult, type Template } from "./core";
+import { AnyMask, backToGame, backToModel, deskPartFolder, describeSurface, dropPartFiles, gameMaterials, materialFit, searchGameMaterials, useGameMaterial, useSurface, type BridgeClient, type Desk, type GameMaterialList, type Library, type PartResult, type Template } from "./core";
 import { FindView } from "./findView";
 
 export interface PartHost {
@@ -28,6 +28,43 @@ export interface PartHost {
 type Part = NonNullable<ReturnType<typeof FindView.partOf>>;
 
 const file = (p: string) => p.split("\\").pop() ?? p;
+
+type MaterialItem = vscode.QuickPickItem & { mi?: string };
+
+/**
+ * A game material picked by words as you type, each word in its name or path, "glow" for one that glows,
+ * "glass" for glass: the same search as mat_materials (searchGameMaterials). The quick pick's own filter
+ * wants the words together in one field, so "glow blue" found nothing; these items are always shown.
+ */
+function pickGameMaterial(l: GameMaterialList, material: string): Promise<MaterialItem | undefined> {
+  const qp = vscode.window.createQuickPick<MaterialItem>();
+  qp.title = `Use a Game Material on ${material} (${l.materials.length} suit any shape)`;
+  qp.placeholder = "Search: glass, glow blue, metal, wood...";
+  const byPath: MaterialItem = { label: "$(edit) A game path...", description: "any .mi, such as one from REDcode's Game Assets", alwaysShow: true };
+  const show = (value: string) => {
+    const found = searchGameMaterials(l, value, Infinity);
+    qp.items = [
+      byPath,
+      ...found.map((m): MaterialItem => ({ label: m.name, description: [m.glass ? "glass" : "", m.glow ? "glows" : "", file(m.base)].filter(Boolean).join(" · "), detail: m.path, mi: m.path, alwaysShow: true })),
+      ...(found.length ? [] : [{ label: `No game material matches "${value.trim()}"`, description: "try fewer words, or a game path", alwaysShow: true }]),
+    ];
+  };
+  show("");
+  qp.onDidChangeValue(show);
+  return new Promise((resolve) => {
+    qp.onDidAccept(() => {
+      const it = qp.selectedItems[0];
+      if (!it || (!it.mi && it !== byPath)) return;
+      resolve(it);
+      qp.hide();
+    });
+    qp.onDidHide(() => {
+      resolve(undefined);
+      qp.dispose();
+    });
+    qp.show();
+  });
+}
 
 const fail = (e: unknown) => void vscode.window.showErrorMessage(`EDGEmat: ${e instanceof Error ? e.message : String(e)}`);
 
@@ -115,12 +152,7 @@ export function registerPartCommands(host: PartHost): vscode.Disposable[] {
         list = undefined;
         throw e;
       });
-      type MaterialItem = vscode.QuickPickItem & { mi?: string };
-      const items: MaterialItem[] = [
-        { label: "$(edit) A game path...", description: "any .mi, such as one from REDcode's Game Assets", alwaysShow: true },
-        ...l.materials.map((m): MaterialItem => ({ label: m.name, description: [m.glass ? "glass" : "", m.glow ? "glows" : "", file(m.base)].filter(Boolean).join(" · "), detail: m.path, mi: m.path })),
-      ];
-      const pick = await vscode.window.showQuickPick(items, { title: `Use a Game Material on ${part.material} (${l.materials.length} suit any shape)`, placeHolder: "Search: glass, glow blue, metal, wood...", matchOnDescription: true, matchOnDetail: true });
+      const pick = await pickGameMaterial(l, part.material);
       if (!pick) return;
       let mi = pick.mi;
       if (!mi) {

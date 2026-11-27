@@ -44,7 +44,7 @@ Last updated 2026-10-26.
 | [Game materials on a prop's parts](#game-materials-on-a-props-parts) | By hand, F5, with REDcode; then in the game with EDGEbuilder | #12, before EDGEfab 0.1.0 | 2026-11-18 | **Passed**, all 11 steps (owner) |
 | [Desk parts check](#desk-parts-check) | From `npm run desk-parts-check` | Desk part commands | 2026-11-25 | **Passed** (Claude, outside the game, on the s1_055 sneakers with a scratch Desk and project) |
 | [Keep check](#keep-check) | From `npm run keep-check` | #13 | 2026-11-25 | **Passed** (Claude, outside the game, on EDGEfab's `neon_vending_box2` Tripo model: 70 materials; a new glow with every slot kept in 0.1 s against 60.7 s, no texture written) |
-| [Messages name EDGEmat](#messages-name-edgemat) | By hand, F5, with REDcode | #15, before 0.3.5 | | **Not run yet** |
+| [Messages name EDGEmat](#messages-name-edgemat) | By hand, F5, with REDcode | #15, before 0.3.5 | 2026-11-26 | **Partly run** (the EDGEweb session, by script): steps 2 to 4 as expected; steps 1 (`glow blue` found nothing) and 5 (a progress notice without EDGEmat:) differed, both fixed 2026-11-27; steps 1 and 5 to run again |
 | [Game materials on a Desk mesh](#game-materials-on-a-desk-mesh) | By hand, F5, with REDcode; then in the game | Desk part commands, before 0.3.5 | | **Not run yet** |
 | [Reshape with the game's materials](#reshape-with-the-games-materials) | From `node scripts/reshape-check.mjs` (no credits: the hat made in the Reshape and keys test), then in the game | W3, before Wardrobe Designer 0.1.0 | 2026-11-18 | **Passed** (owner, steps 3 to 5, the three cowboy hats): the textures are the game's own, bright, not Tripo's paint. Finding: the band is a little distorted on the new shape ("not terrible"); it is the game's band bent by EDGEmat's fit (`transfer.ts`), not Tripo, so it can be improved later |
 | [The bake: color](#the-bake-color) | By hand, F5, with REDcode; then in the game | M5's first part, before Wardrobe Designer 0.1.0 | 2026-11-18 | **Passed**, all 4 steps (owner). Built 2026-11-16; smoke passes (the slim-fits' leather: median 50 against the flat map's 8, with grain). Claude drew the Cowboy hat's Reshape views with it: median 158 (was 81), light grey felt; black specks and peach patches remain |
@@ -787,7 +787,19 @@ Added 2026-11-25 (EDGEmat #15, from EDGEfab): the owner took EDGEmat's Add to Pr
 | 2 | Press **Reveal in REDcode** (on the notification at the bottom right, or under the bell in the status bar) | REDcode's **Project** view opens and selects `vending_parts.mesh` (a game material has no new `.mi` in the project) |
 | 3 | Right-click `..._wit_front` › **Use a Game Surface...** › **car paint metallic 01**, any color. Press **Reveal in REDcode** on its notification | The Project view selects `a_battered_cyberpunk_vending_machine_wit_front.mi` in `vending_parts\materials` |
 | 4 | Click **+** on the Desk line `vending_parts.mesh` (**Add to Project**), pick **EDGEmat_PropParts** | The answer starts "EDGEmat: Added vending_parts.mesh to EDGEmat_PropParts" (nothing new to write: the mesh is the project's own), with **Reveal in REDcode** |
-| 5 | Any other EDGEmat message you see on the way | It starts with **EDGEmat:** |
+| 5 | Any other EDGEmat message you see on the way, progress notices included ("EDGEmat: adding vending_parts.mesh to EDGEmat_PropParts") | It starts with **EDGEmat:** |
+
+**Scripted run, 2026-11-26** (the EDGEweb session, trial EDGEkit, EDGEmat at 5f8bd18, REDcode main 986d45b, REDbridge 0.19.0, a copy of the project at `S:\matwork27`; it already had car paint on `wit_front` and a generated `.mi` on `wit_details`, and the scratch Desk held two older entries):
+
+| Step | Result |
+|---|---|
+| 1 | **Different:** `glow blue` left only "A game path..."; **z emissive blue** was found by `emissive blue` or `z_emissive`. Then the notice "EDGEmat: a_battered_cyberpunk_vending_machine_wit_details now wears z_emissive_blue.mi. Pack the project to see it in the game." with Reveal in REDcode. The cause: the quick pick's own filter wants the words together in one field ("glow" was in the description, "blue" in the name). Fixed 2026-11-27: the list is searched by every word, as `mat_materials` does (`glow blue`: 4 found, z emissive blue among them, on the dev PC's list) |
+| 2 | As expected: REDcode's Project view selected `vending_parts.mesh` |
+| 3 | As expected: "EDGEmat: ..._wit_front now wears car paint metallic 01, grey. Tiling 5.9. ..." with Open Setup and Reveal in REDcode, which selected `vending_parts\materials\a_battered_cyberpunk_vending_machine_wit_front.mi` (with REDcode's Project filter off: a filter on `vending_parts.mesh` hid it) |
+| 4 | As expected: no project asked (one open), "EDGEmat: Add vending_parts.mesh to EDGEmat_PropParts?", then "EDGEmat: Added vending_parts.mesh to EDGEmat_PropParts: nothing new to write: the project has it all already. ..." with Reveal in REDcode, which selected the mesh. Pressed on the first of two `vending_parts.mesh` lines, perhaps an older entry |
+| 5 | **Different:** the progress notice "Adding vending_parts.mesh to EDGEmat_PropParts" had no **EDGEmat:**. Fixed 2026-11-27: the four progress notices (adding, comparing, saving into a project, finding a setup's meshes) start with it |
+
+Steps 1 and 5 to run again.
 
 ### Game materials on a Desk mesh
 
