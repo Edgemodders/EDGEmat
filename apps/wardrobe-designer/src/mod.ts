@@ -135,6 +135,13 @@ const restoreButton = ui.button("Restore", () => void restore(), { variant: "gho
 // No fixed height: the log fills what the window has left (at least 160 px, the window scrolls below
 // that), so the window ends at its own bottom edge with nothing of the game showing under its content.
 const log = ui.list({ keep: 1000 });
+/**
+ * Under the status line while the app works (owner, 2026-11-27: Restyle and Reshape take seconds to
+ * minutes, and the window should show it is still working). It slides while a step's length is not
+ * known and fills with Tripo's percentage; its label counts the time each second and says what the
+ * step usually takes. Only in the main view while busy (setBusy).
+ */
+const working = ui.progress(null, { label: "" });
 const patternsButton = ui.button(`Patterns: ${ServiceNames[patternService]}`, () => switchPatterns(), { variant: "ghost" });
 
 function switchPatterns(): void {
@@ -213,6 +220,7 @@ const mainTitleButtons = (): TitleButton[] => [
 function mainView() {
   return [
     status,
+    ...(busy ? [working] : []),
     slotSelect,
     picked,
     wordsInput,
@@ -268,12 +276,48 @@ const failed = (what: string, e: unknown) => {
 /** One thing at a time: a restyle or restore turns the buttons off until it is done. */
 let busy = false;
 const setBusy = (on: boolean) => {
+  const was = busy;
   busy = on;
   restyleButton.set({ disabled: on || !current });
   restoreButton.set({ disabled: on || !current || !readState().restyles[current.item.id] });
   slotSelect.set({ disabled: on || !worn.some((w) => w.item) });
   shapeButtons();
+  if (on === was) return;
+  clearInterval(workTimer);
+  workTimer = undefined;
+  if (on) {
+    workSince = Date.now();
+    workAbout = undefined;
+    workPct = null;
+    drawWork();
+    workTimer = setInterval(drawWork, 1000);
+  }
+  // The bar comes and goes with the main view made again; typed words stay (an input keeps its value).
+  openMain();
 };
+
+let workSince = 0;
+let workTimer: ReturnType<typeof setInterval> | undefined;
+/** What the step under way usually takes, and how much of it is done when the service says (Tripo). */
+let workAbout: string | undefined;
+let workPct: number | null = null;
+
+function drawWork(): void {
+  const s = Math.round((Date.now() - workSince) / 1000);
+  const time = s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")} s`;
+  working.set({ value: workPct, label: `Working: ${time} so far${workAbout ? `; this step usually takes ${workAbout}` : ""}` });
+}
+
+/**
+ * A step of the work under way: the status line says it, and the progress bar what it usually takes
+ * (`about`) and its percentage when known (`pct`, else the bar slides).
+ */
+function step(text: string, about?: string, pct: number | null = null): void {
+  status.set({ text, tone: "dim" });
+  workAbout = about;
+  workPct = pct;
+  if (busy) drawWork();
+}
 
 // ---------- the work project's record ----------
 
@@ -608,7 +652,7 @@ function parseRecipe(text: string): Recipe | undefined {
 
 async function plan(look: Look, want: string): Promise<Recipe | undefined> {
   const t = Date.now();
-  status.set({ text: "Asking REDagent for a plan...", tone: "dim" });
+  step("Asking REDagent for a plan...", "a few seconds");
   say(`Plan: "${want}" for ${look.item.name ?? look.item.id}`);
   let text = "";
   const answer = await agent.ask(PlanPrompt(want), { context: planContext(look), onText: (piece) => (text += piece) });
@@ -640,7 +684,7 @@ async function plan(look: Look, want: string): Promise<Recipe | undefined> {
 async function imageKey(service: ImageService, why = `To make the pattern you asked for as a texture with ${ServiceNames[service]}, with your own key and credits`): Promise<string | null> {
   const key = await secrets.shared(service);
   if (key) return key;
-  status.set({ text: `REDnode is asking for your ${service === "openai" ? "OpenAI" : "Gemini"} key, in its own window...`, tone: "dim" });
+  step(`REDnode is asking for your ${service === "openai" ? "OpenAI" : "Gemini"} key, in its own window...`);
   say(`${ServiceNames[service]} needs your ${KeyHelp[service]}: REDnode asks for it in its own window`);
   return secrets.askShared(service, { reason: why });
 }
@@ -648,7 +692,7 @@ async function imageKey(service: ImageService, why = `To make the pattern you as
 /** A pattern's image from the chosen service: a seamless texture from its words, as PNG. */
 const patternImage = (service: ImageService, key: string): PatternImage => async (words) => {
   const t = Date.now();
-  status.set({ text: `${ServiceNames[service]} is making the pattern "${words}"...`, tone: "dim" });
+  step(`${ServiceNames[service]} is making the pattern "${words}"...`, "about 15 s");
   const img = await generateTexture(service, words, { key });
   say(`  ${ServiceNames[service]} (${img.model}) made "${words}" in ${seconds(t)}`);
   const png = await imageAsPng(await getBridge(), img.bytes, img.mime.includes("jpeg") ? ".jpg" : ".png");
@@ -718,7 +762,7 @@ async function restyle(): Promise<void> {
   try {
     const recipe = await plan(look, want);
     if (!recipe) return;
-    status.set({ text: "Making the materials...", tone: "dim" });
+    step("Making the materials...");
     const t2 = Date.now();
     // The key before anything is written, so a pattern the player has no key for changes nothing.
     const patterns = recipe.patterns?.filter((p) => p?.setup && p?.words) ?? [];
@@ -751,7 +795,7 @@ async function restyle(): Promise<void> {
     for (const f of s.originals) if (!kept.some((x) => sameFile(x, f))) removeFile(f);
     s.originals = [];
     writeState(s);
-    status.set({ text: "Packing and swapping it in...", tone: "dim" });
+    step("Packing and swapping it in...", "a second or two");
     await packAndSwap(look.item.id);
     status.set({ text: `Restyled in ${seconds(t)}.${recipe.notes ? ` ${recipe.notes}` : ""}`, tone: "accent" });
     labelSlots();
@@ -774,7 +818,7 @@ async function restore(): Promise<void> {
   const t = Date.now();
   setBusy(true);
   try {
-    status.set({ text: "Putting the game's look back...", tone: "dim" });
+    step("Putting the game's look back...");
     delete s.restyles[look.item.id];
     dropMade(s, look.item.id);
     const kept = Object.values(s.restyles).flatMap((x) => x.files);
@@ -849,7 +893,7 @@ async function startReshape(): Promise<void> {
   const t = Date.now();
   setBusy(true);
   try {
-    status.set({ text: "Drawing it from four sides...", tone: "dim" });
+    step("Drawing it from four sides...", "a few seconds");
     shape = await reshapeViews(await getBridge(), await getLibrary(), dir, look.meshes, { archive: archiveDir, raw: rawDir }, reshapeWork(look), { log: (l) => say(`  ${l}`) });
     say(`Reshape ${look.item.name ?? look.item.id}: drawn in ${seconds(t)}: ${shape.sheet}`);
     status.set({ text: shape.fit.ok ? "Say how its shape should change, and press Change." : `This one can be changed in pictures, not made yet: ${shape.fit.why}.`, tone: "normal" });
@@ -871,7 +915,7 @@ async function changeShape(): Promise<void> {
   try {
     const key = await imageKey("openai", "To change the pictures of your clothing with GPT Image, with your own key and credits");
     if (!key) return void status.set({ text: "Reshape's pictures need your OpenAI key: nothing was changed.", tone: "danger" });
-    status.set({ text: `GPT Image is changing the pictures: "${want}"...`, tone: "dim" });
+    step(`GPT Image is changing the pictures: "${want}"...`, "about half a minute");
     const c = await reshapeChange(await getBridge(), v, want, { key, what: look.item.name ?? "garment", service: "openai", log: (l) => say(`  ${l}`) });
     say(`Changed in ${seconds(t)}: ${c.sheet}`);
     status.set({ text: v.fit.ok ? "Look at the pictures: change again, Back, or Make it." : "Look at the pictures: change again or Back.", tone: "accent" });
@@ -905,7 +949,7 @@ async function backShape(): Promise<void> {
   const t = Date.now();
   setBusy(true);
   try {
-    status.set({ text: `Taking "${last.words}" off V...`, tone: "dim" });
+    step(`Taking "${last.words}" off V...`);
     const b = await getBridge();
     for (const f of top.written) {
       const out = path.join(archiveDir, f);
@@ -930,7 +974,7 @@ async function backShape(): Promise<void> {
     writeState(s);
     reshapeBack(v);
     say(`Back: "${last.words}" taken away, and off V: ${top.written.length} file(s) as they were before Make it`);
-    status.set({ text: "Packing and swapping it in...", tone: "dim" });
+    step("Packing and swapping it in...", "a second or two");
     await packAndSwap(look.item.id);
     status.set({ text: `"${last.words}" taken off V in ${seconds(t)}.`, tone: "accent" });
     labelSlots();
@@ -967,11 +1011,12 @@ async function makeShape(): Promise<void> {
     const key = (await secrets.shared("tripo")) ?? (await secrets.askShared("tripo", { reason: "To make a 3D model of your changed clothing with Tripo, with your own key and credits" }));
     if (!key) return void status.set({ text: "Make it needs your Tripo key: nothing was made.", tone: "danger" });
     const tripo = new Tripo(key, { log: (l) => say(`  ${l}`) });
+    step("Sending the pictures to Tripo...", "about 4 minutes in all");
     const made = await reshapeModel(tripo, v, change, {
       log: (l) => say(`  ${l}`),
-      progress: (step, p) => status.set({ text: `Tripo is ${step === "model" ? "making the model" : "bringing it to the game's size"}: ${Math.round(p)}%...`, tone: "dim" }),
+      progress: (task, p) => step(`Tripo is ${task === "model" ? "making the model" : "bringing it to the game's size"}: ${Math.round(p)}%...`, "about 2 minutes", Math.round(p)),
     });
-    status.set({ text: "Fitting it on V...", tone: "dim" });
+    step("Fitting it on V...", "about 10 s");
     const s = readState();
     const had = s.restyles[look.item.id];
     // Copies of what the fit may write over (the item's files and its meshes), so Back can put them back.
@@ -995,7 +1040,7 @@ async function makeShape(): Promise<void> {
     for (const f of s.originals) if (!kept.some((x) => sameFile(x, f))) removeFile(f);
     s.originals = [];
     writeState(s);
-    status.set({ text: "Packing and swapping it in...", tone: "dim" });
+    step("Packing and swapping it in...", "a second or two");
     await packAndSwap(look.item.id);
     status.set({ text: `Made and put on V in ${seconds(t)}. Back takes this change off V again; Restore takes every change away.`, tone: "accent" });
     labelSlots();

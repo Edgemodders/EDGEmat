@@ -63,7 +63,8 @@ declare module "rednode" {
       options: SelectOption[],
       props?: Omit<SelectProps, "label" | "options"> & { onChange?: (value: string) => void },
     ): UiNode<SelectProps>;
-    progress(value: number, options?: { label?: string; max?: number }): UiNode<{ value: number; label?: string; max?: number }>;
+    /** A value of null slides back and forth: work whose length is not known (the UI kit's rn-progress without a value). */
+    progress(value: number | null, options?: { label?: string; max?: number }): UiNode<{ value: number | null; label?: string; max?: number }>;
     /**
      * A picture (REDnode 0.55.0, #37): a PNG, JPEG, WebP or GIF file in the package's folder or
      * `pkg.dataDir`, a `data:image/...` URL, or the bytes. Older REDnodes have none: check before use.

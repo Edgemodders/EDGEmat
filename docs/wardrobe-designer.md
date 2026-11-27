@@ -33,6 +33,7 @@ Not needed: Cyber Engine Tweaks, ArchiveXL, TweakXL, WolvenKit.
 | Type how it should look in **How should it look?**, press **Restyle** | REDagent's plan (a few seconds, one to five US cents), the materials saved, packed and swapped in. V and the inventory's preview show it |
 | Restyle it again | It builds on the first: "make it glossier" keeps the red |
 | **Restore** | The item goes back to the game's own look |
+| While it works | A bar under the status line moves, the time so far counts up, and its label says what the step usually takes. While Tripo makes a model, the bar fills with Tripo's percentage |
 | Change V's clothes | **Clothing** follows within a few seconds. The refresh icon in the title bar reads it at once. The piece you picked stays picked while V still wears it |
 
 What words do:
