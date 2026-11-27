@@ -33,7 +33,7 @@ Not needed: Cyber Engine Tweaks, ArchiveXL, TweakXL, WolvenKit.
 | Type how it should look in **How should it look?**, press **Restyle** | REDagent's plan (a few seconds, one to five US cents), the materials saved, packed and swapped in. V and the inventory's preview show it |
 | Restyle it again | It builds on the first: "make it glossier" keeps the red |
 | **Restore** | The item goes back to the game's own look |
-| **Refresh** | Reads what V wears again, after you change clothes. The piece you picked stays picked while V still wears it |
+| Change V's clothes | **Clothing** follows within a few seconds. The refresh icon in the title bar reads it at once. The piece you picked stays picked while V still wears it |
 
 What words do:
 
@@ -50,7 +50,7 @@ A first version. It changes a piece of clothing's shape by words, through pictur
 
 | Do | What happens |
 |---|---|
-| Press a slot, then **Reshape** | The item is drawn from four sides (front, left, back, right) in its look as V wears it. The Reshape line says whether it can be made yet |
+| Pick a piece in **Clothing**, then press **Reshape** | The item is drawn from four sides (front, left, back, right) in its look as V wears it. The Reshape line says whether it can be made yet |
 | Type the change in **Change its shape** ("make the brim twice as wide"), press **Change** | OpenAI's GPT Image changes the pictures with your key (about half a minute, a few tens of US cents). Look at them before going on: the model follows the pictures, mistakes included |
 | Change again ("a little narrower") | It builds on the last change |
 | **Back** | Takes the last change away |
@@ -59,12 +59,12 @@ A first version. It changes a piece of clothing's shape by words, through pictur
 | | |
 |---|---|
 | What can be made | Clothing that moves with one bone: hats, helmets, glasses. Other clothing can be changed in pictures; making it waits for the fit to bend with the body, which comes next |
-| The pictures | Side by side in the window, as it is and changed, on a dark background; a click opens one larger. Each is also kept in the app's data folder, on white (the background the image service and the fit work with) |
+| The pictures | Side by side in the window, as it is and changed, on a dark background; a click shows one larger in the window, and **Back** (or another click) goes back. Each is also kept in the app's data folder, on white (the background the image service and the fit work with) |
 | Only this body | A reshape changes the look for V's body; the other body's version and the item's other colors stay as they were, for now |
 
 ## Your keys
 
-While a key the app uses is missing, the window opens on **your keys**. Each key shows **Ready** or **Needed**; **Set** opens REDnode's own window, where you type the key (never in Wardrobe Designer), and it is kept for every EDGE tool. When every key is ready, the window goes on to the main view by itself; **Continue without them** goes on anyway, and a feature that needs a missing key says so. **Keys** in the main view comes back to it.
+While a key the app uses is missing, the window opens on **your keys**. Each key shows **Ready** or **Needed**; **Set** opens REDnode's own window, where you type the key (never in Wardrobe Designer), and it is kept for every EDGE tool. When every key is ready, the window goes on to the main view by itself; **Continue without them** goes on anyway, and a feature that needs a missing key says so. The key icon in the main view's title bar comes back to it.
 
 | Key | For | Where to make it |
 |---|---|---|

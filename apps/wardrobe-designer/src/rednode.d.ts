@@ -35,6 +35,13 @@ declare module "rednode" {
   }
   export interface TextProps { text: string; tone?: "normal" | "dim" | "accent" | "danger" }
   export interface ButtonProps { label: string; variant?: "primary" | "ghost" | "danger"; disabled?: boolean }
+  export interface TitleButton { id: string; label: string; icon?: "key" | "settings" | "back" | "refresh" | "help" | "info" | "add" | "edit" | "search" | "list" | "home" | "pin" | "reset" | "space"; on?: boolean; onClick?: () => void }
+  export interface UiWindow {
+    readonly id: string;
+    readonly closed: boolean;
+    set(changes: { title?: string; titleButtons?: TitleButton[]; children?: UiNode<any>[] }): void;
+    close(): void;
+  }
   export type SelectOption = string | { value: string; label?: string; disabled?: boolean };
   export interface SelectProps { label: string; options: SelectOption[]; value?: string; placeholder?: string; disabled?: boolean }
   export interface InputProps { label?: string; placeholder?: string; value?: string }
@@ -62,7 +69,8 @@ declare module "rednode" {
      * `pkg.dataDir`, a `data:image/...` URL, or the bytes. Older REDnodes have none: check before use.
      */
     image?(src: string | Uint8Array, options?: { width?: number; alt?: string; onClick?: () => void }): UiNode<{ src: string | Uint8Array; width?: number; alt?: string; version?: number }>;
-    window(options: { id?: string; title: string; width?: number; height?: number; anchor?: string; x?: number; y?: number; children: UiNode<any>[]; onClose?: () => void }): { close(): void };
+    /** `titleButtons` and `set` need REDnode 0.57.0 (#38): `set` changes the open window's content in place. */
+    window(options: { id?: string; title: string; width?: number; height?: number; anchor?: string; x?: number; y?: number; titleButtons?: TitleButton[]; children: UiNode<any>[]; onClose?: () => void }): UiWindow;
   };
 
   export const kernel: {

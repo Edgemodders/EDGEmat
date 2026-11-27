@@ -9,7 +9,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as zlib from "node:zlib";
-import { agent, api, archives, game, kernel, pkg, secrets, ui, type ButtonProps, type GameRef, type UiNode } from "rednode";
+import { agent, api, archives, game, kernel, pkg, secrets, ui, type ButtonProps, type GameRef, type TitleButton, type UiNode, type UiWindow } from "rednode";
 import type { BridgeClient } from "../../../extensions/edgemat/src/core/bridgeClient";
 import { defaultCacheDir } from "../../../extensions/edgemat/src/core/config";
 import { loadItems, type ItemEntry, type ItemLook } from "../../../extensions/edgemat/src/core/find";
@@ -110,7 +110,9 @@ let words = "";
 const wordsInput = ui.input({ label: "How should it look?", placeholder: "red leather, yellow denim...", onChange: (v) => (words = v), onSubmit: (v) => { words = v; void restyle(); } });
 const restyleButton = ui.button("Restyle", () => void restyle(), { disabled: true });
 const restoreButton = ui.button("Restore", () => void restore(), { variant: "ghost", disabled: true });
-const log = ui.list({ height: 200, keep: 1000 });
+// No fixed height: the log fills what the window has left (at least 160 px, the window scrolls below
+// that), so the window ends at its own bottom edge with nothing of the game showing under its content.
+const log = ui.list({ keep: 1000 });
 const patternsButton = ui.button(`Patterns: ${ServiceNames[patternService]}`, () => switchPatterns(), { variant: "ghost" });
 
 function switchPatterns(): void {
@@ -133,8 +135,8 @@ const reshapeButton = ui.button("Reshape", () => void startReshape(), { variant:
 const changeButton = ui.button("Change", () => void changeShape(), { disabled: true });
 const backButton = ui.button("Back", () => backShape(), { variant: "ghost", disabled: true });
 const makeButton = ui.button("Make it", () => void makeShape(), { variant: "ghost", disabled: true });
-// The pictures, side by side (ui.image, REDnode 0.55.0); a click opens one larger. The manifest needs
-// 0.56.1, so the guard matters only for a development copy on an older REDnode: the shape line
+// The pictures, side by side (ui.image, REDnode 0.55.0); a click shows one larger. The manifest needs
+// 0.68.0, so the guard matters only for a development copy on an older REDnode: the shape line
 // then says where they are instead.
 const canShow = typeof ui.image === "function";
 /** A dark square, for a picture slot before there is a picture (an empty path shows an error). */
@@ -148,48 +150,51 @@ function shown(sheet: string): string {
     return sheet;
   }
 }
-const beforeImage = canShow ? ui.image!(blank, { width: 210, alt: "As it is, from four sides", onClick: () => showLarger("before") }) : undefined;
-const afterImage = canShow ? ui.image!(blank, { width: 210, alt: "Changed, from four sides", onClick: () => showLarger("after") }) : undefined;
-let largerWindow: { close(): void } | undefined;
+const beforeImage = canShow ? ui.image!(blank, { width: 190, alt: "As it is, from four sides", onClick: () => showLarger("before") }) : undefined;
+const afterImage = canShow ? ui.image!(blank, { width: 190, alt: "Changed, from four sides", onClick: () => showLarger("after") }) : undefined;
+const largerImage = canShow ? ui.image!(blank, { width: 440, alt: "Larger", onClick: () => openMain(true) }) : undefined;
+const largerText = ui.text("", { tone: "dim" });
 
-/** One of the two pictures in its own, larger window. */
+/**
+ * One of the two pictures larger, in the main window's place (its picture view), with Back. It opened a
+ * window of its own before, which the Reshape test of 2026-11-16 never saw open (cause not found); one
+ * window, its content changed in place (REDnode 0.57.0), is also how the keys view works.
+ */
 function showLarger(which: "before" | "after"): void {
   const v = shape;
-  if (!v || !ui.image) return;
-  const file = which === "before" ? v.sheet : v.changes.at(-1)?.sheet ?? v.sheet;
-  largerWindow?.close();
-  largerWindow = ui.window({
-    id: "picture",
-    title: which === "before" ? "As it is" : `Changed: ${v.changes.at(-1)?.words ?? "nothing yet"}`,
-    width: 640,
-    height: 700,
-    anchor: "right",
-    x: -40,
-    children: [ui.text("Front and left side above, back and right side below.", { tone: "dim" }), ui.image(shown(file), { width: 600, alt: which === "before" ? "As it is" : "Changed" }), ui.button("Close", () => largerWindow?.close(), { variant: "ghost" })],
-    onClose: () => (largerWindow = undefined),
-  });
+  if (!v || !largerImage) return;
+  const last = v.changes.at(-1);
+  const file = which === "before" ? v.sheet : last?.sheet ?? v.sheet;
+  largerImage.set({ src: shown(file), alt: which === "before" ? "As it is" : "Changed" });
+  largerText.set({ text: `${which === "before" || !last ? "As it is" : `Changed: "${last.words}"`}. Front and left side above, back and right side below. Click it or press Back to go back.` });
+  show("picture", [largerText, largerImage, ui.button("Back", () => openMain(true), { variant: "ghost" })]);
 }
 
-// ---------- the window's two views ----------
-// One window, two views: the keys (first, while a key is missing) and the main view. The window kit
-// cannot swap a window's content, so a view change closes the window and opens it again with the same
-// id and size: REDnode keeps its place by both, so it stays where the player put it.
+// ---------- the window's views ----------
+// One window, three views: the keys (first, while a key is missing), the main view, and one picture
+// larger. A view change sets the open window's content in place (REDnode 0.57.0, #38): the same
+// place and size, no flicker.
 
-const WindowSize = { width: 480, height: canShow ? 900 : 760 };
-let view: "main" | "keys" | undefined;
-let mainWindow: { close(): void } | undefined;
-const refreshButton = ui.button("Refresh", () => void readWorn(), { variant: "ghost" });
-const keysButton = ui.button("Keys", () => void openKeys(), { variant: "ghost" });
+// Shorter than before (900): the Reshape test of 2026-11-16 found it running off the bottom of the
+// screen. Refresh and Keys are in the title bar, the dropdown takes one line, and the log fills the rest.
+const WindowSize = { width: 480, height: canShow ? 820 : 660 };
+type View = "main" | "keys" | "picture";
+let view: View | undefined;
+let mainWindow: UiWindow | undefined;
+const Titles: Record<View, string> = { main: "Wardrobe Designer", keys: "Wardrobe Designer: your keys", picture: "Wardrobe Designer: the picture" };
+const mainTitleButtons = (): TitleButton[] => [
+  { id: "refresh", label: "Refresh: read what V wears again", icon: "refresh", onClick: () => void (busy ? undefined : readWorn()) },
+  { id: "keys", label: "Your keys", icon: "key", onClick: () => void openKeys() },
+];
 
-/** The main view: the dropdown of what V wears, then Restyle and Reshape. */
+/** The main view: the dropdown of what V wears, then Restyle and Reshape, then the log. */
 function mainView() {
   return [
     status,
     slotSelect,
     picked,
     wordsInput,
-    ui.row(restyleButton, restoreButton, refreshButton),
-    ui.row(patternsButton, keysButton),
+    ui.row(restyleButton, restoreButton, patternsButton),
     ui.heading("Reshape"),
     shapeText,
     ...(beforeImage && afterImage ? [ui.row(beforeImage, afterImage)] : []),
@@ -199,15 +204,17 @@ function mainView() {
   ];
 }
 
-function show(next: "main" | "keys", children: UiNode<any>[]): void {
-  mainWindow?.close();
+function show(next: View, children: UiNode<any>[]): void {
   view = next;
+  const titleButtons = next === "main" ? mainTitleButtons() : [];
+  if (mainWindow && !mainWindow.closed) return mainWindow.set({ title: Titles[next], titleButtons, children });
   mainWindow = ui.window({
     id: "main",
-    title: next === "main" ? "Wardrobe Designer" : "Wardrobe Designer: your keys",
+    title: Titles[next],
     ...WindowSize,
     anchor: "left",
     x: 40,
+    titleButtons,
     children,
     onClose: () => {
       mainWindow = undefined;
@@ -243,7 +250,6 @@ const setBusy = (on: boolean) => {
   restyleButton.set({ disabled: on || !current });
   restoreButton.set({ disabled: on || !current || !readState().restyles[current.item.id] });
   slotSelect.set({ disabled: on || !worn.some((w) => w.item) });
-  refreshButton.set({ disabled: on });
   shapeButtons();
 };
 
@@ -393,6 +399,7 @@ async function readWorn(soon = false): Promise<void> {
     const outfit = await equipmentExActive();
     const slots = outfit ? ExSlots : AllSlots;
     const held = await itemsInSlots(ts, player, slots.map(([slot]) => slot));
+    wornKey = keyOf(held);
     held.forEach(({ slot, hash }, n) => {
       if (!hash || found.some((w) => w.hash === hash)) return;
       found.push({ slot, label: slots[n][1], hash, item: index.get(hash) });
@@ -427,6 +434,40 @@ async function readWornSoon(): Promise<void> {
     }
   }
 }
+
+/** What V wore at the last read: each slot with its item, so a change is seen. */
+let wornKey = "";
+const keyOf = (held: { slot: string; hash?: string }[]) => held.filter((h) => h.hash).map((h) => `${h.slot}=${h.hash}`).join(",");
+
+/**
+ * The window follows V's clothes without Refresh: every few seconds, while the main view shows and
+ * nothing runs, V's slots are read quietly (about 0.3 s of game calls), and when an item came, went or
+ * moved, what V wears is read again as Refresh does. REDnode sends no event when V's clothes change.
+ * The Reshape test of 2026-11-16 found the buttons stale until Refresh.
+ */
+const WatchEvery = 4000;
+let checking = false;
+async function checkWorn(): Promise<void> {
+  if (checking || busy || view !== "main" || !mainWindow || mainWindow.closed || !wornKey) return;
+  checking = true;
+  try {
+    const player = await api.GetPlayer(game.instance);
+    if (!player) return;
+    const ts = await api.GameInstance.GetTransactionSystem(game.instance);
+    const outfit = await equipmentExActive();
+    const slots = outfit ? ExSlots : AllSlots;
+    const now = keyOf(await itemsInSlots(ts, player, slots.map(([slot]) => slot)));
+    if (now !== wornKey && !busy) {
+      say("V's clothes changed: reading what V wears again");
+      await readWorn();
+    }
+  } catch {
+    // A load or a menu in the way: the next check tries again.
+  } finally {
+    checking = false;
+  }
+}
+setInterval(() => void checkWorn(), WatchEvery);
 
 /** An option's words: where V wears it, what it is, and * for an item restyled. */
 function slotLabel(w: Worn): string {
