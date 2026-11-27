@@ -91,8 +91,30 @@ interface Worn {
 
 /** What the work project holds: each restyled item's files, and game files copied in only to undo one. */
 interface State {
-  restyles: Record<string, { name: string | null; words: string[]; files: string[]; when: string }>;
+  restyles: Record<string, Restyle>;
   originals: string[];
+  /** Each item's Make its, newest last, so Back can take a made shape off V again. */
+  made: Record<string, Made[]>;
+}
+
+interface Restyle {
+  name: string | null;
+  words: string[];
+  files: string[];
+  when: string;
+}
+
+/**
+ * One Make it: the change it made (by its picture), the item's record before it, the files it wrote, and
+ * copies of those the project held before (in `saved`, at their game paths). A written file not copied
+ * was the game's own. Dropped by a restyle or Restore of the item, which build on it or take it all away.
+ */
+interface Made {
+  sheet: string;
+  had: Restyle | null;
+  written: string[];
+  copied: string[];
+  saved: string;
 }
 
 // ---------- the window ----------
@@ -258,10 +280,16 @@ const setBusy = (on: boolean) => {
 function readState(): State {
   try {
     const s = JSON.parse(fs.readFileSync(stateFile, "utf8")) as State;
-    return { restyles: s.restyles ?? {}, originals: s.originals ?? [] };
+    return { restyles: s.restyles ?? {}, originals: s.originals ?? [], made: s.made ?? {} };
   } catch {
-    return { restyles: {}, originals: [] };
+    return { restyles: {}, originals: [], made: {} };
   }
+}
+
+/** Forgets an item's Make its (a restyle builds on the made shape; Restore takes it all away). */
+function dropMade(s: State, itemId: string): void {
+  for (const m of s.made[itemId] ?? []) fs.rmSync(m.saved, { recursive: true, force: true });
+  delete s.made[itemId];
 }
 
 function writeState(s: State): void {
@@ -717,6 +745,7 @@ async function restyle(): Promise<void> {
     const files = [...(had?.files ?? [])];
     for (const f of written) if (!files.some((x) => sameFile(x, f))) files.push(f);
     s.restyles[look.item.id] = { name: look.item.name, words: [...(had?.words ?? []), want], files, when: new Date().toISOString() };
+    dropMade(s, look.item.id);
     // Game files copied in to undo an earlier restyle go now: this pack holds restyles again.
     const kept = Object.values(s.restyles).flatMap((x) => x.files);
     for (const f of s.originals) if (!kept.some((x) => sameFile(x, f))) removeFile(f);
@@ -747,6 +776,7 @@ async function restore(): Promise<void> {
   try {
     status.set({ text: "Putting the game's look back...", tone: "dim" });
     delete s.restyles[look.item.id];
+    dropMade(s, look.item.id);
     const kept = Object.values(s.restyles).flatMap((x) => x.files);
     const mine = rec.files.filter((f) => !kept.some((x) => sameFile(x, f)));
     for (const f of mine) removeFile(f);
@@ -853,12 +883,64 @@ async function changeShape(): Promise<void> {
   }
 }
 
-function backShape(): void {
-  if (busy || !shape?.changes.length) return;
-  const gone = reshapeBack(shape);
-  say(`Back: "${gone?.words}" taken away`);
+/**
+ * Takes the last change away. When it is the one Make it put on V, V's piece goes back as it was before
+ * that Make it too (owner, 2026-11-27: Back after Make it left the made cap on V), so a made shape the
+ * player does not like is one press away from gone; an earlier Make it stays on V until its own Back.
+ */
+async function backShape(): Promise<void> {
+  const look = current, v = shape, last = shape?.changes.at(-1);
+  if (busy || !look || !v || !last) return;
   confirmMake = false;
-  showShape();
+  const s = readState();
+  const stack = s.made[look.item.id] ?? [];
+  const top = stack.at(-1);
+  if (!top || !sameFile(top.sheet, last.sheet)) {
+    reshapeBack(v);
+    const onV = s.restyles[look.item.id]?.words.includes(`reshaped: ${last.words}`);
+    say(`Back: "${last.words}" taken away from the pictures${onV ? "; the shape made from it stays on V, since a restyle built on it: Restore takes it away" : ""}`);
+    showShape();
+    return;
+  }
+  const t = Date.now();
+  setBusy(true);
+  try {
+    status.set({ text: `Taking "${last.words}" off V...`, tone: "dim" });
+    const b = await getBridge();
+    for (const f of top.written) {
+      const out = path.join(archiveDir, f);
+      if (top.copied.some((x) => sameFile(x, f))) {
+        fs.copyFileSync(path.join(top.saved, f), out);
+        // A game mesh Restore had copied in comes back as one: it goes at the next restyle again.
+        if (!top.had?.files.some((x) => sameFile(x, f)) && !s.originals.some((x) => sameFile(x, f))) s.originals.push(f);
+      } else if (/\.mesh$/i.test(f)) {
+        // The game's own mesh in its place, as Restore does: REDswap keeps a left-out file's last copy.
+        fs.mkdirSync(path.dirname(out), { recursive: true });
+        await b.extract(f, out);
+        if (!s.originals.some((x) => sameFile(x, f))) s.originals.push(f);
+      } else {
+        removeFile(f);
+      }
+    }
+    if (top.had) s.restyles[look.item.id] = top.had;
+    else delete s.restyles[look.item.id];
+    stack.pop();
+    fs.rmSync(top.saved, { recursive: true, force: true });
+    if (!stack.length) delete s.made[look.item.id];
+    writeState(s);
+    reshapeBack(v);
+    say(`Back: "${last.words}" taken away, and off V: ${top.written.length} file(s) as they were before Make it`);
+    status.set({ text: "Packing and swapping it in...", tone: "dim" });
+    await packAndSwap(look.item.id);
+    status.set({ text: `"${last.words}" taken off V in ${seconds(t)}.`, tone: "accent" });
+    labelSlots();
+    if (pickedSlot !== undefined) await pick(pickedSlot, true);
+  } catch (e) {
+    failed("Taking it off V", e);
+  } finally {
+    setBusy(false);
+    showShape();
+  }
 }
 
 /**
@@ -890,21 +972,32 @@ async function makeShape(): Promise<void> {
       progress: (step, p) => status.set({ text: `Tripo is ${step === "model" ? "making the model" : "bringing it to the game's size"}: ${Math.round(p)}%...`, tone: "dim" }),
     });
     status.set({ text: "Fitting it on V...", tone: "dim" });
+    const s = readState();
+    const had = s.restyles[look.item.id];
+    // Copies of what the fit may write over (the item's files and its meshes), so Back can put them back.
+    const saved = path.join(reshapeWork(look), `before-make-${Date.now()}`);
+    const copied: string[] = [];
+    for (const f of [...(had?.files ?? []), ...v.meshes.map((m) => m.mesh)]) {
+      const from = path.join(archiveDir, f);
+      if (copied.some((x) => sameFile(x, f)) || !fs.existsSync(from)) continue;
+      fs.mkdirSync(path.dirname(path.join(saved, f)), { recursive: true });
+      fs.copyFileSync(from, path.join(saved, f));
+      copied.push(f);
+    }
     const r = await reshapeFit(await getBridge(), v, change, made, { archive: archiveDir, raw: rawDir }, { folder: `edgemat\\reshape\\${materialSlug(change.words)}`, log: (l) => say(`  ${l}`) });
     for (const n of r.notes) say(`  ${n}`);
     say(`Made in ${seconds(t)} (${made.credits} Tripo credits): ${r.written.length} file(s)`);
-    const s = readState();
-    const had = s.restyles[look.item.id];
     const files = [...(had?.files ?? [])];
     for (const f of r.written) if (!files.some((x) => sameFile(x, f))) files.push(f);
     s.restyles[look.item.id] = { name: look.item.name, words: [...(had?.words ?? []), `reshaped: ${change.words}`], files, when: new Date().toISOString() };
+    (s.made[look.item.id] ??= []).push({ sheet: change.sheet, had: had ?? null, written: r.written, copied, saved });
     const kept = Object.values(s.restyles).flatMap((x) => x.files);
     for (const f of s.originals) if (!kept.some((x) => sameFile(x, f))) removeFile(f);
     s.originals = [];
     writeState(s);
     status.set({ text: "Packing and swapping it in...", tone: "dim" });
     await packAndSwap(look.item.id);
-    status.set({ text: `Made and put on V in ${seconds(t)}. Restore takes it away.`, tone: "accent" });
+    status.set({ text: `Made and put on V in ${seconds(t)}. Back takes this change off V again; Restore takes every change away.`, tone: "accent" });
     labelSlots();
     if (pickedSlot !== undefined) await pick(pickedSlot, true);
   } catch (e) {

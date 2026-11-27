@@ -53,8 +53,8 @@ A first version. It changes a piece of clothing's shape by words, through pictur
 | Pick a piece in **Clothing**, then press **Reshape** | The item is drawn from four sides (front, left, back, right) in its look as V wears it. The Reshape line says whether it can be made yet |
 | Type the change in **Change its shape** ("make the brim twice as wide"), press **Change** | OpenAI's GPT Image changes the pictures with your key (about half a minute, a few tens of US cents). Look at them before going on: the model follows the pictures, mistakes included |
 | Change again ("a little narrower") | It builds on the last change |
-| **Back** | Takes the last change away |
-| **Make it**, then **Make it** again within 10 seconds | Tripo makes the 3D model from the pictures and brings it to the game's size (about 60 of your Tripo credits, about 4 minutes), then it is fitted on V and swapped in, as a restyle is. **Restore** takes it away |
+| **Back** | Takes the last change away. If **Make it** put that change on V, Back takes it off V too: the piece goes back to how it was before Make it |
+| **Make it**, then **Make it** again within 10 seconds | Tripo makes the 3D model from the pictures and brings it to the game's size (about 60 of your Tripo credits, about 4 minutes), then it is fitted on V and swapped in, as a restyle is. **Back** takes it off again, and **Restore** takes every change to the piece away. After a restyle of the made piece, only **Restore** takes it away |
 
 | | |
 |---|---|
