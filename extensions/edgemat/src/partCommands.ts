@@ -43,11 +43,10 @@ function pickGameMaterial(l: GameMaterialList, material: string): Promise<Materi
   const byPath: MaterialItem = { label: "$(edit) A game path...", description: "any .mi, such as one from REDcode's Game Assets", alwaysShow: true };
   const show = (value: string) => {
     const found = searchGameMaterials(l, value, Infinity);
-    qp.items = [
-      byPath,
-      ...found.map((m): MaterialItem => ({ label: m.name, description: [m.glass ? "glass" : "", m.glow ? "glows" : "", file(m.base)].filter(Boolean).join(" · "), detail: m.path, mi: m.path, alwaysShow: true })),
-      ...(found.length ? [] : [{ label: `No game material matches "${value.trim()}"`, description: "try fewer words, or a game path", alwaysShow: true }]),
-    ];
+    const matches = found.map((m): MaterialItem => ({ label: m.name, description: [m.glass ? "glass" : "", m.glow ? "glows" : "", file(m.base)].filter(Boolean).join(" · "), detail: m.path, mi: m.path, alwaysShow: true }));
+    qp.items = [byPath, ...matches, ...(found.length ? [] : [{ label: `No game material matches "${value.trim()}"`, description: "try fewer words, or a game path", alwaysShow: true }])];
+    // New items make the first one active, the path box; after a search, Enter takes the first match.
+    if (value.trim() && matches.length) qp.activeItems = [matches[0]];
   };
   show("");
   qp.onDidChangeValue(show);
@@ -104,7 +103,8 @@ export function registerPartCommands(host: PartHost): vscode.Disposable[] {
     if (part.onDesk && part.desk) host.desk.markPart(part.desk, part.material, changed);
     host.changed(part.archive, part.mesh, part.material, part.onDesk ? part.desk : undefined);
     const tile = r.tile !== undefined ? ` Tiling ${r.tile}.` : "";
-    const next = part.onDesk ? "It changed on the Desk: + on the Desk line puts the mesh in a project." : "Pack the project to see it in the game.";
+    // Back to the game's material on the Desk is no change any more (the EDGEweb run of 2026-11-27 found it said so).
+    const next = !part.onDesk ? "Pack the project to see it in the game." : changed ? "It changed on the Desk: + on the Desk line puts the mesh in a project." : "On this Desk entry it is as the game made it again.";
     // In a project, Reveal in REDcode shows the part's new .mi, else the mesh (#15).
     const shown = [r.mi, part.mesh].map((f) => path.join(part.archive, f)).find((f) => fs.existsSync(f));
     const reveal = !part.onDesk && shown && host.canReveal?.() ? host.reveal : undefined;
